@@ -1,4 +1,4 @@
-import { getAds, AdsArgs } from "./clients/adServer";
+import { getAds } from "./clients/adServer";
 import {
   AdsByPlacement,
   getSkuIds,
@@ -11,8 +11,10 @@ import {
   RawAdsByPlacements,
   HydratedProductsByPlacements,
   HydratedAdsResponse,
+  GetAdsArgs,
 } from "./types";
 import { atob } from "./utils/base64";
+import { toAdServerArgs } from "./utils/toAdServerArgs";
 
 /**
  * Fetches raw advertisement data without enriching it with product details.
@@ -21,10 +23,11 @@ import { atob } from "./utils/base64";
  * @returns RawAdsResponse - An object where each key is a placement and the
  * value is an array of sponsored products
  */
-export const getRawAds: (_: AdsArgs) => Promise<RawAdsResponse> = async (
+export const getRawAds: (_: GetAdsArgs) => Promise<RawAdsResponse> = async (
   args,
 ) => {
-  const adsArray = getSponsoredProductArray(await getAds(args));
+  const adServerArgs = toAdServerArgs(args);
+  const adsArray = getSponsoredProductArray(await getAds(adServerArgs));
 
   const adsByPlacements = {} as RawAdsByPlacements;
 
@@ -99,9 +102,10 @@ const mergeProductsAndAds = (
  * are sponsored by the ad server.
  */
 export const getHydratedAds: (
-  _: AdsArgs,
+  _: GetAdsArgs,
 ) => Promise<HydratedAdsResponse> = async (args) => {
-  const ads = getSponsoredProductArray(await getAds(args));
+  const adServerArgs = toAdServerArgs(args);
+  const ads = getSponsoredProductArray(await getAds(adServerArgs));
   const adsSkuIds = getSkuIds(ads);
 
   const searchProduct = await getProductsBySkuId(adsSkuIds);
