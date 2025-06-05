@@ -1,25 +1,14 @@
-import fetch from "isomorphic-unfetch";
+import { post } from "../httpClient";
 import { SearchResponse } from "./types";
 
-const baseUrl = (an: string) =>
+export const getSearchBaseUrl = (an: string) =>
   `https://${an}.vtexcommercestable.com.br/api/intelligent-search`;
 
 export const getProductsBySkuId = async (
+  an: string,
   skuIds: string[],
 ): Promise<SearchResponse> => {
-  const url = `${baseUrl}/product_search`;
+  const url = `${getSearchBaseUrl(an)}/product_search`;
 
-  const data = {
-    skuIds,
-  };
-
-  return fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  }).then((response) => {
-    return response.json();
-  });
+  return post(url, { skuIds });
 };

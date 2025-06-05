@@ -1,11 +1,5 @@
-import fetch from "isomorphic-unfetch";
-import {
-  AdRequest,
-  AdResponse,
-  Channel,
-  NavigationContext,
-  PlacementBody,
-} from "./types";
+import { AdResponse, Channel, NavigationContext, PlacementBody } from "./types";
+import { post } from "../httpClient";
 
 export interface AdsArgs {
   publisherId: string;
@@ -23,36 +17,8 @@ const baseUrl = "https://newtail-media.newtail.com.br/v1/rma/";
 
 export const getAds = async ({
   publisherId,
-  macId,
-  context,
-  term = "",
-  placements,
-  categoryName,
-  productSku,
-  tags,
-  channel,
+  ...args
 }: AdsArgs): Promise<AdResponse> => {
-  const url = `${baseUrl}${publisherId}`;
-
-  const data: AdRequest = {
-    term,
-    context,
-    placements,
-    user_id: macId,
-    session_id: macId,
-    category_name: categoryName,
-    product_sku: productSku,
-    tags,
-    channel,
-  };
-
-  return fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  }).then((response) => {
-    return response.json();
-  });
+  const url = new URL(publisherId, baseUrl).toString();
+  return post(url, args);
 };
