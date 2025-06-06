@@ -1,24 +1,15 @@
-import { AdResponse, Channel, NavigationContext, PlacementBody } from "./types";
-import { post } from "../httpClient";
+import { httpClient } from "../httpClient";
+import { AdRequest, AdResponse } from "./types";
 
-export interface AdsArgs {
-  publisherId: string;
-  macId: string;
-  context: NavigationContext;
-  term?: string;
-  placements: Record<string, PlacementBody>;
-  categoryName?: string;
-  productSku?: string;
-  tags?: string[];
-  channel?: Channel;
+export interface AdServerArgs extends AdRequest {
+  publisher_id: string;
 }
 
 const baseUrl = "https://newtail-media.newtail.com.br/v1/rma/";
 
 export const getAds = async ({
-  publisherId,
+  publisher_id,
   ...args
-}: AdsArgs): Promise<AdResponse> => {
-  const url = new URL(publisherId, baseUrl).toString();
-  return post(url, args);
+}: AdServerArgs): Promise<AdResponse> => {
+  return httpClient.post<AdResponse>(baseUrl, publisher_id, args);
 };
