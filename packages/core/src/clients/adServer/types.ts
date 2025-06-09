@@ -31,7 +31,7 @@ export interface AdRequest {
   user_id: string;
   session_id: string;
   tags?: string[];
-  placements: Record<Placement, PlacementBody>;
+  placements: Partial<Record<Placement, PlacementBody>>;
   channel?: Channel;
   product_sku?: string;
 }

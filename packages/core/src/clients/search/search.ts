@@ -1,10 +1,10 @@
 import { httpClient } from "../httpClient";
 import { SearchResponse } from "./types";
 
-const getSearchBaseUrl = (accountName: string) =>
+export const getSearchBaseUrl = (accountName: string) =>
   `https://${accountName}.vtexcommercestable.com.br/api/intelligent-search`;
 
-const productSearchUrl = '/product_search';
+export const productSearchUrl = '/product_search';
 
 export const getProductsBySkuId = async (
   accountName: string,
