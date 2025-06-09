@@ -14,16 +14,16 @@ export interface Correction {
 }
 
 export interface Options {
-  sorts: any[];
-  counts: any[];
+  sorts: object[];
+  counts: object[];
   deliveryPromisesEnabled: boolean;
 }
 
 export interface Pagination {
   count: number;
   current: Current;
-  before: any[];
-  after: any[];
+  before: object[];
+  after: object[];
   perPage: number;
   next: First;
   previous: First;
@@ -64,7 +64,7 @@ export interface Product {
   metaTagDescription: string;
   origin: string;
   productTitle: string;
-  deliveryPromisesBadges: any[];
+  deliveryPromisesBadges: object[];
 }
 
 export interface ClusterHighlight {
@@ -85,10 +85,10 @@ export interface Item {
   variations: Variation[];
   ean: string;
   modalType: string;
-  videos: any[];
-  attachments: any[];
+  videos: object[];
+  attachments: object[];
   isKit: boolean;
-  attributes: any[];
+  attributes: object[];
   CORES?: string[];
   "Voltagem do Produto"?: string[];
 }
@@ -125,10 +125,10 @@ export interface Seller {
 }
 
 export interface CommertialOffer {
-  DeliverySlaSamplesPerRegion: DeliverySlaSamplesPerRegion;
-  DeliverySlaSamples: any[];
+  DeliverySlaSamplesPerRegion: object;
+  DeliverySlaSamples: object[];
   AvailableQuantity: number;
-  discountHighlights: any[];
+  discountHighlights: object[];
   Installments: Installment[];
   Price: number;
   ListPrice: number;
@@ -136,17 +136,15 @@ export interface CommertialOffer {
   taxPercentage: number | null;
   PriceWithoutDiscount: number;
   Tax: number;
-  GiftSkuIds: any[];
-  BuyTogether: any[];
-  ItemMetadataAttachment: any[];
+  GiftSkuIds: object[];
+  BuyTogether: object[];
+  ItemMetadataAttachment: object[];
   RewardValue: number;
   PriceValidUntil: Date | null;
   GetInfoErrorMessage: null;
   CacheVersionUsedToCallCheckout: string;
   teasers: Teaser[];
 }
-
-export interface DeliverySlaSamplesPerRegion {}
 
 export interface Installment {
   Value: number;
@@ -183,7 +181,7 @@ export interface Teaser {
   name: string;
   conditions: Conditions;
   effects: Effects;
-  generalValues: any[];
+  generalValues: object[];
 }
 
 export interface Conditions {

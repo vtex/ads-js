@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getProductsBySkuId, getSearchBaseUrl, productSearchUrl as productSearchPath } from "./search"; // adjust path
+import {
+  getProductsBySkuId,
+  getSearchBaseUrl,
+  productSearchUrl as productSearchPath,
+} from "./search"; // adjust path
 import { httpClient } from "../httpClient";
 import { SearchResponse } from "./types";
 
@@ -55,7 +59,7 @@ describe("getProductsBySkuId", () => {
           metaTagDescription: "",
           origin: "",
           productTitle: "",
-          deliveryPromisesBadges: []
+          deliveryPromisesBadges: [],
         },
       ],
       recordsFiltered: 0,
