@@ -1,2 +1,4 @@
 dist/
+packages/**/dist
 node_modules/
+.turbo
