@@ -27,7 +27,9 @@ export const getRawAds: (_: GetAdsArgs) => Promise<RawAdsResponse> = async (
   args,
 ) => {
   const adServerArgs = toAdServerArgs(args);
-  const adsArray = getSponsoredProductArray(await getAds(adServerArgs));
+  const adsArray = getSponsoredProductArray(
+    await getAds(args.publisherId, adServerArgs),
+  );
 
   const adsByPlacements = {} as RawAdsByPlacements;
 
@@ -105,10 +107,12 @@ export const getHydratedAds: (
   _: GetAdsArgs,
 ) => Promise<HydratedAdsResponse> = async (args) => {
   const adServerArgs = toAdServerArgs(args);
-  const ads = getSponsoredProductArray(await getAds(adServerArgs));
+  const ads = getSponsoredProductArray(
+    await getAds(args.publisherId, adServerArgs),
+  );
   const adsSkuIds = getSkuIds(ads);
 
-  const searchProduct = await getProductsBySkuId(adsSkuIds);
+  const searchProduct = await getProductsBySkuId(args.publisherId, adsSkuIds);
   const products = searchProduct.products;
   const hydratedAds = mergeProductsAndAds(products, ads);
 

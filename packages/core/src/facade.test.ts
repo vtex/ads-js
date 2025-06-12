@@ -159,9 +159,12 @@ describe("facade", () => {
       const result = await getRawAds(mockGetAdsArgs);
 
       // Assert
-      expect(mockedGetAds).toHaveBeenCalledWith(mockGetAdsArgs);
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.publisherId,
+        mockGetAdsArgs,
+      );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
-        mockAdServerResponse
+        mockAdServerResponse,
       );
       expect(result).toEqual(expectedResponse);
     });
@@ -235,12 +238,18 @@ describe("facade", () => {
       const result = await getHydratedAds(mockGetAdsArgs);
 
       // Assert
-      expect(mockedGetAds).toHaveBeenCalledWith(mockGetAdsArgs);
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.publisherId,
+        mockGetAdsArgs,
+      );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
-        mockAdServerResponse
+        mockAdServerResponse,
       );
       expect(mockedGetSkuIds).toHaveBeenCalledWith(mockAdsByPlacement);
-      expect(mockedGetProductsBySkuId).toHaveBeenCalledWith(mockSkuIds);
+      expect(mockedGetProductsBySkuId).toHaveBeenCalledWith(
+        mockGetAdsArgs.publisherId,
+        mockSkuIds,
+      );
 
       expect(result.sponsoredProducts.search_top_product).toHaveLength(1);
       expect(result.sponsoredProducts.search_top_product[0]).toEqual({
