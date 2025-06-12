@@ -1,6 +1,10 @@
 import { getSponsoredProductArray, AdsByPlacement } from "./mappers";
-import { AdResponse, SponsoredBrandDetail, SponsoredProductDetail } from "./types";
-import { expect, it, describe } from 'vitest'
+import {
+  AdResponse,
+  SponsoredBrandDetail,
+  SponsoredProductDetail,
+} from "./types";
+import { expect, it, describe } from "vitest";
 
 describe.concurrent("getSponsoredProductArray", () => {
   const sampleSponsoredProduct: SponsoredProductDetail = {
@@ -21,10 +25,12 @@ describe.concurrent("getSponsoredProductArray", () => {
     impression_url: "http://example.com/impression2",
     view_url: "http://example.com/view2",
     destination_url: "http://example.com/destination2",
-    products: [ {
-      ...sampleSponsoredProduct,
-      product_sku: "sku2",
-    } ],
+    products: [
+      {
+        ...sampleSponsoredProduct,
+        product_sku: "sku2",
+      },
+    ],
     brand_url: "http://example.com/brand",
     brand_name: "Brand 1",
     headline: "Brand Headline",
@@ -48,9 +54,7 @@ describe.concurrent("getSponsoredProductArray", () => {
 
   it("should return sponsored products grouped by placement", () => {
     const adResponse: AdResponse = {
-      placement1: [
-        { ...sampleSponsoredProduct, product_sku: "sku1" },
-      ],
+      placement1: [{ ...sampleSponsoredProduct, product_sku: "sku1" }],
       placement2: [
         { ...sampleSponsoredProduct, product_sku: "sku2" },
         { ...sampleSponsoredProduct, product_sku: "sku3" },

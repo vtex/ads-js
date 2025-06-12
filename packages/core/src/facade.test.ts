@@ -9,7 +9,7 @@ import {
 import { getProductsBySkuId } from "./clients/search";
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
-import { GetAdsArgs, RawAdsResponse, HydratedAdsResponse } from "./types";
+import { GetAdsArgs, RawAdsResponse } from "./types";
 
 // Mock all dependencies
 vi.mock("./clients/adServer", () => ({
@@ -51,8 +51,8 @@ describe("facade", () => {
     sessionId: "session-456",
     channel: "site",
     placements: {
-      search_top_product: { quantity: 3, types: ["product"] },
-      home_shelf_product: { quantity: 2, types: ["product"] },
+      search_top_product: { quantity: 1, types: ["product"] },
+      home_shelf_product: { quantity: 1, types: ["product"] },
     },
     selectedFacets: [{ key: "brand", value: "Nike" }],
     term: "shoes",
@@ -194,14 +194,18 @@ describe("facade", () => {
           "search_top_product",
           [
             mockSponsoredProduct,
-            { ...mockSponsoredProduct, ad_id: "ad-789", product_sku: "sku-789" },
+            {
+              ...mockSponsoredProduct,
+              ad_id: "ad-789",
+              product_sku: "sku-789",
+            },
           ],
         ],
       ];
 
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(
-        multipleAdsForSamePlacement
+        multipleAdsForSamePlacement,
       );
 
       // Act
@@ -210,7 +214,7 @@ describe("facade", () => {
       // Assert
       expect(result.sponsoredProducts.search_top_product).toHaveLength(2);
       expect(result.sponsoredProducts.search_top_product[0]).toEqual(
-        mockSponsoredProduct
+        mockSponsoredProduct,
       );
       expect(result.sponsoredProducts.search_top_product[1]).toEqual({
         ...mockSponsoredProduct,
@@ -292,9 +296,9 @@ describe("facade", () => {
 
       // Assert
       expect(result.sponsoredProducts.search_top_product).toHaveLength(1);
-      expect(result.sponsoredProducts.search_top_product[0].items[0].itemId).toBe(
-        "sku-123"
-      );
+      expect(
+        result.sponsoredProducts.search_top_product[0].items[0].itemId,
+      ).toBe("sku-123");
     });
 
     it("should handle empty ads response", async () => {
@@ -371,7 +375,9 @@ describe("facade", () => {
       mockedGetAds.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getRawAds(mockGetAdsArgs)).rejects.toThrow("Ad server error");
+      await expect(getRawAds(mockGetAdsArgs)).rejects.toThrow(
+        "Ad server error",
+      );
     });
 
     it("should propagate errors from getAds in getHydratedAds", async () => {
@@ -381,7 +387,7 @@ describe("facade", () => {
 
       // Act & Assert
       await expect(getHydratedAds(mockGetAdsArgs)).rejects.toThrow(
-        "Ad server error"
+        "Ad server error",
       );
     });
 
@@ -395,8 +401,8 @@ describe("facade", () => {
 
       // Act & Assert
       await expect(getHydratedAds(mockGetAdsArgs)).rejects.toThrow(
-        "Search service error"
+        "Search service error",
       );
     });
   });
-}); 
+});

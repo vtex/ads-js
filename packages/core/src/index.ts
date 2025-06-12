@@ -1,9 +1,3 @@
-import {
-  getRawAds,
-  getHydratedAds,
-} from './facade';
+import { getRawAds, getHydratedAds } from "./facade";
 
-export {
-  getRawAds,
-  getHydratedAds,
-}
+export { getRawAds, getHydratedAds };

@@ -1,4 +1,8 @@
-import { Channel, PlacementBody, SponsoredProductDetail } from "./clients/adServer";
+import {
+  Channel,
+  PlacementBody,
+  SponsoredProductDetail,
+} from "./clients/adServer";
 import { Product } from "./clients/search/types";
 
 export interface HydratedSponsoredProduct extends Product {
@@ -51,4 +55,4 @@ export interface GetAdsArgs {
   selectedFacets: Facet[];
   term?: string;
   skuId?: string;
-};
+}
