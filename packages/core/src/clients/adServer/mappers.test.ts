@@ -1,4 +1,4 @@
-import { getSponsoredProductArray, AdsByPlacement } from "./mappers";
+import { getSponsoredProductArray, getSkuIds, AdsByPlacement } from "./mappers";
 import {
   AdResponse,
   SponsoredBrandDetail,
@@ -97,5 +97,99 @@ describe.concurrent("getSponsoredProductArray", () => {
 
     const result = getSponsoredProductArray(adResponse);
     expect(result).toEqual(expected);
+  });
+});
+
+describe.concurrent("getSkuIds", () => {
+  const sampleSponsoredProduct: SponsoredProductDetail = {
+    ad_id: "ad1",
+    click_url: "http://example.com/click",
+    impression_url: "http://example.com/impression",
+    view_url: "http://example.com/view",
+    product_name: "Product 1",
+    product_sku: "sku1",
+    image_url: "http://example.com/image1.jpg",
+    seller_id: "seller1",
+    destination_url: "http://example.com/destination1",
+  };
+
+  it("should return an empty array when given an empty ads array", () => {
+    const ads: AdsByPlacement[] = [];
+    const result = getSkuIds(ads);
+    expect(result).toEqual([]);
+  });
+
+  it("should return an empty array when placements have no products", () => {
+    const ads: AdsByPlacement[] = [
+      ["placement1", []],
+      ["placement2", []],
+    ];
+    const result = getSkuIds(ads);
+    expect(result).toEqual([]);
+  });
+
+  it("should extract SKU ID from a single placement with one product", () => {
+    const ads: AdsByPlacement[] = [
+      ["placement1", [{ ...sampleSponsoredProduct, product_sku: "sku123" }]],
+    ];
+    const result = getSkuIds(ads);
+    expect(result).toEqual(["sku123"]);
+  });
+
+  it("should extract SKU IDs from a single placement with multiple products", () => {
+    const ads: AdsByPlacement[] = [
+      [
+        "placement1",
+        [
+          { ...sampleSponsoredProduct, product_sku: "sku123" },
+          { ...sampleSponsoredProduct, product_sku: "sku456" },
+          { ...sampleSponsoredProduct, product_sku: "sku789" },
+        ],
+      ],
+    ];
+    const result = getSkuIds(ads);
+    expect(result).toEqual(["sku123", "sku456", "sku789"]);
+  });
+
+  it("should extract SKU IDs from multiple placements", () => {
+    const ads: AdsByPlacement[] = [
+      [
+        "placement1",
+        [
+          { ...sampleSponsoredProduct, product_sku: "sku123" },
+          { ...sampleSponsoredProduct, product_sku: "sku456" },
+        ],
+      ],
+      ["placement2", [{ ...sampleSponsoredProduct, product_sku: "sku789" }]],
+      [
+        "placement3",
+        [
+          { ...sampleSponsoredProduct, product_sku: "sku101" },
+          { ...sampleSponsoredProduct, product_sku: "sku202" },
+        ],
+      ],
+    ];
+    const result = getSkuIds(ads);
+    expect(result).toEqual(["sku123", "sku456", "sku789", "sku101", "sku202"]);
+  });
+
+  it("should filter out undefined product_sku values", () => {
+    const productWithoutSku = {
+      ...sampleSponsoredProduct,
+      product_sku: undefined as any,
+    };
+
+    const ads: AdsByPlacement[] = [
+      [
+        "placement1",
+        [
+          { ...sampleSponsoredProduct, product_sku: "sku123" },
+          productWithoutSku,
+          { ...sampleSponsoredProduct, product_sku: "sku456" },
+        ],
+      ],
+    ];
+    const result = getSkuIds(ads);
+    expect(result).toEqual(["sku123", "sku456"]);
   });
 });
