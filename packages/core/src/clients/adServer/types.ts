@@ -3,7 +3,7 @@ export type Channel = "site" | "app";
 export type NavigationContext =
   | "search"
   | "category"
-  | "brand"
+  | "brand_page"
   | "product_page"
   | "home";
 
@@ -27,6 +27,7 @@ export interface PlacementBody {
 export interface AdRequest {
   context: NavigationContext;
   term?: string;
+  brand_name?: string;
   category_name?: string;
   user_id: string;
   session_id: string;

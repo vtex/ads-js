@@ -1,4 +1,4 @@
-import { AdServerArgs } from "../clients/adServer";
+import { AdRequest } from "../clients/adServer";
 import { getParametersFromFacets } from "../clients/adServer/facetsAdapter";
 import { GetAdsArgs } from "../types";
 import { getAdServerContext } from "./getNavigationContext";
@@ -13,9 +13,9 @@ import { getAdServerContext } from "./getNavigationContext";
  * @param args - The input arguments provided by the ads SDK consumer.
  * @returns The adapted argument object compatible with the Ad Server.
  */
-export const toAdServerArgs: (_: GetAdsArgs) => AdServerArgs = (
+export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
   args: GetAdsArgs,
-): AdServerArgs => {
+): AdRequest => {
   const { category, brand, tags } = getParametersFromFacets(
     args.selectedFacets,
   );
@@ -33,7 +33,6 @@ export const toAdServerArgs: (_: GetAdsArgs) => AdServerArgs = (
     tags,
     context,
 
-    publisher_id: args.publisherId,
     placements: args.placements,
     channel: args.channel,
     term: args.term,

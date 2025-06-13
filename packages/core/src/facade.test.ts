@@ -10,6 +10,7 @@ import { getProductsBySkuId } from "./clients/search";
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
 import { GetAdsArgs, RawAdsResponse } from "./types";
+import { SearchResponse } from "../dist/clients/search";
 
 // Mock all dependencies
 vi.mock("./clients/adServer", () => ({
@@ -236,7 +237,9 @@ describe("facade", () => {
       mockedGetAds.mockResolvedValue(mockAdServerResponse);
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
       mockedGetSkuIds.mockReturnValue(mockSkuIds);
-      mockedGetProductsBySkuId.mockResolvedValue(mockSearchResponse);
+      mockedGetProductsBySkuId.mockResolvedValue(
+        mockSearchResponse as SearchResponse,
+      );
 
       // Act
       const result = await getHydratedAds(mockGetAdsArgs);
