@@ -176,7 +176,7 @@ describe.concurrent("getSkuIds", () => {
   it("should filter out undefined product_sku values", () => {
     const productWithoutSku = {
       ...sampleSponsoredProduct,
-      product_sku: undefined as any,
+      product_sku: undefined as unknown,
     };
 
     const ads: AdsByPlacement[] = [
@@ -184,7 +184,7 @@ describe.concurrent("getSkuIds", () => {
         "placement1",
         [
           { ...sampleSponsoredProduct, product_sku: "sku123" },
-          productWithoutSku,
+          productWithoutSku as SponsoredProductDetail,
           { ...sampleSponsoredProduct, product_sku: "sku456" },
         ],
       ],
