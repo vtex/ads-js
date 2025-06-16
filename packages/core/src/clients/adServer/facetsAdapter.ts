@@ -111,7 +111,7 @@ export const getBrandFromFacets = (selectedFacets?: Facet[]) => {
 export const getTagsFromFacets = (selectedFacets?: Facet[]) => {
   return getAttributeFromFacets({
     selectedFacets,
-    attributeSynonyms: ["productClusterIds"],
+    attributeSynonyms: ["productClusterIds", "productClusterNames"],
   })?.map((facet) => `product_cluster/${facet.value}`);
 };
 
