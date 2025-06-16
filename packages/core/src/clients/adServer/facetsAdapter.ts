@@ -43,12 +43,15 @@ export const getAttributeFromFacets: (
     return undefined;
   }
 
+  const lowerAtrtibuteSynonyms = attributeSynonyms?.map((s) => s.toLowerCase());
+  const lowerAttributePrefix = attributePrefix?.toLowerCase();
+
   const attributes = selectedFacets.filter((facet) => {
     const key = facet.key.toLowerCase();
 
     return (
-      attributeSynonyms?.map((s) => s.toLowerCase()).includes(key) ||
-      (attributePrefix && key.startsWith(attributePrefix.toLowerCase()))
+      lowerAtrtibuteSynonyms?.includes(key) ||
+      (lowerAttributePrefix && key.startsWith(lowerAttributePrefix))
     );
   });
 
