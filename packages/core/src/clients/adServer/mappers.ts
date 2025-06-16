@@ -41,6 +41,5 @@ export const getSkuIds: (ads: AdsByPlacement[]) => string[] = (ads) => {
     .map(([_placement, ad]) => {
       return ad.map((item) => item.product_sku);
     })
-    .flat()
-    .filter((item) => item !== undefined);
+    .flat();
 };
