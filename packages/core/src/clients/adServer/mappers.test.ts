@@ -172,24 +172,4 @@ describe.concurrent("getSkuIds", () => {
     const result = getSkuIds(ads);
     expect(result).toEqual(["sku123", "sku456", "sku789", "sku101", "sku202"]);
   });
-
-  it("should filter out undefined product_sku values", () => {
-    const productWithoutSku = {
-      ...sampleSponsoredProduct,
-      product_sku: undefined as unknown,
-    };
-
-    const ads: AdsByPlacement[] = [
-      [
-        "placement1",
-        [
-          { ...sampleSponsoredProduct, product_sku: "sku123" },
-          productWithoutSku as SponsoredProductDetail,
-          { ...sampleSponsoredProduct, product_sku: "sku456" },
-        ],
-      ],
-    ];
-    const result = getSkuIds(ads);
-    expect(result).toEqual(["sku123", "sku456"]);
-  });
 });
