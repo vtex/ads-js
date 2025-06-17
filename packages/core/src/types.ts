@@ -47,12 +47,16 @@ export interface Facet {
 }
 
 export interface GetAdsArgs {
-  publisherId: string;
-  userId: string;
-  sessionId: string;
-  channel?: Channel;
+  identity: {
+    publisherId: string;
+    userId: string;
+    sessionId: string;
+    channel?: Channel;
+  };
+  search: {
+    selectedFacets?: Facet[];
+    term?: string;
+    skuId?: string;
+  }
   placements: Record<Placement, PlacementBody>;
-  selectedFacets: Facet[];
-  term?: string;
-  skuId?: string;
 }
