@@ -112,7 +112,10 @@ export const getHydratedAds: (
   );
   const adsSkuIds = getSkuIds(ads);
 
-  const searchProduct = await getProductsBySkuId(args.identity.publisherId, adsSkuIds);
+  const searchProduct = await getProductsBySkuId(
+    args.identity.publisherId,
+    adsSkuIds,
+  );
   const products = searchProduct.products;
   const hydratedAds = mergeProductsAndAds(products, ads);
 

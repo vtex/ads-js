@@ -57,6 +57,6 @@ export interface GetAdsArgs {
     selectedFacets?: Facet[];
     term?: string;
     skuId?: string;
-  }
+  };
   placements: Record<Placement, PlacementBody>;
 }
