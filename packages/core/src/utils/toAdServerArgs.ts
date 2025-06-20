@@ -17,14 +17,14 @@ export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
   args: GetAdsArgs,
 ): AdRequest => {
   const { category, brand, tags } = getParametersFromFacets(
-    args.selectedFacets,
+    args.search.selectedFacets,
   );
 
   const context = getAdServerContext({
-    term: args.term,
+    term: args.search.term,
     category,
     brand,
-    skuId: args.skuId,
+    skuId: args.search.skuId,
   });
 
   return {
@@ -34,10 +34,10 @@ export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
     context,
 
     placements: args.placements,
-    channel: args.channel,
-    term: args.term,
-    session_id: args.sessionId,
-    user_id: args.userId,
-    product_sku: args.skuId,
+    channel: args.identity.channel,
+    term: args.search.term,
+    session_id: args.identity.sessionId,
+    user_id: args.identity.userId,
+    product_sku: args.search.skuId,
   };
 };

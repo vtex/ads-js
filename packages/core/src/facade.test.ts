@@ -47,16 +47,20 @@ describe("facade", () => {
 
   // Test data
   const mockGetAdsArgs: GetAdsArgs = {
-    publisherId: "test-publisher",
-    userId: "user-123",
-    sessionId: "session-456",
-    channel: "site",
+    identity: {
+      publisherId: "test-publisher",
+      userId: "user-123",
+      sessionId: "session-456",
+      channel: "site",
+    },
     placements: {
       search_top_product: { quantity: 1, types: ["product"] },
       home_shelf_product: { quantity: 1, types: ["product"] },
     },
-    selectedFacets: [{ key: "brand", value: "Nike" }],
-    term: "shoes",
+    search: {
+      selectedFacets: [{ key: "brand", value: "Nike" }],
+      term: "shoes",
+    },
   };
 
   const mockSponsoredProduct: SponsoredProductDetail = {
@@ -161,7 +165,7 @@ describe("facade", () => {
 
       // Assert
       expect(mockedGetAds).toHaveBeenCalledWith(
-        mockGetAdsArgs.publisherId,
+        mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
@@ -246,7 +250,7 @@ describe("facade", () => {
 
       // Assert
       expect(mockedGetAds).toHaveBeenCalledWith(
-        mockGetAdsArgs.publisherId,
+        mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
@@ -254,7 +258,7 @@ describe("facade", () => {
       );
       expect(mockedGetSkuIds).toHaveBeenCalledWith(mockAdsByPlacement);
       expect(mockedGetProductsBySkuId).toHaveBeenCalledWith(
-        mockGetAdsArgs.publisherId,
+        mockGetAdsArgs.identity.publisherId,
         mockSkuIds,
       );
 
@@ -287,7 +291,7 @@ describe("facade", () => {
 
       const mockSearchResponse = {
         products: [mockProduct, nonMatchingProduct],
-      };
+      } as unknown as SearchResponse;
 
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
@@ -309,7 +313,9 @@ describe("facade", () => {
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue([]);
       mockedGetSkuIds.mockReturnValue([]);
-      mockedGetProductsBySkuId.mockResolvedValue({ products: [] });
+      mockedGetProductsBySkuId.mockResolvedValue({
+        products: [],
+      } as unknown as SearchResponse);
 
       // Act
       const result = await getHydratedAds(mockGetAdsArgs);
@@ -344,7 +350,7 @@ describe("facade", () => {
 
       const mockSearchResponse = {
         products: [productWithMultipleItems],
-      };
+      } as unknown as SearchResponse;
 
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
