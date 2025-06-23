@@ -1,4 +1,4 @@
-import { getSponsoredProductArray, getSkuIds, AdsByPlacement } from "./mappers";
+import { getSponsoredProductArray, getProductIds, AdsByPlacement } from "./mappers";
 import {
   AdResponse,
   SponsoredBrandDetail,
@@ -100,7 +100,7 @@ describe.concurrent("getSponsoredProductArray", () => {
   });
 });
 
-describe.concurrent("getSkuIds", () => {
+describe.concurrent("getProductIds", () => {
   const sampleSponsoredProduct: SponsoredProductDetail = {
     ad_id: "ad1",
     click_url: "http://example.com/click",
@@ -111,11 +111,14 @@ describe.concurrent("getSkuIds", () => {
     image_url: "http://example.com/image1.jpg",
     seller_id: "seller1",
     destination_url: "http://example.com/destination1",
+    product_metadata: {
+      productId: "product1",
+    },
   };
 
   it("should return an empty array when given an empty ads array", () => {
     const ads: AdsByPlacement[] = [];
-    const result = getSkuIds(ads);
+    const result = getProductIds(ads);
     expect(result).toEqual([]);
   });
 
@@ -124,52 +127,79 @@ describe.concurrent("getSkuIds", () => {
       ["placement1", []],
       ["placement2", []],
     ];
-    const result = getSkuIds(ads);
+    const result = getProductIds(ads);
     expect(result).toEqual([]);
   });
 
-  it("should extract SKU ID from a single placement with one product", () => {
+  it("should return an empty array when products have no product metadata", () => {
+    const productWithoutMetadata: SponsoredProductDetail = {
+      ...sampleSponsoredProduct,
+      product_metadata: undefined,
+    };
     const ads: AdsByPlacement[] = [
-      ["placement1", [{ ...sampleSponsoredProduct, product_sku: "sku123" }]],
+      ["placement1", [productWithoutMetadata]],
     ];
-    const result = getSkuIds(ads);
-    expect(result).toEqual(["sku123"]);
+    const result = getProductIds(ads);
+    expect(result).toEqual([]);
   });
 
-  it("should extract SKU IDs from a single placement with multiple products", () => {
+  it("should extract product ID from a single placement with one product", () => {
+    const ads: AdsByPlacement[] = [
+      ["placement1", [{ ...sampleSponsoredProduct, product_metadata: { productId: "product123" } }]],
+    ];
+    const result = getProductIds(ads);
+    expect(result).toEqual(["product123"]);
+  });
+
+  it("should extract product IDs from a single placement with multiple products", () => {
     const ads: AdsByPlacement[] = [
       [
         "placement1",
         [
-          { ...sampleSponsoredProduct, product_sku: "sku123" },
-          { ...sampleSponsoredProduct, product_sku: "sku456" },
-          { ...sampleSponsoredProduct, product_sku: "sku789" },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product789" } },
         ],
       ],
     ];
-    const result = getSkuIds(ads);
-    expect(result).toEqual(["sku123", "sku456", "sku789"]);
+    const result = getProductIds(ads);
+    expect(result).toEqual(["product123", "product456", "product789"]);
   });
 
-  it("should extract SKU IDs from multiple placements", () => {
+  it("should extract product IDs from multiple placements", () => {
     const ads: AdsByPlacement[] = [
       [
         "placement1",
         [
-          { ...sampleSponsoredProduct, product_sku: "sku123" },
-          { ...sampleSponsoredProduct, product_sku: "sku456" },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
         ],
       ],
-      ["placement2", [{ ...sampleSponsoredProduct, product_sku: "sku789" }]],
+      ["placement2", [{ ...sampleSponsoredProduct, product_metadata: { productId: "product789" } }]],
       [
         "placement3",
         [
-          { ...sampleSponsoredProduct, product_sku: "sku101" },
-          { ...sampleSponsoredProduct, product_sku: "sku202" },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product101" } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product202" } },
         ],
       ],
     ];
-    const result = getSkuIds(ads);
-    expect(result).toEqual(["sku123", "sku456", "sku789", "sku101", "sku202"]);
+    const result = getProductIds(ads);
+    expect(result).toEqual(["product123", "product456", "product789", "product101", "product202"]);
+  });
+
+  it("should filter out products with undefined product IDs", () => {
+    const ads: AdsByPlacement[] = [
+      [
+        "placement1",
+        [
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: undefined } },
+          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
+        ],
+      ],
+    ];
+    const result = getProductIds(ads);
+    expect(result).toEqual(["product123", "product456"]);
   });
 });

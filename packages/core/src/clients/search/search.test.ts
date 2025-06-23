@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
-  getProductsBySkuId,
+  getProductsByIds,
   getSearchBaseUrl,
   productSearchUrl as productSearchPath,
 } from "./search"; // adjust path
@@ -9,20 +9,20 @@ import { SearchResponse } from "./types";
 
 vi.mock("../httpClient", () => ({
   httpClient: {
-    post: vi.fn(),
+    get: vi.fn(),
   },
 }));
 
-describe("getProductsBySkuId", () => {
+describe("getProductsByIds", () => {
   const mockedHttpClient = vi.mocked(httpClient, true);
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls httpClient.post with correct URL and body", async () => {
+  it("calls httpClient.get with correct URL and query parameters", async () => {
     const account = "acme";
-    const skuIds = ["sku1", "sku2"];
+    const productIds = ["product1", "product2"];
 
     const expectedResponse: Partial<SearchResponse> = {
       products: [
@@ -68,24 +68,67 @@ describe("getProductsBySkuId", () => {
       translated: false,
     };
 
-    mockedHttpClient.post.mockResolvedValue(expectedResponse);
+    mockedHttpClient.get.mockResolvedValue(expectedResponse);
 
-    const result = await getProductsBySkuId(account, skuIds);
+    const result = await getProductsByIds(account, productIds);
 
-    expect(httpClient.post).toHaveBeenCalledWith(
+    expect(httpClient.get).toHaveBeenCalledWith(
       getSearchBaseUrl(account),
-      productSearchPath,
-      { skuIds },
+      `${productSearchPath}?q=product:product1;product2`,
     );
 
     expect(result).toEqual(expectedResponse);
   });
 
-  it("throws if httpClient.post fails", async () => {
-    mockedHttpClient.post.mockRejectedValue(new Error("Search failed"));
+  it("throws if httpClient.get fails", async () => {
+    mockedHttpClient.get.mockRejectedValue(new Error("Search failed"));
 
-    await expect(getProductsBySkuId("acme", ["sku1"])).rejects.toThrow(
+    await expect(getProductsByIds("acme", ["product1"])).rejects.toThrow(
       "Search failed",
+    );
+  });
+
+  it("handles single product ID correctly", async () => {
+    const account = "acme";
+    const productIds = ["product123"];
+
+    const expectedResponse: Partial<SearchResponse> = {
+      products: [],
+      recordsFiltered: 0,
+      fuzzy: "",
+      operator: "",
+      translated: false,
+    };
+
+    mockedHttpClient.get.mockResolvedValue(expectedResponse);
+
+    await getProductsByIds(account, productIds);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl(account),
+      `${productSearchPath}?q=product:product123`,
+    );
+  });
+
+  it("handles empty product IDs array", async () => {
+    const account = "acme";
+    const productIds: string[] = [];
+
+    const expectedResponse: Partial<SearchResponse> = {
+      products: [],
+      recordsFiltered: 0,
+      fuzzy: "",
+      operator: "",
+      translated: false,
+    };
+
+    mockedHttpClient.get.mockResolvedValue(expectedResponse);
+
+    await getProductsByIds(account, productIds);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl(account),
+      `${productSearchPath}?q=product:`,
     );
   });
 });
