@@ -1,4 +1,8 @@
-import { getSponsoredProductArray, getProductIds, AdsByPlacement } from "./mappers";
+import {
+  getSponsoredProductArray,
+  getProductIds,
+  AdsByPlacement,
+} from "./mappers";
 import {
   AdResponse,
   SponsoredBrandDetail,
@@ -136,16 +140,22 @@ describe.concurrent("getProductIds", () => {
       ...sampleSponsoredProduct,
       product_metadata: undefined,
     };
-    const ads: AdsByPlacement[] = [
-      ["placement1", [productWithoutMetadata]],
-    ];
+    const ads: AdsByPlacement[] = [["placement1", [productWithoutMetadata]]];
     const result = getProductIds(ads);
     expect(result).toEqual([]);
   });
 
   it("should extract product ID from a single placement with one product", () => {
     const ads: AdsByPlacement[] = [
-      ["placement1", [{ ...sampleSponsoredProduct, product_metadata: { productId: "product123" } }]],
+      [
+        "placement1",
+        [
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product123" },
+          },
+        ],
+      ],
     ];
     const result = getProductIds(ads);
     expect(result).toEqual(["product123"]);
@@ -156,9 +166,18 @@ describe.concurrent("getProductIds", () => {
       [
         "placement1",
         [
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product789" } },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product123" },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product456" },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product789" },
+          },
         ],
       ],
     ];
@@ -171,21 +190,47 @@ describe.concurrent("getProductIds", () => {
       [
         "placement1",
         [
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product123" },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product456" },
+          },
         ],
       ],
-      ["placement2", [{ ...sampleSponsoredProduct, product_metadata: { productId: "product789" } }]],
+      [
+        "placement2",
+        [
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product789" },
+          },
+        ],
+      ],
       [
         "placement3",
         [
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product101" } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product202" } },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product101" },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product202" },
+          },
         ],
       ],
     ];
     const result = getProductIds(ads);
-    expect(result).toEqual(["product123", "product456", "product789", "product101", "product202"]);
+    expect(result).toEqual([
+      "product123",
+      "product456",
+      "product789",
+      "product101",
+      "product202",
+    ]);
   });
 
   it("should filter out products with undefined product IDs", () => {
@@ -193,9 +238,18 @@ describe.concurrent("getProductIds", () => {
       [
         "placement1",
         [
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product123" } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: undefined } },
-          { ...sampleSponsoredProduct, product_metadata: { productId: "product456" } },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product123" },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: undefined },
+          },
+          {
+            ...sampleSponsoredProduct,
+            product_metadata: { productId: "product456" },
+          },
         ],
       ],
     ];

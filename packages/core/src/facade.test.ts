@@ -4,7 +4,6 @@ import { getAds } from "./clients/adServer";
 import {
   getSponsoredProductArray,
   AdsByPlacement,
-  getProductIds,
   getOffer,
 } from "./clients/adServer/mappers";
 
@@ -33,15 +32,17 @@ vi.mock("./hydration/intelligentSearchFetcher/fetchWithIS", () => ({
   fetchWithIS: vi.fn(),
 }));
 
-vi.mock("./hydration/intelligentSearchFetcher/searchProductMatchesOffer", () => ({
-  searchProductMatchesOffer: vi.fn(),
-}));
+vi.mock(
+  "./hydration/intelligentSearchFetcher/searchProductMatchesOffer",
+  () => ({
+    searchProductMatchesOffer: vi.fn(),
+  }),
+);
 
 describe("facade", () => {
   // Mock instances
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
-  const mockedGetSkuIds = vi.mocked(getProductIds);
   const mockedGetOffer = vi.mocked(getOffer);
   const mockedFetchWithIS = vi.mocked(fetchWithIS);
   const mockedSearchProductMatchesOffer = vi.mocked(searchProductMatchesOffer);
@@ -251,7 +252,11 @@ describe("facade", () => {
       mockedSearchProductMatchesOffer.mockReturnValue(true);
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
       expect(mockedGetAds).toHaveBeenCalledWith(
@@ -266,8 +271,12 @@ describe("facade", () => {
         mockGetAdsArgs.identity,
       );
 
-      expect(result.sponsoredProducts.byPlacement.search_top_product).toHaveLength(1);
-      expect(result.sponsoredProducts.byPlacement.search_top_product[0]).toEqual({
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0],
+      ).toEqual({
         product: mockProduct,
         advertisement: {
           eventUrls: {
@@ -302,18 +311,24 @@ describe("facade", () => {
         sellerId: mockSponsoredProduct.seller_id ?? "1",
       });
       mockedFetchWithIS.mockResolvedValue(mockProducts);
-      mockedSearchProductMatchesOffer
-        .mockImplementation((product, offer) => 
-          product.items.some(item => item.itemId === offer.skuId)
-        );
+      mockedSearchProductMatchesOffer.mockImplementation((product, offer) =>
+        product.items.some((item) => item.itemId === offer.skuId),
+      );
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
-      expect(result.sponsoredProducts.byPlacement.search_top_product).toHaveLength(1);
       expect(
-        result.sponsoredProducts.byPlacement.search_top_product[0].product.items[0].itemId,
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0].product
+          .items[0].itemId,
       ).toBe("sku-123");
     });
 
@@ -324,7 +339,11 @@ describe("facade", () => {
       mockedFetchWithIS.mockResolvedValue([]);
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
       expect(result).toEqual({
@@ -369,11 +388,19 @@ describe("facade", () => {
       mockedSearchProductMatchesOffer.mockReturnValue(true);
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
-      expect(result.sponsoredProducts.byPlacement.search_top_product).toHaveLength(1);
-      expect(result.sponsoredProducts.byPlacement.search_top_product[0]).toEqual({
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0],
+      ).toEqual({
         product: productWithMultipleItems,
         advertisement: {
           eventUrls: {
@@ -406,9 +433,9 @@ describe("facade", () => {
       mockedGetAds.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer)).rejects.toThrow(
-        "Ad server error",
-      );
+      await expect(
+        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+      ).rejects.toThrow("Ad server error");
     });
 
     it("should propagate errors from getProductsBySkuId in getHydratedAds", async () => {
@@ -419,9 +446,9 @@ describe("facade", () => {
       mockedFetchWithIS.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer)).rejects.toThrow(
-        "Search service error",
-      );
+      await expect(
+        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+      ).rejects.toThrow("Search service error");
     });
   });
 });
