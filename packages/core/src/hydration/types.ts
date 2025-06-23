@@ -1,5 +1,6 @@
 import { Placement, SponsoredProductDetail } from "../clients/adServer";
 import { AdsByPlacement } from "../clients/adServer/mappers";
+import { Identity } from "../types";
 
 export type SkuId = string;
 export type SellerId = string;
@@ -18,7 +19,7 @@ export type ProductMatchesOffer<TProduct> = (
 
 export type ProductFetcher<TProduct extends object> = (
   ads: AdsByPlacement[],
-  publisherId: string,
+  identity: Identity,
 ) => Promise<TProduct[]>;
 
 export interface HydratedProductsResult<T> {

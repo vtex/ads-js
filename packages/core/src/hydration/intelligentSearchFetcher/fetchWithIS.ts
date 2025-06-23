@@ -1,6 +1,7 @@
 import { AdsByPlacement, getProductIds } from "../../clients/adServer/mappers";
 import { Product as SearchProduct } from "../../clients/search";
 import { getProductsByIds } from "../../clients/search/search";
+import { Identity } from "../../types";
 import { ProductFetcher } from "../types";
 import { filterProductsWithValidItems } from "./helpers/filters";
 
@@ -15,11 +16,11 @@ import { filterProductsWithValidItems } from "./helpers/filters";
  */
 export const fetchWithIS: ProductFetcher<SearchProduct> = async (
   ads: AdsByPlacement[],
-  publisherId: string,
+  { accountName }: Identity,
 ) => {
   const ids = getProductIds(ads);
 
-  const searchProducts = (await getProductsByIds(publisherId, ids)).products;
+  const searchProducts = (await getProductsByIds(accountName, ids)).products;
 
   return filterProductsWithValidItems(searchProducts, ads);
 };

@@ -3,7 +3,7 @@ import { getSponsoredProductArray } from "./clients/adServer/mappers";
 import { Product } from "./clients/search";
 import { mergeAdsWithProducts } from "./hydration/mergeAdsWithProducts";
 import { fetchWithIS } from "./hydration/intelligentSearchFetcher/fetchWithIS";
-import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/productMatchesISSku";
+import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/searchProductMatchesOffer";
 import {
   HydratedAdsResponse,
   ProductFetcher,
