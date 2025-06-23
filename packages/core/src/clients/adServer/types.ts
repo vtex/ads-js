@@ -78,4 +78,4 @@ export interface AdResponse {
 
 export type AdResponseWithError = AdResponse & {
   validations: object[];
-}
+};
