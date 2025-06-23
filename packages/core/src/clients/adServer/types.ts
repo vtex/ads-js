@@ -14,7 +14,8 @@ export type Placement =
   | "pdp_shelf_product"
   | "plp_shelf_product"
   | "autocomplete_product"
-  | "search_top_brand";
+  | "search_top_brand"
+  | string;
 
 export type AdType = "product" | "banner" | "sponsored_brand";
 
@@ -73,4 +74,8 @@ export type AdsDetail = SponsoredProductDetail | SponsoredBrandDetail;
 
 export interface AdResponse {
   [placement: string]: AdsDetail[];
+}
+
+export type AdResponseWithError = AdResponse & {
+  validations: object[];
 }

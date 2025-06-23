@@ -1,3 +1,3 @@
-import { getRawAds, getHydratedAds } from "./facade";
+import { getRawAds, getHydratedAds, getISHydratedAdsUncached } from "./facade";
 
-export { getRawAds, getHydratedAds };
+export { getRawAds, getHydratedAds, getISHydratedAdsUncached };

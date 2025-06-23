@@ -1,36 +1,9 @@
 import {
   Channel,
+  Placement,
   PlacementBody,
   SponsoredProductDetail,
 } from "./clients/adServer";
-import { Product } from "./clients/search/types";
-
-export interface HydratedSponsoredProduct extends Product {
-  adMetadata: {
-    eventUrls: {
-      click: string;
-      impression: string;
-      view: string;
-    };
-    // Base64 encoded string containing event parameters, used by
-    // Activity Flow tracking.
-    eventParameters: string;
-    sponsorSellerId?: string;
-  };
-}
-
-export type Placement = string;
-export type HydratedProductsByPlacements = Record<
-  Placement,
-  HydratedSponsoredProduct[]
->;
-
-export type HydratedAdsResponse = {
-  sponsoredProducts: HydratedProductsByPlacements;
-  // TODO: implement other ad responses.
-  banners: void;
-  sponsoredBrands: void;
-};
 
 export type RawAdsByPlacements = Record<Placement, SponsoredProductDetail[]>;
 
@@ -46,13 +19,16 @@ export interface Facet {
   value: string;
 }
 
+export interface Identity {
+  accountName: string;
+  publisherId: string;
+  userId: string;
+  sessionId: string;
+  channel?: Channel;
+}
+
 export interface GetAdsArgs {
-  identity: {
-    publisherId: string;
-    userId: string;
-    sessionId: string;
-    channel?: Channel;
-  };
+  identity: Identity;
   search: {
     selectedFacets?: Facet[];
     term?: string;

@@ -8,7 +8,7 @@ export interface HttpClientOptions {
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 const createHttpClient = () => {
-  const request = async <T, U>(
+  const request = async <T, U = unknown>(
     baseUrl: string,
     path: string,
     method: HttpMethod,
@@ -29,6 +29,7 @@ const createHttpClient = () => {
       },
     }).then((response) => {
       if (!response.ok) {
+        console.error({ description: "HTTP error", response });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
