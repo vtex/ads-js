@@ -92,7 +92,7 @@ const { ads: shelfAds, isLoading: isShelfAdsLoading } = useAds({
 });
 ```
 
-Each call triggers will receive its own result.
+Each call will receive its own result.
 
 ### Request batching
 
