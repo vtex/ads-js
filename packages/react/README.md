@@ -6,20 +6,12 @@ them reactively, abstracting request batching and subscription lifecycle.
 
 ## Roadmap
 
-- [ ] Implement `useRawAds` hook Low-level access to ads without hydration.
+- [ ] Implement provider
 
-  Useful for implementing hydration in a specific storefront data format and
-  endpoint.
-
-- [ ] Implement `useHydratedAds` hook
-
-  Return ads with additional product metadata, ready for UI display. May not
-  use the best caching strategy for the specific storefront being used.
+- [ ] Implement `useAds` hook
 
 - [ ] Request batching
 
-  Consolidate multiple ads calls into a single network request to reduce load
-  and latency.
 
 ## Installation
 
@@ -31,14 +23,13 @@ yarn add @vtex/ads-react
 
 ## Setting up the Ads Provider
 
-// quem hidrata é o provider, não o ads.
-
 Before requesting any ads, wrap your app or page component tree with the
 `AdsProvider`. This provider is responsible for managing ad requests and
 distributing results to child components.
 
 ```jsx
 import { AdsProvider } from "@vtex/ads-react";
+import { fetchWithIS, searchProductMatchesOffer } from '@vtex/ads-core';
 
 const Page = () => {
   return (
@@ -48,6 +39,11 @@ const Page = () => {
       userId={userId}
       sessionId={sessionId}
       channel={channel}
+
+      hydrationStrategy={{
+        fetcher: fetchWithIS,
+        matcher: searchProductMatchesOffer,
+      }}
     >
       <App />
     </AdsProvider>
@@ -77,18 +73,18 @@ The ads hooks will return an object with the following properties:
 - `isLoading`, which is `true` while the request is in progress.
 - `error`, that will be populated if the request fails.
 
-You can call `useRawAds()` multiple times within the same component to request
+You can call `useAds()` multiple times within the same component to request
 different placements.
 
 ```ts
-const { ads: searchAds, isLoading: isSearchAdsLoading } = useRawAds({
+const { ads: searchAds, isLoading: isSearchAdsLoading } = useAds({
   placement: "search_top_product",
   type: "product",
   amount: 2,
   term: "tv",
 });
 
-const { ads: shelfAds, isLoading: isShelfAdsLoading } = useRawAds({
+const { ads: shelfAds, isLoading: isShelfAdsLoading } = useAds({
   placement: "search_top-shelf_product",
   type: "product",
   amount: 10,
@@ -96,13 +92,13 @@ const { ads: shelfAds, isLoading: isShelfAdsLoading } = useRawAds({
 });
 ```
 
-Each call triggers its own request and receives its own result.
+Each call triggers will receive its own result.
 
 ### Request batching
 
-When multiple components call `useRawAds()` during the same render cycle or
-within a short debounce window, their requests are automatically batched into a
-single HTTP call. This optimizes performance by reducing the number of network
+When multiple components call `useAds()` during the same render cycle or within
+a short debounce window, their requests are automatically batched into a single
+HTTP call. This optimizes performance by reducing the number of network
 requests sent to the Ad Server. It also may be used to guarantee that ads won't
 repeat across placements
 
