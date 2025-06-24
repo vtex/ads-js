@@ -106,13 +106,13 @@ For example, the following two calls will be combined into a single request
 internally:
 
 ```ts
-const bannerAds = useRawAds({
+const bannerAds = useAds({
   placement: "search_banner",
   type: "banner",
   amount: 1,
 });
 
-const shelfAds = useRawAds({
+const shelfAds = useAds({
   placement: "search_shelf",
   type: "product",
   amount: 6,
@@ -135,10 +135,17 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
 
 ```jsx
 <AdsProvider
+  accountName={accountName}
   publisherId={publisherId}
   userId={userId}
   sessionId={sessionId}
   channel={channel}
+
+  hydrationStrategy={{
+    fetcher: fetchWithIS,
+    matcher: searchProductMatchesOffer,
+  }}
+
   showUniqueAds={true}
 >
   <App />
