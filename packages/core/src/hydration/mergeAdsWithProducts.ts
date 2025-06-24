@@ -1,28 +1,11 @@
 import { SponsoredProductDetail } from "../clients/adServer";
 import { AdsByPlacement, getOffer } from "../clients/adServer/mappers";
+import { buildHydratedProduct } from "./mappers";
 import {
   HydratedProductsByPlacements,
   HydratedProductsResult,
-  HydratedSponsoredProduct,
   ProductMatchesOffer,
 } from "./types";
-
-const buildHydratedProduct = <T extends object>(
-  product: T,
-  ad: SponsoredProductDetail,
-  sponsoredOffer: ReturnType<typeof getOffer>,
-): HydratedSponsoredProduct<T> => ({
-  product,
-  advertisement: {
-    eventUrls: {
-      click: ad.click_url,
-      impression: ad.impression_url,
-      view: ad.view_url,
-    },
-    eventParameters: btoa(ad.impression_url),
-    sponsoredBySellerId: sponsoredOffer.sellerId,
-  },
-});
 
 /**
  * Add advertisement data to the products.

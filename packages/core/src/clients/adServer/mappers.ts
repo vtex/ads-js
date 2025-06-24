@@ -52,12 +52,9 @@ export const getSponsoredProductArray = (
 export const getOffer = (ad: SponsoredProductDetail): Offer => ({
   skuId: ad.product_sku,
   sellerId: ad.seller_id ?? "1",
+  productId: ad.product_metadata.productId,
 });
 
-export const getProductIds = (ads: AdsByPlacement[]): string[] => {
-  return ads.flatMap(([_, ad]) =>
-    ad
-      .map((item) => item.product_metadata?.productId)
-      .filter((item) => item !== undefined),
-  );
+export const getProductIds = (offers: Offer[]): string[] => {
+  return offers.map((offer) => offer.productId);
 };

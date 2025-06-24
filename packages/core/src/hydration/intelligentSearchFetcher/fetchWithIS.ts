@@ -1,8 +1,8 @@
-import { AdsByPlacement, getProductIds } from "../../clients/adServer/mappers";
+import { getProductIds } from "../../clients/adServer/mappers";
 import { Product as SearchProduct } from "../../clients/search";
 import { getProductsByIds } from "../../clients/search/search";
 import { Identity } from "../../types";
-import { ProductFetcher } from "../types";
+import { Offer, ProductFetcher } from "../types";
 import { filterProductsWithValidItems } from "./helpers/filters";
 
 /**
@@ -15,12 +15,12 @@ import { filterProductsWithValidItems } from "./helpers/filters";
  * those that match the specified SKUs and sellers.
  */
 export const fetchWithIS: ProductFetcher<SearchProduct> = async (
-  ads: AdsByPlacement[],
+  offers: Offer[],
   { accountName }: Identity,
 ) => {
-  const ids = getProductIds(ads);
+  const ids = getProductIds(offers);
 
   const searchProducts = (await getProductsByIds(accountName, ids)).products;
 
-  return filterProductsWithValidItems(searchProducts, ads);
+  return filterProductsWithValidItems(searchProducts, offers);
 };

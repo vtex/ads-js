@@ -48,8 +48,8 @@ export interface SponsoredProductDetail {
   image_url?: string;
   seller_id?: string;
   destination_url?: string;
-  product_metadata?: {
-    productId?: string;
+  product_metadata: {
+    productId: string;
   };
 }
 

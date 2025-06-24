@@ -11,6 +11,7 @@ import {
 } from "./hydration/types";
 import { GetAdsArgs, RawAdsByPlacements, RawAdsResponse } from "./types";
 import { toAdServerArgs } from "./utils/toAdServerArgs";
+import { buildOffers } from "./hydration/mappers";
 
 /**
  * Fetches raw advertisement data without enriching it with product details.
@@ -65,7 +66,7 @@ export const getHydratedAds = async <T extends object>(
     await getAds(args.identity.publisherId, adServerArgs),
   );
 
-  const products = await fetchProducts(ads, args.identity);
+  const products = await fetchProducts(buildOffers(ads), args.identity);
 
   const mergedResult = mergeAdsWithProducts<T>(
     products,

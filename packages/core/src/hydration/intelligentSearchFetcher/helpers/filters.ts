@@ -1,10 +1,9 @@
-import { AdsByPlacement } from "../../../clients/adServer/mappers";
 import {
   Product as SearchProduct,
   Item as SearchSku,
 } from "../../../clients/search";
-import { OffersMap } from "../../types";
-import { extractOffersFromAds, buildOffersMap } from "./mappers";
+import { Offer, OffersMap } from "../../types";
+import { buildOffersMap } from "./mappers";
 
 const filterItemsByOffers = (
   items: SearchSku[],
@@ -31,9 +30,9 @@ const filterItemsByOffers = (
 
 export const filterProductsWithValidItems = (
   products: SearchProduct[],
-  ads: AdsByPlacement[],
+  offers: Offer[],
 ): SearchProduct[] => {
-  const offersMap = buildOffersMap(extractOffersFromAds(ads));
+  const offersMap = buildOffersMap(offers);
 
   return products
     .map((product) => {

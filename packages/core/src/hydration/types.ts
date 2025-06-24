@@ -1,13 +1,13 @@
 import { Placement, SponsoredProductDetail } from "../clients/adServer";
-import { AdsByPlacement } from "../clients/adServer/mappers";
 import { Identity } from "../types";
 
 export type SkuId = string;
 export type SellerId = string;
 
 export type Offer = {
-  skuId: SkuId;
-  sellerId: SellerId;
+  skuId: string;
+  sellerId: string;
+  productId: string;
 };
 
 export type OffersMap = Map<SkuId, SellerId[]>;
@@ -18,7 +18,7 @@ export type ProductMatchesOffer<TProduct> = (
 ) => boolean;
 
 export type ProductFetcher<TProduct extends object> = (
-  ads: AdsByPlacement[],
+  offers: Offer[],
   identity: Identity,
 ) => Promise<TProduct[]>;
 
