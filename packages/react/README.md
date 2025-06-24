@@ -12,7 +12,6 @@ them reactively, abstracting request batching and subscription lifecycle.
 
 - [ ] Request batching
 
-
 ## Installation
 
 ```bash
@@ -29,7 +28,7 @@ distributing results to child components.
 
 ```jsx
 import { AdsProvider } from "@vtex/ads-react";
-import { fetchWithIS, searchProductMatchesOffer } from '@vtex/ads-core';
+import { fetchWithIS, searchProductMatchesOffer } from "@vtex/ads-core";
 
 const Page = () => {
   return (
@@ -39,7 +38,6 @@ const Page = () => {
       userId={userId}
       sessionId={sessionId}
       channel={channel}
-
       hydrationStrategy={{
         fetcher: fetchWithIS,
         matcher: searchProductMatchesOffer,
@@ -140,12 +138,10 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
   userId={userId}
   sessionId={sessionId}
   channel={channel}
-
   hydrationStrategy={{
     fetcher: fetchWithIS,
     matcher: searchProductMatchesOffer,
   }}
-
   showUniqueAds={true}
 >
   <App />
