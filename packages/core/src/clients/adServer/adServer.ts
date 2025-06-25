@@ -14,7 +14,7 @@ export const getAds = async (
         console.error(
           JSON.stringify(
             {
-              description: "Newtail validation error",
+              description: "Ads validation error",
               response,
             },
             null,
@@ -22,7 +22,7 @@ export const getAds = async (
           ),
         );
 
-        throw new Error("Newtail validation error");
+        throw new Error("Ads validation error");
       }
 
       return response as AdResponse;
