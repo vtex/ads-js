@@ -17,7 +17,12 @@ export type Placement =
   | "search_top_brand"
   | string;
 
-export type AdType = "product" | "banner" | "sponsored_brand";
+export type AdType =
+  | "product"
+  | "banner"
+  | "sponsored_brand"
+  | "video"
+  | "sponsored_brand_video";
 
 export interface PlacementBody {
   quantity: number;
