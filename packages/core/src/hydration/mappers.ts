@@ -1,6 +1,7 @@
 import { SponsoredProductDetail } from "../clients/adServer";
 import { AdsByPlacement } from "../clients/adServer/mappers";
 import { HydratedSponsoredProduct, Offer } from "./types";
+import { getOffer } from "../clients/adServer/mappers";
 
 export const buildHydratedProduct = <T extends object>(
   product: T,
@@ -20,10 +21,4 @@ export const buildHydratedProduct = <T extends object>(
 });
 
 export const buildOffers = (ads: AdsByPlacement[]): Offer[] =>
-  ads
-    .flatMap(([_, ad]) => ad)
-    .map((ad) => ({
-      productId: ad.product_metadata?.productId || "",
-      skuId: ad.product_sku,
-      sellerId: ad.seller_id || "",
-    }));
+  ads.flatMap(([_, ad]) => ad).map((ad) => getOffer(ad));
