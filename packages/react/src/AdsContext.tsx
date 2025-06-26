@@ -14,6 +14,8 @@ export interface AdsContextType<TProduct extends object> {
   };
 }
 
-export const AdsContext = createContext<AdsContextType<object> | undefined>(
+export type UnknownProduct = Record<string, unknown>;
+
+export const AdsContext = createContext<AdsContextType<UnknownProduct> | undefined>(
   undefined,
 );
