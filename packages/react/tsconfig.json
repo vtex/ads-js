@@ -2,14 +2,15 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "declaration": true,
     "sourceMap": true,
     "strict": true,
     "types": ["node"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext", "ES2021.WeakRef"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
