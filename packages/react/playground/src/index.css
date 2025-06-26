@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* VTEX Brand Base Styles */
+@layer base {
+  body {
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    line-height: 1.5;
+    color: #071127;
+    background-color: #ffffff;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 400; /* VTEX uses regular weight only */
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+  h2 {
+    font-size: 2rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  p,
+  body {
+    line-height: 1.5; /* 150% as per VTEX guidelines */
+  }
+}
+
+/* VTEX Brand Components */
+@layer components {
+  .vtex-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .vtex-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e7e9ee;
+    box-shadow: 0 2px 4px rgba(7, 17, 39, 0.1);
+  }
+
+  .vtex-button-primary {
+    background-color: #f71963;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .vtex-button-primary:hover {
+    background-color: #d61455;
+    transform: translateY(-1px);
+  }
+
+  .vtex-button-secondary {
+    background-color: transparent;
+    color: #f71963;
+    border: 1px solid #f71963;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .vtex-button-secondary:hover {
+    background-color: #fff3f6;
+  }
+
+  .vtex-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #c3c6cc;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .vtex-input:focus {
+    outline: none;
+    border-color: #f71963;
+    box-shadow: 0 0 0 3px rgba(247, 25, 99, 0.1);
+  }
+}
+
+svg {
+  display: inline;
+}
