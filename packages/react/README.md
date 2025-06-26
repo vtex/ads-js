@@ -6,9 +6,9 @@ them reactively, abstracting request batching and subscription lifecycle.
 
 ## Roadmap
 
-- [ ] Implement provider
+- [x] Implement provider
 
-- [ ] Implement `useAds` hook
+- [x] Implement `useAds` hook
 
 - [ ] Request batching
 
