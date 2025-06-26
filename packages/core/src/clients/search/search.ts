@@ -2,7 +2,7 @@ import { httpClient } from "../httpClient";
 import { SearchResponse } from "./types";
 
 export const getSearchBaseUrl = (accountName: string) =>
-  `https://${accountName}.vtexcommercestable.com.br/api/io/_v/api/intelligent-search/`;
+  `https://${accountName}.vtexcommercestable.com.br/api/intelligent-search/`;
 
 export const productSearchUrl = "product_search";
 
