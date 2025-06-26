@@ -1,8 +1,8 @@
 import { describe, it, vi, expect, beforeEach } from "vitest";
 import { httpClient } from "./httpClient";
-import fetch from "isomorphic-unfetch";
+import fetch from "cross-unfetch";
 
-vi.mock("isomorphic-unfetch", async () => {
+vi.mock("cross-unfetch", async () => {
   return {
     default: vi.fn().mockResolvedValue({
       ok: true,
