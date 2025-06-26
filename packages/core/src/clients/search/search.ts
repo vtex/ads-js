@@ -2,14 +2,18 @@ import { httpClient } from "../httpClient";
 import { SearchResponse } from "./types";
 
 export const getSearchBaseUrl = (accountName: string) =>
-  `https://${accountName}.vtexcommercestable.com.br/api/intelligent-search`;
+  `https://${accountName}.vtexcommercestable.com.br/api/io/_v/api/intelligent-search/`;
 
-export const productSearchUrl = "/product_search";
+export const productSearchUrl = "product_search";
 
-export const getProductsBySkuId = async (
+export const getProductsByIds = async (
   accountName: string,
-  skuIds: string[],
+  productIds: string[],
 ): Promise<SearchResponse> => {
   const baseUrl = getSearchBaseUrl(accountName);
-  return httpClient.post(baseUrl, productSearchUrl, { skuIds });
+
+  const q = `product:${productIds.join(";")}`;
+  const path = `${productSearchUrl}?q=${q}`;
+
+  return httpClient.get(baseUrl, path);
 };

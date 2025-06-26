@@ -89,26 +89,15 @@ export interface Item {
   attachments: object[];
   isKit: boolean;
   attributes: object[];
-  CORES?: string[];
-  "Voltagem do Produto"?: string[];
 }
 
 export interface Image {
   imageId: string;
   cacheId: string;
   imageTag: string;
-  imageLabel: ImageLabelEnum;
-  imageText: ImageLabelEnum;
+  imageLabel: string;
+  imageText: string;
   imageUrl: string;
-}
-
-export enum ImageLabelEnum {
-  Empty = "",
-  The0_Image = "0_image",
-  The1_Image = "1_image",
-  The2_Image = "2_image",
-  The3_Image = "3_image",
-  The4_Image = "4_image",
 }
 
 export interface ReferenceID {
@@ -151,30 +140,9 @@ export interface Installment {
   InterestRate: number;
   TotalValuePlusInterestRate: number;
   NumberOfInstallments: number;
-  PaymentSystemName: PaymentSystemName;
-  PaymentSystemGroupName: PaymentSystemGroupName;
+  PaymentSystemName: string;
+  PaymentSystemGroupName: string;
   Name: string;
-}
-
-export enum PaymentSystemGroupName {
-  CreditCardPaymentGroup = "creditCardPaymentGroup",
-  Custom210PaymentGroupPaymentGroup = "custom210PaymentGroupPaymentGroup",
-  CustomPrivate401PaymentGroup = "customPrivate_401PaymentGroup",
-  GiftCardPaymentGroup = "giftCardPaymentGroup",
-  InstantPaymentPaymentGroup = "instantPaymentPaymentGroup",
-}
-
-export enum PaymentSystemName {
-  AmericanExpress = "American Express",
-  Diners = "Diners",
-  Elo = "Elo",
-  FastPayPlatinum = "Fast Pay Platinum",
-  Hipercard = "Hipercard",
-  Mastercard = "Mastercard",
-  OutrosPagamentosAPPVendedor12XSJuros = "Outros Pagamentos APP Vendedor (12x - s/ juros)",
-  Pix = "Pix",
-  Vale = "Vale",
-  Visa = "Visa",
 }
 
 export interface Teaser {

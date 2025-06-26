@@ -1,3 +1,4 @@
+import { Offer } from "../../hydration/types";
 import { AdResponse, SponsoredProductDetail } from "./types";
 
 export type AdsByPlacement = [string, SponsoredProductDetail[]];
@@ -15,10 +16,11 @@ export type AdsByPlacement = [string, SponsoredProductDetail[]];
  * @returns sponsoredProductArray An array of tuples, each containing a
  * placement and an array of sponsored products.
  */
-export const getSponsoredProductArray: (_: AdResponse) => AdsByPlacement[] = (
-  adResponse,
-) => {
+export const getSponsoredProductArray = (
+  adResponse: AdResponse,
+): AdsByPlacement[] => {
   return Object.entries(adResponse)
+    .filter(([, ads]) => ads instanceof Array)
     .map(
       ([placement, ads]) =>
         [
@@ -30,16 +32,29 @@ export const getSponsoredProductArray: (_: AdResponse) => AdsByPlacement[] = (
 };
 
 /**
- * Extracts SKU IDs from a list of ads by placement.
+ * Extracts the SKU ID and Seller ID from a single ad placement.
  *
- * @param ads An array of ad placements, where each element is a tuple
- * containing a placement identifier and an array of ads.
- * @returns skuIds An array of SKU IDs extracted from the ads.
+ * If a sponsored offer comes without a `sellerId`, it's generally
+ * assumed to be a 1P offer (`sellerId = "1"`). This normalization is
+ * applied automatically.
+ *
+ * However, in rare cases, the ad server may omit the `sellerId` when
+ * the advertiser-publisher relationship has no seller constraint. In
+ * such cases, the sponsored ad can apply to any offer for the given SKU
+ * — not necessarily seller 1.
+ *
+ * This implementation does not handle that edge case and will assume
+ * all `null` seller IDs are seller `"1"`.
+ *
+ * @param ads A single ad placement containing a sponsored product.
+ * @returns An object containing the SKU ID and Seller ID of the offer.
  */
-export const getSkuIds: (ads: AdsByPlacement[]) => string[] = (ads) => {
-  return ads
-    .map(([_placement, ad]) => {
-      return ad.map((item) => item.product_sku);
-    })
-    .flat();
+export const getOffer = (ad: SponsoredProductDetail): Offer => ({
+  skuId: ad.product_sku,
+  sellerId: ad.seller_id ?? "1",
+  productId: ad.product_metadata.productId,
+});
+
+export const getProductIds = (offers: Offer[]): string[] => {
+  return offers.map((offer) => offer.productId);
 };

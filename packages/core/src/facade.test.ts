@@ -3,14 +3,16 @@ import { getRawAds, getHydratedAds } from "./facade";
 import { getAds } from "./clients/adServer";
 import {
   getSponsoredProductArray,
-  getSkuIds,
   AdsByPlacement,
+  getOffer,
 } from "./clients/adServer/mappers";
-import { getProductsBySkuId } from "./clients/search";
+
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
 import { GetAdsArgs, RawAdsResponse } from "./types";
-import { SearchResponse } from "../dist/clients/search";
+import { fetchWithIS } from "./hydration/intelligentSearchFetcher/fetchWithIS";
+import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/searchProductMatchesOffer";
+import { buildOffers, buildHydratedProduct } from "./hydration/mappers";
 
 // Mock all dependencies
 vi.mock("./clients/adServer", () => ({
@@ -19,27 +21,38 @@ vi.mock("./clients/adServer", () => ({
 
 vi.mock("./clients/adServer/mappers", () => ({
   getSponsoredProductArray: vi.fn(),
-  getSkuIds: vi.fn(),
-}));
-
-vi.mock("./clients/search", () => ({
-  getProductsBySkuId: vi.fn(),
-}));
-
-vi.mock("./utils/base64", () => ({
-  atob: vi.fn((str: string) => `decoded_${str}`),
+  getOffer: vi.fn(),
 }));
 
 vi.mock("./utils/toAdServerArgs", () => ({
   toAdServerArgs: vi.fn((args) => args),
 }));
 
+vi.mock("./hydration/intelligentSearchFetcher/fetchWithIS", () => ({
+  fetchWithIS: vi.fn(),
+}));
+
+vi.mock(
+  "./hydration/intelligentSearchFetcher/searchProductMatchesOffer",
+  () => ({
+    searchProductMatchesOffer: vi.fn(),
+  }),
+);
+
+vi.mock("./hydration/mappers", () => ({
+  buildOffers: vi.fn(),
+  buildHydratedProduct: vi.fn(),
+}));
+
 describe("facade", () => {
   // Mock instances
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
-  const mockedGetSkuIds = vi.mocked(getSkuIds);
-  const mockedGetProductsBySkuId = vi.mocked(getProductsBySkuId);
+  const mockedGetOffer = vi.mocked(getOffer);
+  const mockedFetchWithIS = vi.mocked(fetchWithIS);
+  const mockedSearchProductMatchesOffer = vi.mocked(searchProductMatchesOffer);
+  const mockedBuildOffers = vi.mocked(buildOffers);
+  const mockedBuildHydratedProduct = vi.mocked(buildHydratedProduct);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,6 +61,7 @@ describe("facade", () => {
   // Test data
   const mockGetAdsArgs: GetAdsArgs = {
     identity: {
+      accountName: "testaccount",
       publisherId: "test-publisher",
       userId: "user-123",
       sessionId: "session-456",
@@ -71,6 +85,9 @@ describe("facade", () => {
     view_url: "https://example.com/view",
     product_name: "Test Product",
     seller_id: "seller-456",
+    product_metadata: {
+      productId: "product-123",
+    },
   };
 
   const mockAdsByPlacement: AdsByPlacement[] = [
@@ -83,10 +100,21 @@ describe("facade", () => {
           ad_id: "ad-456",
           product_sku: "sku-456",
           product_name: "Another Test Product",
+          product_metadata: {
+            productId: "product-456",
+          },
         },
       ],
     ],
   ];
+
+  const mockOffer = {
+    productId: "product-123",
+    skuId: "sku-123",
+    sellerId: "seller-456",
+  };
+
+  const mockOffers = [mockOffer];
 
   const mockProduct: Product = {
     cacheId: "cache-123",
@@ -153,6 +181,9 @@ describe("facade", () => {
               ad_id: "ad-456",
               product_sku: "sku-456",
               product_name: "Another Test Product",
+              product_metadata: {
+                productId: "product-456",
+              },
             },
           ],
         },
@@ -203,6 +234,9 @@ describe("facade", () => {
               ...mockSponsoredProduct,
               ad_id: "ad-789",
               product_sku: "sku-789",
+              product_metadata: {
+                productId: "product-789",
+              },
             },
           ],
         ],
@@ -225,6 +259,9 @@ describe("facade", () => {
         ...mockSponsoredProduct,
         ad_id: "ad-789",
         product_sku: "sku-789",
+        product_metadata: {
+          productId: "product-789",
+        },
       });
     });
   });
@@ -233,20 +270,33 @@ describe("facade", () => {
     it("should fetch ads, enrich with product data, and return hydrated ads", async () => {
       // Arrange
       const mockAdServerResponse = {};
-      const mockSkuIds = ["sku-123"];
-      const mockSearchResponse = {
-        products: [mockProduct],
-      };
+      const mockProducts = [mockProduct];
 
       mockedGetAds.mockResolvedValue(mockAdServerResponse);
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
-      mockedGetSkuIds.mockReturnValue(mockSkuIds);
-      mockedGetProductsBySkuId.mockResolvedValue(
-        mockSearchResponse as SearchResponse,
-      );
+      mockedBuildOffers.mockReturnValue(mockOffers);
+      mockedGetOffer.mockReturnValue(mockOffer);
+      mockedFetchWithIS.mockResolvedValue(mockProducts);
+      mockedSearchProductMatchesOffer.mockReturnValue(true);
+      mockedBuildHydratedProduct.mockReturnValue({
+        product: mockProduct,
+        advertisement: {
+          eventUrls: {
+            click: mockSponsoredProduct.click_url,
+            impression: mockSponsoredProduct.impression_url,
+            view: mockSponsoredProduct.view_url,
+          },
+          eventParameters: "YVcxd2NtVnpjMmx2Ymw5a1lYUmg=",
+          sponsoredBySellerId: mockSponsoredProduct.seller_id,
+        },
+      });
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
       expect(mockedGetAds).toHaveBeenCalledWith(
@@ -256,28 +306,32 @@ describe("facade", () => {
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
         mockAdServerResponse,
       );
-      expect(mockedGetSkuIds).toHaveBeenCalledWith(mockAdsByPlacement);
-      expect(mockedGetProductsBySkuId).toHaveBeenCalledWith(
-        mockGetAdsArgs.identity.publisherId,
-        mockSkuIds,
+      expect(mockedBuildOffers).toHaveBeenCalledWith(mockAdsByPlacement);
+      expect(mockedFetchWithIS).toHaveBeenCalledWith(
+        mockOffers,
+        mockGetAdsArgs.identity,
       );
 
-      expect(result.sponsoredProducts.search_top_product).toHaveLength(1);
-      expect(result.sponsoredProducts.search_top_product[0]).toEqual({
-        ...mockProduct,
-        adMetadata: {
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0],
+      ).toEqual({
+        product: mockProduct,
+        advertisement: {
           eventUrls: {
             click: mockSponsoredProduct.click_url,
             impression: mockSponsoredProduct.impression_url,
             view: mockSponsoredProduct.view_url,
           },
-          eventParameters: "decoded_aW1wcmVzc2lvbl9kYXRh",
-          sponsorSellerId: mockSponsoredProduct.seller_id,
+          eventParameters: "YVcxd2NtVnpjMmx2Ymw5a1lYUmg=",
+          sponsoredBySellerId: mockSponsoredProduct.seller_id,
         },
       });
     });
 
-    it("should filter products to only include those with matching SKUs", async () => {
+    it("should filter products to only include those with matching offers", async () => {
       // Arrange
       const nonMatchingProduct: Product = {
         ...mockProduct,
@@ -289,22 +343,45 @@ describe("facade", () => {
         ],
       };
 
-      const mockSearchResponse = {
-        products: [mockProduct, nonMatchingProduct],
-      } as unknown as SearchResponse;
+      const mockProducts = [mockProduct, nonMatchingProduct];
 
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
-      mockedGetSkuIds.mockReturnValue(["sku-123"]);
-      mockedGetProductsBySkuId.mockResolvedValue(mockSearchResponse);
+      mockedBuildOffers.mockReturnValue(mockOffers);
+      mockedGetOffer.mockReturnValue(mockOffer);
+      mockedFetchWithIS.mockResolvedValue(mockProducts);
+      mockedSearchProductMatchesOffer.mockImplementation((product, offer) =>
+        offer
+          ? product.items.some((item) => item.itemId === offer.skuId)
+          : false,
+      );
+      mockedBuildHydratedProduct.mockReturnValue({
+        product: mockProduct,
+        advertisement: {
+          eventUrls: {
+            click: mockSponsoredProduct.click_url,
+            impression: mockSponsoredProduct.impression_url,
+            view: mockSponsoredProduct.view_url,
+          },
+          eventParameters: "YVcxd2NtVnpjMmx2Ymw5a1lYUmg=",
+          sponsoredBySellerId: mockSponsoredProduct.seller_id,
+        },
+      });
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
-      expect(result.sponsoredProducts.search_top_product).toHaveLength(1);
       expect(
-        result.sponsoredProducts.search_top_product[0].items[0].itemId,
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0].product
+          .items[0].itemId,
       ).toBe("sku-123");
     });
 
@@ -312,17 +389,22 @@ describe("facade", () => {
       // Arrange
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue([]);
-      mockedGetSkuIds.mockReturnValue([]);
-      mockedGetProductsBySkuId.mockResolvedValue({
-        products: [],
-      } as unknown as SearchResponse);
+      mockedBuildOffers.mockReturnValue([]);
+      mockedFetchWithIS.mockResolvedValue([]);
 
       // Act
-      const result = await getHydratedAds(mockGetAdsArgs);
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
 
       // Assert
       expect(result).toEqual({
-        sponsoredProducts: {},
+        sponsoredProducts: {
+          byPlacement: {},
+          failed: [],
+        },
         banners: undefined,
         sponsoredBrands: undefined,
       });
@@ -348,30 +430,50 @@ describe("facade", () => {
         ],
       };
 
-      const mockSearchResponse = {
-        products: [productWithMultipleItems],
-      } as unknown as SearchResponse;
+      const mockProducts = [productWithMultipleItems];
 
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
-      mockedGetSkuIds.mockReturnValue(["sku-123"]);
-      mockedGetProductsBySkuId.mockResolvedValue(mockSearchResponse);
-
-      // Act
-      const result = await getHydratedAds(mockGetAdsArgs);
-
-      // Assert
-      expect(result.sponsoredProducts.search_top_product).toHaveLength(1);
-      expect(result.sponsoredProducts.search_top_product[0]).toEqual({
-        ...productWithMultipleItems,
-        adMetadata: {
+      mockedBuildOffers.mockReturnValue(mockOffers);
+      mockedGetOffer.mockReturnValue(mockOffer);
+      mockedFetchWithIS.mockResolvedValue(mockProducts);
+      mockedSearchProductMatchesOffer.mockReturnValue(true);
+      mockedBuildHydratedProduct.mockReturnValue({
+        product: productWithMultipleItems,
+        advertisement: {
           eventUrls: {
             click: mockSponsoredProduct.click_url,
             impression: mockSponsoredProduct.impression_url,
             view: mockSponsoredProduct.view_url,
           },
-          eventParameters: "decoded_aW1wcmVzc2lvbl9kYXRh",
-          sponsorSellerId: mockSponsoredProduct.seller_id,
+          eventParameters: "YVcxd2NtVnpjMmx2Ymw5a1lYUmg=",
+          sponsoredBySellerId: mockSponsoredProduct.seller_id,
+        },
+      });
+
+      // Act
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        fetchWithIS,
+        searchProductMatchesOffer,
+      );
+
+      // Assert
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product,
+      ).toHaveLength(1);
+      expect(
+        result.sponsoredProducts.byPlacement.search_top_product[0],
+      ).toEqual({
+        product: productWithMultipleItems,
+        advertisement: {
+          eventUrls: {
+            click: mockSponsoredProduct.click_url,
+            impression: mockSponsoredProduct.impression_url,
+            view: mockSponsoredProduct.view_url,
+          },
+          eventParameters: "YVcxd2NtVnpjMmx2Ymw5a1lYUmg=",
+          sponsoredBySellerId: mockSponsoredProduct.seller_id,
         },
       });
     });
@@ -395,23 +497,23 @@ describe("facade", () => {
       mockedGetAds.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getHydratedAds(mockGetAdsArgs)).rejects.toThrow(
-        "Ad server error",
-      );
+      await expect(
+        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+      ).rejects.toThrow("Ad server error");
     });
 
-    it("should propagate errors from getProductsBySkuId in getHydratedAds", async () => {
+    it("should propagate errors from fetchProducts in getHydratedAds", async () => {
       // Arrange
       const error = new Error("Search service error");
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
-      mockedGetSkuIds.mockReturnValue(["sku-123"]);
-      mockedGetProductsBySkuId.mockRejectedValue(error);
+      mockedBuildOffers.mockReturnValue(mockOffers);
+      mockedFetchWithIS.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getHydratedAds(mockGetAdsArgs)).rejects.toThrow(
-        "Search service error",
-      );
+      await expect(
+        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+      ).rejects.toThrow("Search service error");
     });
   });
 });
