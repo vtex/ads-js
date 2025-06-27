@@ -1,9 +1,9 @@
 import { getHydratedAds } from "@vtex/ads-core";
-import type { AdType, GetAdsArgs, Placement, SponsoredProductDetail } from "@vtex/ads-core";
-import { Facet } from "@vtex/ads-core";
+import type { GetAdsArgs, Facet } from "@vtex/ads-core";
+import type { Placement, SponsoredProductDetail, AdType } from "@vtex/ads-core";
 import { useContext, useEffect, useState } from "react";
 import { AdsContext, UnknownProduct } from "./AdsContext";
-import { HydratedSponsoredProduct } from "@vtex/ads-core/dist/hydration/types";
+import { HydratedSponsoredProduct } from "../../core/dist/hydration/types";
 
 export interface UseAdsProps {
   placement: Placement;

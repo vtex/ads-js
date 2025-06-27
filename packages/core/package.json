@@ -13,5 +13,19 @@
   },
   "dependencies": {
     "cross-fetch": "^4.1.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./search": {
+      "import": "./dist/clients/search/index.js",
+      "types": "./dist/clients/search/index.d.ts"
+    },
+    "./adServer": {
+      "import": "./dist/clients/adServer/index.js",
+      "types": "./dist/clients/adServer/index.d.ts"
+    }
   }
 }
