@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AdsProvider } from "../../src";
+import { AdsProvider } from "@vtex/ads-react";
 import { ConfigForm } from "./components/ConfigForm";
 import { TestAds } from "./components/TestAds";
 import { HydrationStrategyKey, hydrationStrategies } from "./hydration";
