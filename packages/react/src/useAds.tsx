@@ -27,16 +27,36 @@ interface UseAdsReturn {
 }
 
 /**
- Call `useAds()` inside your component to request ads for a specific placement:
-
- ```ts
- const { ads, failed, isLoading, error } = useAds({
-   placement: "search_top_product",
-   type: "product",
-   amount: 2,
-   term: "tv",
- });
- ```
+ * Fetches and returns hydrated ads
+ *
+ * It must be used within an <AdsProvider> component, which supplies the necessary
+ * context such as identity and hydration strategy.
+ *
+ * @param props - Configuration object for the ad request.
+ * @param props.placement - The placement identifier (e.g. "top", "sidebar").
+ * @param props.type - The type of ad to retrieve (e.g. "product").
+ * @param props.amount - The number of ads to request for the given placement.
+ * @param [props.term] - The search term used in the query (optional).
+ * @param [props.selectedFacets] - The selected search filters (optional).
+ * @param [props.skuId] - An optional SKU ID to contextualize the ad request.
+ *
+ * @returns An object containing:
+ * - `ads`: The hydrated list of sponsored products for the given placement.
+ * - `failed`: Any sponsored products that failed to hydrate with product data.
+ * - `isLoading`: Whether the ads are currently being fetched.
+ * - `error`: Any error that occurred during the request.
+ * - `refresh`: A function to manually trigger a re-fetch of the ads.
+ *
+ * @throws Will throw an error if used outside of an AdsProvider.
+ *
+ * @example
+ * const { ads, isLoading, error, refresh } = useAds({
+ *   placement: "top",
+ *   type: "product",
+ *   amount: 3,
+ *   term: "camiseta",
+ *   selectedFacets: [{ key: "brand", value: "Nike" }],
+ * });
  */
 export const useAds = ({
   placement,
