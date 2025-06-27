@@ -1,4 +1,4 @@
-import { ProductFetcher, ProductMatchesOffer, Channel } from "@vtex/ads-core";
+import { Channel, ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
 import { createContext } from "react";
 
 export interface AdsContextType<TProduct extends UnknownProduct> {

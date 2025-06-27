@@ -41,9 +41,7 @@ export function App() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-vtex-gray">
-                The Enterprise Digital
-              </p>
+              <p className="text-sm text-vtex-gray">The Enterprise Digital</p>
               <p className="text-sm text-vtex-pink font-medium -mt-1">
                 Commerce Platform
               </p>
@@ -116,7 +114,10 @@ export function App() {
       <footer className="border-t border-vtex-gray-winter bg-white mt-12">
         <div className="vtex-container">
           <div className="py-6 flex items-center justify-between">
-            <a className="flex items-center space-x-2" href="https://ads.vtex.com/">
+            <a
+              className="flex items-center space-x-2"
+              href="https://ads.vtex.com/"
+            >
               <span className="text-sm text-vtex-gray">Powered by</span>
               <span className="text-sm text-vtex-pink font-medium">
                 VTEX Ads

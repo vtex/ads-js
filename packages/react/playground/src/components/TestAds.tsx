@@ -1,12 +1,11 @@
 import React from "react";
 import JsonView from "@uiw/react-json-view";
-import { useAds } from "../../../src";
-import { Facet } from "@vtex/ads-core";
+import { useAds } from "@vtex/ads-react";
 
 interface TestAdsProps {
   searchTerm: string;
   sponsoredCount: number;
-  selectedFacets: Facet[];
+  selectedFacets: object[];
   strategyName?: string;
   refreshTrigger?: number;
 }
