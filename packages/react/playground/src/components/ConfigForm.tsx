@@ -1,101 +1,107 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HydrationStrategyKey, hydrationStrategies } from "../hydration";
-import { Facet } from "@vtex/ads-core";
+import { buildSelectedFacets, getFacetFormFields } from "../utils/facets";
+import { PlaygroundConfig } from "../hooks/usePlaygroundConfig";
 
 interface ConfigFormProps {
-  accountName: string;
-  publisherId: string;
-  searchTerm: string;
-  sponsoredCount: number;
-  selectedFacets: Facet[];
-  hydrationStrategy: HydrationStrategyKey;
-  onAccountNameChange: (value: string) => void;
-  onPublisherIdChange: (value: string) => void;
-  onSearchTermChange: (value: string) => void;
-  onSponsoredCountChange: (value: number) => void;
-  onSelectedFacetsChange: (value: Facet[]) => void;
-  onHydrationStrategyChange: (value: HydrationStrategyKey) => void;
+  config: PlaygroundConfig;
+  setConfig: React.Dispatch<React.SetStateAction<PlaygroundConfig>>;
   onRefresh?: () => void;
 }
 
-export function ConfigForm({
-  accountName,
-  publisherId,
-  searchTerm,
-  sponsoredCount,
-  selectedFacets,
-  hydrationStrategy,
-  onAccountNameChange,
-  onPublisherIdChange,
-  onSearchTermChange,
-  onSponsoredCountChange,
-  onSelectedFacetsChange,
-  onHydrationStrategyChange,
-  onRefresh,
-}: ConfigFormProps) {
+export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
+  // Initialize local form fields from selectedFacets
+  const getLocalInitialValues = () => getFacetFormFields(config.selectedFacets);
+
   // Local state for form inputs
-  const [localAccountName, setLocalAccountName] = useState(accountName);
-  const [localPublisherId, setLocalPublisherId] = useState(publisherId);
-  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  const [localSponsoredCount, setLocalSponsoredCount] =
-    useState(sponsoredCount);
-  const [localHydrationStrategy, setLocalHydrationStrategy] =
-    useState(hydrationStrategy);
+  const [localAccountName, setLocalAccountName] = useState(config.accountName);
+  const [localPublisherId, setLocalPublisherId] = useState(config.publisherId);
+  const [localSearchTerm, setLocalSearchTerm] = useState(config.searchTerm);
+  const [localSponsoredCount, setLocalSponsoredCount] = useState(
+    config.sponsoredCount,
+  );
+  const [localHydrationStrategy, setLocalHydrationStrategy] = useState(
+    config.hydrationStrategy,
+  );
 
-  // Facet inputs
-  const [categoryPath, setCategoryPath] = useState("");
-  const [brand, setBrand] = useState("");
-  const [productClusterId, setProductClusterId] = useState("");
+  // Facet inputs with URL initialization
+  const localInitialValues = getLocalInitialValues();
+  const [categoryPath, setCategoryPath] = useState(
+    localInitialValues.categoryPath,
+  );
+  const [brand, setBrand] = useState(localInitialValues.brand);
+  const [productClusterId, setProductClusterId] = useState(
+    localInitialValues.productClusterId,
+  );
 
-  const buildSelectedFacets = (): Facet[] => {
-    const facets: Facet[] = [];
+  // Sync local state with props when they change (e.g., from URL changes)
+  useEffect(() => {
+    setLocalAccountName(config.accountName);
+    setLocalPublisherId(config.publisherId);
+    setLocalSearchTerm(config.searchTerm);
+    setLocalSponsoredCount(config.sponsoredCount);
+    setLocalHydrationStrategy(config.hydrationStrategy);
+  }, [config]);
 
-    // Handle category path: "Electronics > Phones > Smartphones" ->
-    // multiple category facets
-    if (categoryPath.trim()) {
-      const categories = categoryPath
-        .split(">")
-        .map((cat) => cat.trim())
-        .filter(Boolean);
-      categories.forEach((category, index) => {
-        facets.push({
-          key: `category-${index + 1}`,
-          value: category,
-        });
-      });
-    }
+  // Update URL when local form fields change (only after user interaction)
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-    // Handle brand
-    if (brand.trim()) {
-      facets.push({
-        key: "brand",
-        value: brand.trim(),
-      });
-    }
+  useEffect(() => {}, [
+    categoryPath,
+    brand,
+    productClusterId,
+    hasUserInteracted,
+  ]);
 
-    // Handle product cluster ID
-    if (productClusterId.trim()) {
-      facets.push({
-        key: "productClusterIds",
-        value: productClusterId.trim(),
-      });
-    }
-
-    return facets;
-  };
+  // Sync local facet fields when selectedFacets change (from URL navigation)
+  useEffect(() => {
+    const values = getLocalInitialValues();
+    setCategoryPath(values.categoryPath);
+    setBrand(values.brand);
+    setProductClusterId(values.productClusterId);
+  }, [config.selectedFacets]);
 
   const handleApplyChanges = () => {
-    onAccountNameChange(localAccountName);
-    onPublisherIdChange(localPublisherId);
-    onSearchTermChange(localSearchTerm);
-    onSponsoredCountChange(localSponsoredCount);
-    onHydrationStrategyChange(localHydrationStrategy);
-    onSelectedFacetsChange(buildSelectedFacets());
+    setConfig({
+      accountName: localAccountName,
+      publisherId: localPublisherId,
+      searchTerm: localSearchTerm,
+      sponsoredCount: localSponsoredCount,
+      hydrationStrategy: localHydrationStrategy,
+      selectedFacets: buildSelectedFacets({
+        categoryPath,
+        brand,
+        productClusterId,
+      }),
+    });
 
-    // Trigger refresh to get fresh ads
-    if (onRefresh) {
-      onRefresh();
+    if (!hasUserInteracted) return; // Don't update URL during initialization
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (categoryPath) {
+      params.set("categoryPath", categoryPath);
+    } else {
+      params.delete("categoryPath");
     }
+
+    if (brand) {
+      params.set("brand", brand);
+    } else {
+      params.delete("brand");
+    }
+
+    if (productClusterId) {
+      params.set("productClusterId", productClusterId);
+    } else {
+      params.delete("productClusterId");
+    }
+
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+
+    window.history.replaceState({}, "", newUrl);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,12 +111,18 @@ export function ConfigForm({
 
   // Check if there are any unsaved changes
   const hasChanges =
-    localAccountName !== accountName ||
-    localPublisherId !== publisherId ||
-    localSearchTerm !== searchTerm ||
-    localSponsoredCount !== sponsoredCount ||
-    localHydrationStrategy !== hydrationStrategy ||
-    JSON.stringify(buildSelectedFacets()) !== JSON.stringify(selectedFacets);
+    localAccountName !== config.accountName ||
+    localPublisherId !== config.publisherId ||
+    localSearchTerm !== config.searchTerm ||
+    localSponsoredCount !== config.sponsoredCount ||
+    localHydrationStrategy !== config.hydrationStrategy ||
+    JSON.stringify(
+      buildSelectedFacets({
+        categoryPath,
+        brand,
+        productClusterId,
+      }),
+    ) !== JSON.stringify(config.selectedFacets);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -216,7 +228,10 @@ export function ConfigForm({
           <input
             type="text"
             value={categoryPath}
-            onChange={(e) => setCategoryPath(e.target.value)}
+            onChange={(e) => {
+              setCategoryPath(e.target.value);
+              setHasUserInteracted(true);
+            }}
             placeholder="e.g., Electronics > Phones > Smartphones"
             className="vtex-input"
           />
@@ -233,8 +248,11 @@ export function ConfigForm({
             <input
               type="text"
               value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="e.g., Samsung, Apple"
+              onChange={(e) => {
+                setBrand(e.target.value);
+                setHasUserInteracted(true);
+              }}
+              placeholder="e.g., Acme, Dunder Mifflin"
               className="vtex-input"
             />
           </div>
@@ -246,7 +264,10 @@ export function ConfigForm({
             <input
               type="text"
               value={productClusterId}
-              onChange={(e) => setProductClusterId(e.target.value)}
+              onChange={(e) => {
+                setProductClusterId(e.target.value);
+                setHasUserInteracted(true);
+              }}
               placeholder="e.g., 123"
               className="vtex-input"
             />
@@ -254,8 +275,12 @@ export function ConfigForm({
         </div>
 
         <div className="flex items-center justify-between">
-          <button type="submit" className="vtex-button-primary">
-            🚀 Query Hydrated Ads
+          <button
+            type="submit"
+            className="vtex-button-primary"
+            onClick={hasChanges ? undefined : onRefresh}
+          >
+            {hasChanges ? "🚀 Apply Changes" : "🔄 Refresh Ads"}
           </button>
 
           {hasChanges && (
@@ -280,7 +305,15 @@ export function ConfigForm({
               Current Facets Preview
             </h4>
             <pre className="text-xs text-vtex-gray overflow-x-auto">
-              {JSON.stringify(buildSelectedFacets(), null, 2)}
+              {JSON.stringify(
+                buildSelectedFacets({
+                  categoryPath,
+                  brand,
+                  productClusterId,
+                }),
+                null,
+                2,
+              )}
             </pre>
           </div>
         )}

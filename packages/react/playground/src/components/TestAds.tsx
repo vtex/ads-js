@@ -1,11 +1,12 @@
 import React from "react";
 import JsonView from "@uiw/react-json-view";
 import { useAds } from "@vtex/ads-react";
+import { Facet } from "@vtex/ads-core";
 
 interface TestAdsProps {
   searchTerm: string;
   sponsoredCount: number;
-  selectedFacets: object[];
+  selectedFacets: Facet[];
   strategyName?: string;
   refreshTrigger?: number;
 }
@@ -30,7 +31,7 @@ export function TestAds({
   const successSectionRef = React.useRef<HTMLDivElement>(null);
 
   // Function to scroll to sections
-  const scrollToSucessSection = (e) => {
+  const scrollToSucessSection = (e: React.SyntheticEvent) => {
     e.preventDefault();
     successSectionRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -38,7 +39,7 @@ export function TestAds({
     });
   };
 
-  const scrollToFailedSection = (e) => {
+  const scrollToFailedSection = (e: React.SyntheticEvent) => {
     e.preventDefault();
     failedSectionRef.current?.scrollIntoView({
       behavior: "smooth",
