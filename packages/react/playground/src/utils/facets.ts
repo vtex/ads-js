@@ -8,7 +8,8 @@ export interface FacetFormFields {
 
 /**
  * Builds a Facet array from form input fields
- * @param fields - Form fields containing category path, brand, and product cluster ID
+ * @param fields - Form fields containing category path, brand, and product
+ * cluster ID
  * @returns Array of Facet objects
  */
 export const buildSelectedFacets = (fields: FacetFormFields): Facet[] => {

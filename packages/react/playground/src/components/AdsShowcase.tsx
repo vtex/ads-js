@@ -34,4 +34,3 @@ export function AdsShowcase({ config, refreshTrigger }: AdsShowcaseProps) {
     </AdsProvider>
   );
 }
-
