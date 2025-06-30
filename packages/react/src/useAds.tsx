@@ -29,8 +29,8 @@ interface UseAdsReturn {
 /**
  * Fetches and returns hydrated ads
  *
- * It must be used within an <AdsProvider> component, which supplies the necessary
- * context such as identity and hydration strategy.
+ * It must be used within an <AdsProvider> component, which supplies the
+ * necessary context such as identity and hydration strategy.
  *
  * @param props - Configuration object for the ad request.
  * @param props.placement - The placement identifier (e.g. "top", "sidebar").
