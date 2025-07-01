@@ -26,7 +26,8 @@ interface AdsState<TProduct extends UnknownProduct> {
   error?: Error;
 }
 
-interface UseAdsReturn<TProduct extends UnknownProduct> extends AdsState<TProduct> {
+interface UseAdsReturn<TProduct extends UnknownProduct>
+  extends AdsState<TProduct> {
   refresh: () => void; // Function to trigger a fresh request
 }
 
