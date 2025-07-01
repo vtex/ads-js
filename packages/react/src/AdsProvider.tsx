@@ -58,12 +58,13 @@ type AdsProviderProps<TProduct extends UnknownProduct> =
  */
 export const AdsProvider: <TProduct extends UnknownProduct>(
   props: AdsProviderProps<TProduct>,
-) => ReactNode = ({ children, ...props }) => {
+) => ReactNode = ({ identity, hydrationStrategy, children }) => {
   return (
     <AdsContext.Provider
       value={
         {
-          ...props,
+          identity: identity,
+          hydrationStrategy: hydrationStrategy,
         } as AdsContextType<UnknownProduct>
       }
     >
