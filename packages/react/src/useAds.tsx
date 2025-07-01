@@ -78,13 +78,7 @@ export const useAds = ({
   }
 
   const args: GetAdsArgs = {
-    identity: {
-      accountName: context.accountName,
-      publisherId: context.publisherId,
-      userId: context.userId,
-      sessionId: context.sessionId,
-      channel: context.channel,
-    },
+    identity: context.identity,
     search: {
       selectedFacets,
       term,
@@ -149,8 +143,8 @@ export const useAds = ({
     term,
     selectedFacetsString,
     skuId,
-    context.accountName,
-    context.publisherId,
+    context.identity.accountName,
+    context.identity.publisherId,
     context.hydrationStrategy.key,
     refreshCounter,
   ]);
