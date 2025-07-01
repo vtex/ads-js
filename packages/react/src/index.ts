@@ -4,4 +4,4 @@ export { useAds } from "./useAds";
 
 export type { AdsContextType } from "./AdsContext";
 export type { AdsProviderProps } from "./AdsProvider";
-export type { UseAdsProps, UseAdsReturn } from "./useAds";
+export type { UseAdsProps, UseAdsReturn, AdsState } from "./useAds";

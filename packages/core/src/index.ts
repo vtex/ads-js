@@ -9,4 +9,8 @@ export type {
   Identity,
   GetAdsArgs,
 } from "./types";
-export type { ProductFetcher, ProductMatchesOffer } from "./hydration/types";
+export type {
+  ProductFetcher,
+  ProductMatchesOffer,
+  HydratedSponsoredProduct,
+} from "./hydration/types";

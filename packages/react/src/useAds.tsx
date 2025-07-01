@@ -1,9 +1,14 @@
 import { getHydratedAds } from "@vtex/ads-core";
-import type { GetAdsArgs, Facet } from "@vtex/ads-core";
-import type { Placement, SponsoredProductDetail, AdType } from "@vtex/ads-core";
 import { useContext, useEffect, useState } from "react";
 import { AdsContext, UnknownProduct } from "./AdsContext";
-import { HydratedSponsoredProduct } from "../../core/dist/hydration/types";
+import { HydratedSponsoredProduct } from "@vtex/ads-core";
+
+import type {
+  AdType,
+  Placement,
+  SponsoredProductDetail,
+} from "@vtex/ads-core/adServer";
+import type { GetAdsArgs, Facet } from "@vtex/ads-core";
 
 export interface UseAdsProps {
   placement: Placement;
@@ -14,14 +19,14 @@ export interface UseAdsProps {
   skuId?: string;
 }
 
-interface AdsState<TProduct extends UnknownProduct> {
+export interface AdsState<TProduct extends UnknownProduct> {
   ads: HydratedSponsoredProduct<TProduct>[];
   failed: SponsoredProductDetail[];
   isLoading: boolean;
   error?: Error;
 }
 
-interface UseAdsReturn<TProduct extends UnknownProduct>
+export interface UseAdsReturn<TProduct extends UnknownProduct>
   extends AdsState<TProduct> {
   refresh: () => void; // Function to trigger a fresh request
 }
