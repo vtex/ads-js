@@ -202,3 +202,5 @@ export interface SpecificationGroup {
   name: string;
   specifications: Property[];
 }
+
+export { Facet } from "../../types";
