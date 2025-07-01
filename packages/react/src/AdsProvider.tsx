@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { AdsContext, AdsContextType, UnknownProduct } from "./AdsContext";
 
-type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
+type AdsProviderProps<TProduct extends UnknownProduct> = React.PropsWithChildren<
   AdsContextType<TProduct>
 >;
 

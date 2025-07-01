@@ -7,7 +7,8 @@ import type {
 } from "@vtex/ads-core";
 import { Facet } from "@vtex/ads-core";
 import { useContext, useEffect, useState } from "react";
-import { AdsContext } from "./AdsContext";
+import { AdsContext, UnknownProduct } from "./AdsContext";
+import { HydratedSponsoredProduct } from "@vtex/ads-core/dist/hydration/types";
 
 export interface UseAdsProps {
   placement: Placement;
@@ -18,11 +19,14 @@ export interface UseAdsProps {
   skuId?: string;
 }
 
-interface UseAdsReturn {
-  ads: unknown[]; // Replace with the actual type of ads returned
-  failed: SponsoredProductDetail[]; // Ads that failed to be hydrated
+interface AdsState<TProduct extends UnknownProduct> {
+  ads: HydratedSponsoredProduct<TProduct>[];
+  failed: SponsoredProductDetail[];
   isLoading: boolean;
   error?: Error;
+}
+
+interface UseAdsReturn<TProduct extends UnknownProduct> extends AdsState<TProduct> {
   refresh: () => void; // Function to trigger a fresh request
 }
 
@@ -65,7 +69,7 @@ export const useAds = ({
   term,
   selectedFacets,
   skuId,
-}: UseAdsProps): UseAdsReturn => {
+}: UseAdsProps): UseAdsReturn<UnknownProduct> => {
   const context = useContext(AdsContext);
 
   if (!context) {
@@ -97,10 +101,13 @@ export const useAds = ({
     ? selectedFacets.map((facet) => `${facet.key}:${facet.value}`).join(", ")
     : "none";
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
-  const [ads, setAds] = useState<UseAdsReturn["ads"]>([]);
-  const [failed, setFailed] = useState<SponsoredProductDetail[]>([]);
+  const [state, setState] = useState<AdsState<UnknownProduct>>({
+    ads: [],
+    failed: [],
+    isLoading: true,
+    error: undefined,
+  });
+
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   const refresh = () => {
@@ -108,24 +115,31 @@ export const useAds = ({
   };
 
   useEffect(() => {
-    setIsLoading(true);
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+    }));
 
-    getHydratedAds(
+    getHydratedAds<UnknownProduct>(
       args,
       context.hydrationStrategy.fetcher,
       context.hydrationStrategy.matcher,
     )
       .then((response) => {
-        setIsLoading(false);
-        setAds(response.sponsoredProducts.byPlacement[placement] || []);
-        setFailed(response.sponsoredProducts.failed || []);
-        setError(undefined);
+        setState({
+          ads: response.sponsoredProducts.byPlacement[placement],
+          failed: response.sponsoredProducts.failed || [],
+          isLoading: false,
+          error: undefined,
+        });
       })
       .catch((err) => {
-        setAds([]);
-        setFailed([]);
-        setIsLoading(false);
-        setError(err);
+        setState({
+          ads: [],
+          failed: [],
+          isLoading: false,
+          error: err,
+        });
       });
   }, [
     placement,
@@ -141,10 +155,10 @@ export const useAds = ({
   ]);
 
   return {
-    ads,
-    failed,
-    isLoading,
-    error,
+    ads: state.ads,
+    failed: state.failed,
+    isLoading: state.isLoading,
+    error: state.error,
     refresh,
   };
 };
