@@ -1,7 +1,7 @@
 import { getHydratedAds } from "@vtex/ads-core";
 import { Facet } from "@vtex/ads-core";
 import { useContext, useEffect, useState } from "react";
-import { AdsContext, UnknownProduct } from "./AdsContext";
+import { AdsContext, BaseProduct } from "./AdsContext";
 
 import type { GetAdsArgs } from "@vtex/ads-core";
 import type { HydratedSponsoredProduct } from "@vtex/ads-core";
@@ -20,14 +20,14 @@ export interface UseAdsProps {
   skuId?: string;
 }
 
-export interface AdsState<TProduct extends UnknownProduct> {
+export interface AdsState<TProduct extends BaseProduct> {
   ads: HydratedSponsoredProduct<TProduct>[];
   failed: SponsoredProductDetail[];
   isLoading: boolean;
   error?: Error;
 }
 
-export interface UseAdsReturn<TProduct extends UnknownProduct>
+export interface UseAdsReturn<TProduct extends BaseProduct>
   extends AdsState<TProduct> {
   refresh: () => void; // Function to trigger a fresh request
 }
@@ -71,7 +71,7 @@ export const useAds = ({
   term,
   selectedFacets,
   skuId,
-}: UseAdsProps): UseAdsReturn<UnknownProduct> => {
+}: UseAdsProps): UseAdsReturn<BaseProduct> => {
   const context = useContext(AdsContext);
 
   if (!context) {
@@ -97,7 +97,7 @@ export const useAds = ({
     ? selectedFacets.map((facet) => `${facet.key}:${facet.value}`).join(", ")
     : "none";
 
-  const [state, setState] = useState<AdsState<UnknownProduct>>({
+  const [state, setState] = useState<AdsState<BaseProduct>>({
     ads: [],
     failed: [],
     isLoading: true,
@@ -116,7 +116,7 @@ export const useAds = ({
       isLoading: true,
     }));
 
-    getHydratedAds<UnknownProduct>(
+    getHydratedAds<BaseProduct>(
       args,
       context.hydrationStrategy.fetcher,
       context.hydrationStrategy.matcher,

@@ -1,7 +1,8 @@
 import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
+import { UnknownProduct } from "@vtex/ads-react/dist/AdsContext";
 
 // Simple mock product interface for easy identification
-export interface SimpleMockProduct {
+export interface SimpleMockProduct extends UnknownProduct {
   id: string;
   name: string;
   price: number;

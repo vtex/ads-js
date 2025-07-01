@@ -3,6 +3,7 @@ import { AdsProvider } from "@vtex/ads-react";
 import { TestAds } from "./TestAds";
 import { hydrationStrategies } from "../hydration";
 import { PlaygroundConfig } from "../hooks/usePlaygroundConfig";
+import {Channel} from "@vtex/ads-core/adServer";
 
 interface AdsShowcaseProps {
   config: PlaygroundConfig;
@@ -14,10 +15,13 @@ export function AdsShowcase({ config, refreshTrigger }: AdsShowcaseProps) {
 
   return (
     <AdsProvider
-      accountName={config.accountName}
-      publisherId={config.publisherId}
-      sessionId="session-123"
-      userId="user-123"
+      identity={{
+        accountName: config.accountName,
+        publisherId: config.publisherId,
+        userId: "user-123",
+        sessionId: "session-123",
+        channel: "web" as Channel,
+      }}
       hydrationStrategy={{
         fetcher: currentStrategy.fetcher,
         matcher: currentStrategy.matcher,

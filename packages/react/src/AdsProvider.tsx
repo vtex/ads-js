@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import { AdsContext, AdsContextType, UnknownProduct } from "./AdsContext";
+import { AdsContext, AdsContextType, BaseProduct } from "./AdsContext";
 
-export type AdsProviderProps<TProduct extends UnknownProduct> =
+export type AdsProviderProps<TProduct extends BaseProduct> =
   React.PropsWithChildren<AdsContextType<TProduct>>;
 
 /**
@@ -56,7 +56,7 @@ export type AdsProviderProps<TProduct extends UnknownProduct> =
  * </AdsProvider>
  * ```
  */
-export const AdsProvider: <TProduct extends UnknownProduct>(
+export const AdsProvider: <TProduct extends BaseProduct>(
   props: AdsProviderProps<TProduct>,
 ) => ReactNode = ({ identity, hydrationStrategy, children }) => {
   if (!identity || !hydrationStrategy) {
@@ -71,7 +71,7 @@ export const AdsProvider: <TProduct extends UnknownProduct>(
         {
           identity: identity,
           hydrationStrategy: hydrationStrategy,
-        } as AdsContextType<UnknownProduct>
+        } as AdsContextType<BaseProduct>
       }
     >
       {children}
