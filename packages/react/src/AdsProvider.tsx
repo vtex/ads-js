@@ -59,6 +59,12 @@ type AdsProviderProps<TProduct extends UnknownProduct> =
 export const AdsProvider: <TProduct extends UnknownProduct>(
   props: AdsProviderProps<TProduct>,
 ) => ReactNode = ({ identity, hydrationStrategy, children }) => {
+  if (!identity || !hydrationStrategy) {
+    throw new Error(
+      "AdsProvider requires both identity and hydrationStrategy props",
+    );
+  }
+
   return (
     <AdsContext.Provider
       value={
