@@ -12,6 +12,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "exclude": ["packages/storeframework",  "node_modules", "**/dist"],
+  "exclude": ["packages/storeframework", "node_modules", "**/dist"],
   "include": ["packages", "vitest.config.ts"]
 }

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
-import {ProductMatchesOffer} from "@vtex/ads-core";
+import { ProductMatchesOffer } from "@vtex/ads-core";
 
 export type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
   AdsContextType<TProduct>

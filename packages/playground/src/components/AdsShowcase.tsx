@@ -3,7 +3,7 @@ import { TestAds } from "./TestAds";
 import { hydrationStrategies } from "../hydration";
 import { PlaygroundConfig } from "../hooks/usePlaygroundConfig";
 import { Channel } from "@vtex/ads-core/adServer";
-import {ProductFetcher, ProductMatchesOffer} from "@vtex/ads-core";
+import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
 
 interface AdsShowcaseProps {
   config: PlaygroundConfig;
