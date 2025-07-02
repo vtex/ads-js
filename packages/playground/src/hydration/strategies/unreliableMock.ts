@@ -1,4 +1,4 @@
-import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
+import { ProductFetcher } from "@vtex/ads-core";
 import { SimpleMockProduct, HydrationStrategy } from "../types";
 import { mockMatcher } from "./mock";
 
