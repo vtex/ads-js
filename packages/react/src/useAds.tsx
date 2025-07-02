@@ -1,15 +1,19 @@
 import { getHydratedAds } from "@vtex/ads-core";
 import { Facet } from "@vtex/ads-core";
-import { useContext, useEffect, useState } from "react";
-import { AdsContext, BaseProduct } from "./AdsContext";
+import { Context, useContext, useEffect, useState } from "react";
 
-import type { GetAdsArgs } from "@vtex/ads-core";
+import type {
+  GetAdsArgs,
+  ProductFetcher,
+  ProductMatchesOffer,
+} from "@vtex/ads-core";
 import type { HydratedSponsoredProduct } from "@vtex/ads-core";
 import type {
   AdType,
   Placement,
   SponsoredProductDetail,
 } from "@vtex/ads-core/adServer";
+import { AdsContext, AdsContextType } from "./AdsContext";
 
 export interface UseAdsProps {
   placement: Placement;
@@ -20,14 +24,14 @@ export interface UseAdsProps {
   skuId?: string;
 }
 
-export interface AdsState<TProduct extends BaseProduct> {
+export interface AdsState<TProduct extends object> {
   ads: HydratedSponsoredProduct<TProduct>[];
   failed: SponsoredProductDetail[];
   isLoading: boolean;
   error?: Error;
 }
 
-export interface UseAdsReturn<TProduct extends BaseProduct>
+export interface UseAdsReturn<TProduct extends object>
   extends AdsState<TProduct> {
   refresh: () => void; // Function to trigger a fresh request
 }
@@ -64,14 +68,14 @@ export interface UseAdsReturn<TProduct extends BaseProduct>
  *   selectedFacets: [{ key: "brand", value: "Nike" }],
  * });
  */
-export const useAds = ({
+export function useAds<TProduct extends object>({
   placement,
   type,
   amount,
   term,
   selectedFacets,
   skuId,
-}: UseAdsProps): UseAdsReturn<BaseProduct> => {
+}: UseAdsProps): UseAdsReturn<TProduct> {
   const context = useContext(AdsContext);
 
   if (!context) {
@@ -97,7 +101,7 @@ export const useAds = ({
     ? selectedFacets.map((facet) => `${facet.key}:${facet.value}`).join(", ")
     : "none";
 
-  const [state, setState] = useState<AdsState<BaseProduct>>({
+  const [state, setState] = useState<AdsState<TProduct>>({
     ads: [],
     failed: [],
     isLoading: true,
@@ -116,9 +120,9 @@ export const useAds = ({
       isLoading: true,
     }));
 
-    getHydratedAds<BaseProduct>(
+    getHydratedAds<TProduct>(
       args,
-      context.hydrationStrategy.fetcher,
+      context.hydrationStrategy.fetcher as ProductFetcher<TProduct>,
       context.hydrationStrategy.matcher,
     )
       .then((response) => {
@@ -157,4 +161,4 @@ export const useAds = ({
     error: state.error,
     refresh,
   };
-};
+}

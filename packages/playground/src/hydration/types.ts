@@ -1,8 +1,7 @@
 import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
-import { UnknownProduct } from "@vtex/ads-react/dist/AdsContext";
 
 // Simple mock product interface for easy identification
-export interface SimpleMockProduct extends UnknownProduct {
+export interface SimpleMockProduct {
   id: string;
   name: string;
   price: number;
@@ -15,8 +14,8 @@ export interface SimpleMockProduct extends UnknownProduct {
 }
 
 // Hydration strategy interface
-export interface HydrationStrategy {
+export interface HydrationStrategy<TProduct extends object> {
   name: string;
-  fetcher: ProductFetcher<SimpleMockProduct>;
-  matcher: ProductMatchesOffer<SimpleMockProduct>;
+  fetcher: ProductFetcher<TProduct>;
+  matcher: ProductMatchesOffer<TProduct>;
 }

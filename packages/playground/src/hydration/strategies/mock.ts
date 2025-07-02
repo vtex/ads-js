@@ -39,8 +39,8 @@ export const mockMatcher: ProductMatchesOffer<SimpleMockProduct> = (
   return product.skuId === offer.skuId && product.sellerId === offer.sellerId;
 };
 
-export const mockStrategy: HydrationStrategy = {
+export const mockStrategy: HydrationStrategy<SimpleMockProduct> = {
   name: "Mocked Hydration",
-  fetcher: mockFetcher as ProductFetcher<SimpleMockProduct>,
-  matcher: mockMatcher as ProductMatchesOffer<SimpleMockProduct>,
+  fetcher: mockFetcher,
+  matcher: mockMatcher,
 };

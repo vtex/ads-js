@@ -39,6 +39,9 @@ describe("getAds", () => {
           impression_url: "http://example.com/impression",
           view_url: "http://example.com/view",
           product_name: "Sample Product",
+          product_metadata: {
+            productId: "123",
+          },
         },
       ],
     };

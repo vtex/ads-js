@@ -20,7 +20,7 @@ describe("base64 utilities", () => {
       const mockAtob = vi.fn().mockReturnValue("decoded string");
       global.window = {
         atob: mockAtob,
-      } as object;
+      } as object as Window & typeof globalThis;
 
       // Act
       const result = atob("ZW5jb2RlZCBzdHJpbmc=");
@@ -32,7 +32,7 @@ describe("base64 utilities", () => {
 
     it("should use Buffer when window.atob is not available", () => {
       // Arrange
-      global.window = {} as object;
+      global.window = {} as Window & typeof globalThis;
 
       // Act
       const result = atob("aGVsbG8gd29ybGQ=");
@@ -43,7 +43,7 @@ describe("base64 utilities", () => {
 
     it("should use Buffer when window is not defined (real Node.js behavior)", () => {
       // Arrange - Delete window completely to simulate real Node.js
-      delete (global as object).window;
+      delete (global as { window: unknown }).window;
 
       // Act
       const result = atob("aGVsbG8gd29ybGQ=");
@@ -54,7 +54,7 @@ describe("base64 utilities", () => {
 
     it("should decode base64 strings correctly using Buffer fallback", () => {
       // Arrange
-      global.window = {} as object;
+      global.window = {} as Window & typeof globalThis;
 
       // Test various strings
       const testCases = [
@@ -79,7 +79,7 @@ describe("base64 utilities", () => {
 
     it("should handle empty string", () => {
       // Arrange
-      global.window = {} as object;
+      global.window = {} as Window & typeof globalThis;
 
       // Act
       const result = atob("");
@@ -90,7 +90,7 @@ describe("base64 utilities", () => {
 
     it("should handle special characters", () => {
       // Arrange
-      global.window = {} as object;
+      global.window = {} as Window & typeof globalThis;
 
       // Act
       const result = atob("8J+YgPCfmIHwn5iC");
@@ -103,7 +103,7 @@ describe("base64 utilities", () => {
       // Arrange
       global.window = {
         atob: null,
-      } as object;
+      } as object as Window & typeof globalThis;
 
       // Act
       const result = atob("dGVzdA==");
@@ -116,7 +116,7 @@ describe("base64 utilities", () => {
       // Arrange
       global.window = {
         atob: undefined,
-      } as object;
+      } as object as Window & typeof globalThis;
 
       // Act
       const result = atob("dGVzdA==");
@@ -132,7 +132,7 @@ describe("base64 utilities", () => {
       const mockBtoa = vi.fn().mockReturnValue("ZW5jb2RlZCBzdHJpbmc=");
       global.window = {
         btoa: mockBtoa,
-      } as unknown as Window & typeof globalThis;
+      } as object as Window & typeof globalThis;
 
       // Act
       const result = btoa("encoded string");
@@ -155,7 +155,7 @@ describe("base64 utilities", () => {
 
     it("should use Buffer when window is not defined (real Node.js behavior)", () => {
       // Arrange - Delete window completely to simulate real Node.js
-      delete (global as unknown as Window & typeof globalThis).window;
+      delete (global as { window: unknown }).window;
 
       // Act
       const result = btoa("hello world");

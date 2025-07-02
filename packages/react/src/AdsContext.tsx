@@ -3,7 +3,7 @@ import { createContext } from "react";
 import type { Channel } from "@vtex/ads-core/adServer";
 import type { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
 
-export interface AdsContextType<TProduct extends BaseProduct> {
+export interface AdsContextType<TProduct extends object> {
   identity: {
     accountName: string;
     publisherId: string;
@@ -18,8 +18,6 @@ export interface AdsContextType<TProduct extends BaseProduct> {
   };
 }
 
-export type BaseProduct = Record<string, unknown>;
-
-export const AdsContext = createContext<
-  AdsContextType<BaseProduct> | undefined
->(undefined);
+export const AdsContext = createContext<AdsContextType<object> | undefined>(
+  undefined,
+);

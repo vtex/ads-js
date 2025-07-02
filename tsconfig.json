@@ -3,7 +3,6 @@
     "target": "ESNext",
     "jsx": "preserve",
     "module": "ESNext",
-    "rootDir": "./packages",
     "moduleResolution": "Bundler",
     "declaration": true,
     "outDir": "./dist",
@@ -13,5 +12,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "exclude": ["packages/storeframework", "node_modules", "dist"]
+  "exclude": ["packages/storeframework",  "node_modules", "**/dist"],
+  "include": ["packages", "vitest.config.ts"]
 }
