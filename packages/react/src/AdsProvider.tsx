@@ -1,8 +1,10 @@
 import { ReactNode } from "react";
-import { AdsContext, AdsContextType, UnknownProduct } from "./AdsContext";
+import { AdsContext, AdsContextType } from "./AdsContext";
+import { ProductMatchesOffer } from "@vtex/ads-core";
 
-export type AdsProviderProps<TProduct extends UnknownProduct> =
-  React.PropsWithChildren<AdsContextType<TProduct>>;
+export type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
+  AdsContextType<TProduct>
+>;
 
 /**
  * A React context provider component that supplies ads-related
@@ -56,9 +58,11 @@ export type AdsProviderProps<TProduct extends UnknownProduct> =
  * </AdsProvider>
  * ```
  */
-export const AdsProvider: <TProduct extends UnknownProduct>(
-  props: AdsProviderProps<TProduct>,
-) => ReactNode = ({ identity, hydrationStrategy, children }) => {
+export function AdsProvider<TProduct extends object>({
+  identity,
+  hydrationStrategy,
+  children,
+}: AdsProviderProps<TProduct>): ReactNode {
   if (!identity || !hydrationStrategy) {
     throw new Error(
       "AdsProvider requires both identity and hydrationStrategy props",
@@ -67,14 +71,16 @@ export const AdsProvider: <TProduct extends UnknownProduct>(
 
   return (
     <AdsContext.Provider
-      value={
-        {
-          identity: identity,
-          hydrationStrategy: hydrationStrategy,
-        } as AdsContextType<UnknownProduct>
-      }
+      value={{
+        identity: identity,
+        hydrationStrategy: {
+          fetcher: hydrationStrategy.fetcher,
+          matcher: hydrationStrategy.matcher as ProductMatchesOffer<object>,
+          key: hydrationStrategy.key,
+        },
+      }}
     >
       {children}
     </AdsContext.Provider>
   );
-};
+}

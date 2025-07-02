@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "turbo dev",
+    "check-types": "tsc --noEmit",
     "build": "turbo build",
     "clean": "turbo clean",
     "test": "turbo run test",

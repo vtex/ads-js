@@ -1,4 +1,4 @@
-import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
+import { ProductFetcher } from "@vtex/ads-core";
 import { SimpleMockProduct, HydrationStrategy } from "../types";
 import { mockMatcher } from "./mock";
 
@@ -15,8 +15,8 @@ export const errorProneMockFetcher: ProductFetcher<
   );
 };
 
-export const errorProneMockStrategy: HydrationStrategy = {
+export const errorProneMockStrategy: HydrationStrategy<SimpleMockProduct> = {
   name: "Error-Prone Mock (API Failures)",
-  fetcher: errorProneMockFetcher as ProductFetcher<SimpleMockProduct>,
-  matcher: mockMatcher as ProductMatchesOffer<SimpleMockProduct>,
+  fetcher: errorProneMockFetcher,
+  matcher: mockMatcher,
 };

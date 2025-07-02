@@ -1,4 +1,4 @@
-import { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
+import { ProductFetcher } from "@vtex/ads-core";
 import { SimpleMockProduct, HydrationStrategy } from "../types";
 import { mockMatcher } from "./mock";
 
@@ -37,8 +37,8 @@ export const unreliableMockFetcher: ProductFetcher<SimpleMockProduct> = async (
   );
 };
 
-export const unreliableMockStrategy: HydrationStrategy = {
+export const unreliableMockStrategy: HydrationStrategy<SimpleMockProduct> = {
   name: "Unreliable Mock (Missing Products)",
-  fetcher: unreliableMockFetcher as ProductFetcher<SimpleMockProduct>,
-  matcher: mockMatcher as ProductMatchesOffer<SimpleMockProduct>,
+  fetcher: unreliableMockFetcher,
+  matcher: mockMatcher,
 };

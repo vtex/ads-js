@@ -14,8 +14,8 @@ export interface SimpleMockProduct {
 }
 
 // Hydration strategy interface
-export interface HydrationStrategy {
+export interface HydrationStrategy<TProduct extends object> {
   name: string;
-  fetcher: ProductFetcher<SimpleMockProduct>;
-  matcher: ProductMatchesOffer<SimpleMockProduct>;
+  fetcher: ProductFetcher<TProduct>;
+  matcher: ProductMatchesOffer<TProduct>;
 }

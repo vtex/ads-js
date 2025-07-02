@@ -10,6 +10,7 @@
   "dependencies": {
     "@uiw/react-json-view": "^1.12.2",
     "@vtex/ads-react": "workspace:*",
+    "@vtex/ads-core": "workspace:*",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },

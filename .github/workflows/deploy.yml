@@ -33,7 +33,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./packages/react/playground/dist
+          path: ./packages/playground/dist
 
   deploy:
     needs: build
