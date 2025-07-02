@@ -32,10 +32,10 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: pnpm check-types
-
-      - name: Build
         run: pnpm build
+
+      - name: Check types
+        run: pnpm check-types
 
       - name: Test
         run: pnpm test
