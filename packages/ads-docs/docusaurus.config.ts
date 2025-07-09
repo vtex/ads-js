@@ -119,10 +119,6 @@ const config: Config = {
               label: "Introduction",
               to: "/docs/intro",
             },
-            {
-              label: "Getting Started",
-              to: "/docs/getting-started",
-            },
           ],
         },
         {

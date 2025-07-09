@@ -1,6 +1,5 @@
 ---
 sidebar_position: 1
-slug: /
 ---
 
 # Introduction
@@ -47,5 +46,5 @@ A key concept in the VTEX Ads SDK is **hydration**, the process of enriching ad 
 
 ## Next Steps
 
-- [Installing @vtex/ads-core](./ads-core/installation.md) - Learn how to use the core functionality for any JavaScript environment.
-- [Installing @vtex/ads-react](./ads-react/installation) - Explore the React-specific components and hooks.
+- [Installing @vtex/ads-core](./ads-core/quickstart) - Learn how to use the core functionality for any JavaScript environment.
+- [Installing @vtex/ads-react](./ads-react/quickstart) - Explore the React-specific components and hooks.
