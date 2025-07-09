@@ -28,7 +28,10 @@ distributing results to child components.
 
 ```jsx
 import { AdsProvider } from "@vtex/ads-react";
-import { fetchWithIS, searchProductMatchesOffer } from "@vtex/ads-core";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "@vtex/ads-core";
 
 const Page = () => {
   return (
@@ -39,7 +42,7 @@ const Page = () => {
       sessionId={sessionId}
       channel={channel}
       hydrationStrategy={{
-        fetcher: fetchWithIS,
+        fetcher: intelligentSearchFetcher,
         matcher: searchProductMatchesOffer,
       }}
     >

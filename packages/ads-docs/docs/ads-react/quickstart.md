@@ -27,7 +27,10 @@ Before requesting any ads, wrap your app or page component tree with the `<AdsPr
 ```jsx
 import React from "react";
 import { AdsProvider } from "@vtex/ads-react";
-import { fetchWithIS, searchProductMatchesOffer } from "@vtex/ads-core";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "@vtex/ads-core";
 
 function App() {
   return (
@@ -40,8 +43,8 @@ function App() {
         channel: "web", // optional: "web" | "mobile"
       }}
       hydrationStrategy={{
-        fetcher: fetchWithIS,
-        matcher: searchProductMatchesOffer,
+        fetcher: intelligentSearchFetcher,
+        matcher: intelligentSearchMatcher,
       }}
     >
       <YourAppContent />
