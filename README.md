@@ -1,17 +1,9 @@
 <div align="center">
   <h1>VTEX Ads JavaScript SDK</h1>
   <p>
-    <strong>Delivers sponsored products for the VTEX Ad Network.</strong>
+    <strong>Integrate VTEX Ads into your storefront with ease</strong>
   </p>
   <p>
-
-<!-- prettier-ignore-start -->
-[![OpenAPI specification](https://img.shields.io/badge/specs-green?logo=swagger&label=OpenAPI)](https://ad-server.vtex.systems/swagger-ui/)
-![Minimum Supported Rust Version](https://img.shields.io/badge/rustc-1.80+-ab6000.svg)
-[![CI](https://github.com/vtex/ad-server/actions/workflows/check.yml/badge.svg)](https://github.com/vtex/ad-server/actions/workflows/check.yml)
-[![Chat on Slack](https://img.shields.io/badge/%23team--ad--network-purple?logo=slack&label=Slack)](https://vtex.enterprise.slack.com/archives/C06QBFHREAC)
-<!-- prettier-ignore-end -->
-
   </p>
 </div>
 
@@ -29,7 +21,7 @@ This repository is a **monorepo** powered by [pnpm](https://pnpm.io/) and contai
 ```bash
 # pick your favourite package manager
 pnpm add @vtex/ads-core              # core only
-pnpm add @vtex/ads-core @vtex/ads-react # core + React helpers
+pnpm add @vtex/ads-react             # React hooks
 ```
 
 Both packages are shipped as **ES Modules** and include TypeScript declarations out of the box.
@@ -64,25 +56,16 @@ export function App() {
 }
 
 function HomePage() {
-  const { ads, status } = useAds({ placement: "homepage" });
+  const { ads, isLoading } = useAds({ placement: "homepage" });
 
-  if (status !== "success") return <p>Loading…</p>;
+  if (isLoading) return <p>Loading…</p>;
   return <pre>{JSON.stringify(ads, null, 2)}</pre>;
 }
 ```
 
-## Live playground
-
-Spin up the **playground** locally with `pnpm dev` or try it online at
-<https://vtex.github.io/ads-js/>.
-
 ## Documentation
 
-Comprehensive guides & API reference are coming soon at
-<https://vtex.github.io/ads-js/docs>.
+Comprehensive guides & API reference at <https://vtex.github.io/ads-js/docs>.
 
-## Contributing
-
-1. Clone & install deps: `pnpm i`
-2. Run the test suite: `pnpm test`
-3. Open a pull request – we welcome fixes and improvements!
+Spin up the **playground** locally with `pnpm playground:dev` or try it online
+at <https://vtex.github.io/ads-js/>.
