@@ -2,6 +2,10 @@ import { ReactNode } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
 import { ProductMatchesOffer } from "@vtex/ads-core";
 
+/**
+ * Props for the AdsProvider component
+ * @public
+ */
 export type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
   AdsContextType<TProduct>
 >;
@@ -15,48 +19,32 @@ export type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
  * generic type parameter to ensure type consistency between fetcher and
  * matcher functions.
  *
- * @template TProduct - The product type that extends object, ensuring
- * the fetcher and matcher work with the same product type. Usually
- * inferred from props.
- *
- * @param props - The provider props including children and ads context
- * properties
- * @param props.children - React child components that will have access
- * to the ads context
- * @param props.* - All other props from AdsContextType<TProduct>
- * including ads configuration and methods
+ * @param props - The provider props including children, identity, and
+ * hydration strategy
  *
  * @returns A ReactNode that provides ads context to its children
  *
  * @example
  * ```tsx
  * // Type is usually inferred from fetcher/matcher
- * interface MyProduct {
+ * interface MyProduct \{
  *   id: string;
  *   name: string;
  *   price: number;
- * }
+ * \}
  *
  * const fetcher: ProductFetcher<MyProduct> = // ...
  * const matcher: ProductMatchesOffer<MyProduct> = // ...
  *
  * <AdsProvider
- *   hydrationStrategy={{ fetcher, matcher }}
+ *   hydrationStrategy=\{\{ fetcher, matcher \}\}
  *   // ... other props
  * >
  *   <MyApp />
  * </AdsProvider>
  * ```
  *
- * @example
- * ```tsx
- * // Explicit type parameter (rarely needed)
- * <AdsProvider<MyProduct>
- *   // ... ads context props
- * >
- *   <MyApp />
- * </AdsProvider>
- * ```
+ * @public
  */
 export function AdsProvider<TProduct extends object>({
   identity,
