@@ -43,7 +43,7 @@ const Page = () => {
       channel={channel}
       hydrationStrategy={{
         fetcher: intelligentSearchFetcher,
-        matcher: searchProductMatchesOffer,
+        matcher: intelligentSearchMatcher,
       }}
     >
       <App />
@@ -142,8 +142,8 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
   sessionId={sessionId}
   channel={channel}
   hydrationStrategy={{
-    fetcher: fetchWithIS,
-    matcher: searchProductMatchesOffer,
+    fetcher: intelligentSearchFetcher,
+    matcher: intelligentSearchMatcher,
   }}
   showUniqueAds={true}
 >
