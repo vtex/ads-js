@@ -2,3 +2,4 @@ packages:
   - 'packages/core'
   - 'packages/react'
   - 'packages/playground'
+  - 'packages/ads-docs'

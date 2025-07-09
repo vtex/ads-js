@@ -30,8 +30,7 @@ jobs:
       - name: Build all
         run: |
           pnpm --filter ads-playground build
-          cd packages/ads-docs
-          pnpm build
+          pnpm --filter ads-docs build
 
       - name: Combine docs and playground builds
         run: |
