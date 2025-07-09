@@ -25,6 +25,6 @@ export type HydrationStrategyKey = keyof typeof hydrationStrategies;
 
 // Default exports for backward compatibility
 export {
-  fetchWithIS as fetcher,
-  searchProductMatchesOffer as matcher,
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
 } from "@vtex/ads-core";
