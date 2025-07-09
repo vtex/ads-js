@@ -19,5 +19,11 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vtex/ads-js.git",
+    "directory": "packages/ads-core"
+  },
+  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-react#readme"
 }
