@@ -1,4 +1,7 @@
 dist/
 packages/**/dist
 node_modules/
+/packages/ads-docs/build/
+/packages/ads-docs/.docusaurus
 .turbo
+.DS_Store

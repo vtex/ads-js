@@ -3,11 +3,12 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
 import prettierPlugin from "eslint-plugin-prettier";
+import gitignore from "eslint-config-flat-gitignore";
 
 export default defineConfig([
-  {
-    ignores: ["**/dist/**"],
-  },
+  gitignore({
+    files: [".gitignore"],
+  }),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     plugins: { js, prettier: prettierPlugin },
