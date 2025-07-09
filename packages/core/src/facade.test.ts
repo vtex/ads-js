@@ -10,8 +10,10 @@ import {
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
 import { GetAdsArgs, RawAdsResponse } from "./types";
-import { fetchWithIS } from "./hydration/intelligentSearchFetcher/fetchWithIS";
-import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/searchProductMatchesOffer";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "./hydration/intelligentSearch";
 import { buildOffers, buildHydratedProduct } from "./hydration/mappers";
 
 // Mock all dependencies
@@ -49,8 +51,8 @@ describe("facade", () => {
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
   const mockedGetOffer = vi.mocked(getOffer);
-  const mockedFetchWithIS = vi.mocked(fetchWithIS);
-  const mockedSearchProductMatchesOffer = vi.mocked(searchProductMatchesOffer);
+  const mockedFetchWithIS = vi.mocked(intelligentSearchFetcher);
+  const mockedSearchProductMatchesOffer = vi.mocked(intelligentSearchMatcher);
   const mockedBuildOffers = vi.mocked(buildOffers);
   const mockedBuildHydratedProduct = vi.mocked(buildHydratedProduct);
 
@@ -294,8 +296,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -371,8 +373,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -395,8 +397,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -454,8 +456,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -498,7 +500,11 @@ describe("facade", () => {
 
       // Act & Assert
       await expect(
-        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+        getHydratedAds(
+          mockGetAdsArgs,
+          intelligentSearchFetcher,
+          intelligentSearchMatcher,
+        ),
       ).rejects.toThrow("Ad server error");
     });
 
@@ -512,7 +518,11 @@ describe("facade", () => {
 
       // Act & Assert
       await expect(
-        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+        getHydratedAds(
+          mockGetAdsArgs,
+          intelligentSearchFetcher,
+          intelligentSearchMatcher,
+        ),
       ).rejects.toThrow("Search service error");
     });
   });

@@ -1,3 +1,7 @@
+/**
+ * Channel type for ad requests
+ * @public
+ */
 export type Channel = "site" | "app";
 
 export type NavigationContext =
@@ -7,6 +11,10 @@ export type NavigationContext =
   | "product_page"
   | "home";
 
+/**
+ * Placement identifier for ad positions
+ * @public
+ */
 export type Placement =
   | "search_top_product"
   | "search_top-shelf_product"
@@ -17,6 +25,10 @@ export type Placement =
   | "search_top_brand"
   | string;
 
+/**
+ * Type of advertisement
+ * @public
+ */
 export type AdType =
   | "product"
   | "banner"
@@ -24,6 +36,10 @@ export type AdType =
   | "video"
   | "sponsored_brand_video";
 
+/**
+ * Configuration for ad placement requests
+ * @public
+ */
 export interface PlacementBody {
   quantity: number;
   size?: string;
@@ -43,6 +59,10 @@ export interface AdRequest {
   product_sku?: string;
 }
 
+/**
+ * Sponsored product detail from ad server response
+ * @public
+ */
 export interface SponsoredProductDetail {
   ad_id?: string;
   click_url: string;
