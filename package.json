@@ -15,7 +15,10 @@
     "format:write": "prettier --write .",
     "autoformat": "pnpm format:write && pnpm lint:fix",
     "playground:dev": "cd packages/playground && pnpm dev",
-    "docs:start": "pnpm build && cd packages/ads-docs && pnpm start"
+    "docs:start": "pnpm build && cd packages/ads-docs && pnpm start",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
   },
   "keywords": [],
   "author": "",
