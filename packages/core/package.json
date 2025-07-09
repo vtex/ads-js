@@ -27,5 +27,8 @@
       "import": "./dist/clients/adServer/index.js",
       "types": "./dist/clients/adServer/index.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

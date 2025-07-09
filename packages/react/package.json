@@ -16,5 +16,8 @@
   "devDependencies": {
     "@faststore/sdk": "^3.0.0",
     "@types/node": "^22.15.21"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
