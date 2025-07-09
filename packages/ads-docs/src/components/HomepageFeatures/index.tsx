@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import clsx from "clsx";
 import Heading from "@theme/Heading";
 import styles from "./styles.module.css";
-import mountain from "@site/static/img/undraw_docusaurus_mountain.svg";
+import undrawMountain from "@site/static/img/undraw_docusaurus_mountain.svg";
+import undrawReact from "@site/static/img/undraw_docusaurus_react.svg";
+import undrawTree from "@site/static/img/undraw_docusaurus_tree.svg";
 
 type FeatureItem = {
   title: string;
@@ -13,7 +15,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: "Quick Integration",
-    Svg: mountain,
+    Svg: undrawMountain,
     description: (
       <>
         Add sponsored products to your storefront in minutes using our
@@ -24,7 +26,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: "Relevant Sponsored Products",
-    Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
+    Svg: undrawTree,
     description: (
       <>
         Leverage VTEX&apos;s Ads platform to display products that match your
@@ -35,7 +37,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: "Framework Agnostic",
-    Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
+    Svg: undrawReact,
     description: (
       <>
         Use the core package in any JavaScript environment or opt-in to our
