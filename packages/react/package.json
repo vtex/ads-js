@@ -1,6 +1,6 @@
 {
   "name": "@vtex/ads-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -16,5 +16,14 @@
   "devDependencies": {
     "@faststore/sdk": "^3.0.0",
     "@types/node": "^22.15.21"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vtex/ads-js.git",
+    "directory": "packages/ads-core"
+  },
+  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-react#readme"
 }

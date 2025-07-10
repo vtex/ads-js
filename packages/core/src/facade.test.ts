@@ -10,8 +10,10 @@ import {
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
 import { GetAdsArgs, RawAdsResponse } from "./types";
-import { fetchWithIS } from "./hydration/intelligentSearchFetcher/fetchWithIS";
-import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/searchProductMatchesOffer";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "./hydration/intelligentSearch";
 import { buildOffers, buildHydratedProduct } from "./hydration/mappers";
 
 // Mock all dependencies
@@ -28,16 +30,10 @@ vi.mock("./utils/toAdServerArgs", () => ({
   toAdServerArgs: vi.fn((args) => args),
 }));
 
-vi.mock("./hydration/intelligentSearchFetcher/fetchWithIS", () => ({
-  fetchWithIS: vi.fn(),
+vi.mock("./hydration/intelligentSearch", () => ({
+  intelligentSearchFetcher: vi.fn(),
+  intelligentSearchMatcher: vi.fn(),
 }));
-
-vi.mock(
-  "./hydration/intelligentSearchFetcher/searchProductMatchesOffer",
-  () => ({
-    searchProductMatchesOffer: vi.fn(),
-  }),
-);
 
 vi.mock("./hydration/mappers", () => ({
   buildOffers: vi.fn(),
@@ -49,8 +45,8 @@ describe("facade", () => {
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
   const mockedGetOffer = vi.mocked(getOffer);
-  const mockedFetchWithIS = vi.mocked(fetchWithIS);
-  const mockedSearchProductMatchesOffer = vi.mocked(searchProductMatchesOffer);
+  const mockedIntelligentSearchFetcher = vi.mocked(intelligentSearchFetcher);
+  const mockedIntelligentSearchMatcher = vi.mocked(intelligentSearchMatcher);
   const mockedBuildOffers = vi.mocked(buildOffers);
   const mockedBuildHydratedProduct = vi.mocked(buildHydratedProduct);
 
@@ -276,8 +272,8 @@ describe("facade", () => {
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
       mockedBuildOffers.mockReturnValue(mockOffers);
       mockedGetOffer.mockReturnValue(mockOffer);
-      mockedFetchWithIS.mockResolvedValue(mockProducts);
-      mockedSearchProductMatchesOffer.mockReturnValue(true);
+      mockedIntelligentSearchFetcher.mockResolvedValue(mockProducts);
+      mockedIntelligentSearchMatcher.mockReturnValue(true);
       mockedBuildHydratedProduct.mockReturnValue({
         product: mockProduct,
         advertisement: {
@@ -294,8 +290,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -307,7 +303,7 @@ describe("facade", () => {
         mockAdServerResponse,
       );
       expect(mockedBuildOffers).toHaveBeenCalledWith(mockAdsByPlacement);
-      expect(mockedFetchWithIS).toHaveBeenCalledWith(
+      expect(mockedIntelligentSearchFetcher).toHaveBeenCalledWith(
         mockOffers,
         mockGetAdsArgs.identity,
       );
@@ -349,8 +345,8 @@ describe("facade", () => {
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
       mockedBuildOffers.mockReturnValue(mockOffers);
       mockedGetOffer.mockReturnValue(mockOffer);
-      mockedFetchWithIS.mockResolvedValue(mockProducts);
-      mockedSearchProductMatchesOffer.mockImplementation((product, offer) =>
+      mockedIntelligentSearchFetcher.mockResolvedValue(mockProducts);
+      mockedIntelligentSearchMatcher.mockImplementation((product, offer) =>
         offer
           ? product.items.some((item) => item.itemId === offer.skuId)
           : false,
@@ -371,8 +367,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -390,13 +386,13 @@ describe("facade", () => {
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue([]);
       mockedBuildOffers.mockReturnValue([]);
-      mockedFetchWithIS.mockResolvedValue([]);
+      mockedIntelligentSearchFetcher.mockResolvedValue([]);
 
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -436,8 +432,8 @@ describe("facade", () => {
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
       mockedBuildOffers.mockReturnValue(mockOffers);
       mockedGetOffer.mockReturnValue(mockOffer);
-      mockedFetchWithIS.mockResolvedValue(mockProducts);
-      mockedSearchProductMatchesOffer.mockReturnValue(true);
+      mockedIntelligentSearchFetcher.mockResolvedValue(mockProducts);
+      mockedIntelligentSearchMatcher.mockReturnValue(true);
       mockedBuildHydratedProduct.mockReturnValue({
         product: productWithMultipleItems,
         advertisement: {
@@ -454,8 +450,8 @@ describe("facade", () => {
       // Act
       const result = await getHydratedAds(
         mockGetAdsArgs,
-        fetchWithIS,
-        searchProductMatchesOffer,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
       );
 
       // Assert
@@ -498,7 +494,11 @@ describe("facade", () => {
 
       // Act & Assert
       await expect(
-        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+        getHydratedAds(
+          mockGetAdsArgs,
+          intelligentSearchFetcher,
+          intelligentSearchMatcher,
+        ),
       ).rejects.toThrow("Ad server error");
     });
 
@@ -508,11 +508,15 @@ describe("facade", () => {
       mockedGetAds.mockResolvedValue({});
       mockedGetSponsoredProductArray.mockReturnValue(mockAdsByPlacement);
       mockedBuildOffers.mockReturnValue(mockOffers);
-      mockedFetchWithIS.mockRejectedValue(error);
+      mockedIntelligentSearchFetcher.mockRejectedValue(error);
 
       // Act & Assert
       await expect(
-        getHydratedAds(mockGetAdsArgs, fetchWithIS, searchProductMatchesOffer),
+        getHydratedAds(
+          mockGetAdsArgs,
+          intelligentSearchFetcher,
+          intelligentSearchMatcher,
+        ),
       ).rejects.toThrow("Search service error");
     });
   });

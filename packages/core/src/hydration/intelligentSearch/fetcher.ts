@@ -13,8 +13,13 @@ import { filterProductsWithValidItems } from "./helpers/filters";
  *
  * It changes the IS response to ensure the products to include only
  * those that match the specified SKUs and sellers.
+ *
+ * @param offers - Array of offers containing SKU and seller information
+ * @param identity - Identity object containing account name
+ * @returns Promise resolving to array of products that match the offers
+ * @public
  */
-export const fetchWithIS: ProductFetcher<SearchProduct> = async (
+export const intelligentSearchFetcher: ProductFetcher<SearchProduct> = async (
   offers: Offer[],
   { accountName }: Identity,
 ) => {

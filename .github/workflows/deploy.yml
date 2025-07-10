@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - docs/guide
 
 jobs:
   build:
@@ -27,13 +28,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm build
+      - name: Build all
+        run: |
+          pnpm build --filter ads-playground
+          pnpm build --filter ads-docs
+
+      - name: Combine docs and playground builds
+        run: |
+          mkdir -p combined
+          cp -r packages/ads-docs/build/* combined/
+          mkdir -p combined/playground
+          cp -r packages/playground/dist/* combined/playground/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./packages/playground/dist
+          path: ./combined
 
   deploy:
     needs: build

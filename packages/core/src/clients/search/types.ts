@@ -40,6 +40,10 @@ export interface First {
   index: number;
 }
 
+/**
+ * Product object from Intelligent Search API
+ * @public
+ */
 export interface Product {
   cacheId: string;
   productId: string;
@@ -67,11 +71,19 @@ export interface Product {
   deliveryPromisesBadges: object[];
 }
 
+/**
+ * Cluster highlight information
+ * @public
+ */
 export interface ClusterHighlight {
   id: string;
   name: string;
 }
 
+/**
+ * Product item (SKU) information
+ * @public
+ */
 export interface Item {
   sellers: Seller[];
   images: Image[];
@@ -91,6 +103,10 @@ export interface Item {
   attributes: object[];
 }
 
+/**
+ * Product image information
+ * @public
+ */
 export interface Image {
   imageId: string;
   cacheId: string;
@@ -100,11 +116,19 @@ export interface Image {
   imageUrl: string;
 }
 
+/**
+ * Reference ID information
+ * @public
+ */
 export interface ReferenceID {
   Key: string;
   Value: string;
 }
 
+/**
+ * Product seller information
+ * @public
+ */
 export interface Seller {
   sellerId: string;
   sellerName: string;
@@ -113,6 +137,10 @@ export interface Seller {
   commertialOffer: CommertialOffer;
 }
 
+/**
+ * Commercial offer information for a product
+ * @public
+ */
 export interface CommertialOffer {
   DeliverySlaSamplesPerRegion: object;
   DeliverySlaSamples: object[];
@@ -135,6 +163,10 @@ export interface CommertialOffer {
   teasers: Teaser[];
 }
 
+/**
+ * Installment information for a product
+ * @public
+ */
 export interface Installment {
   Value: number;
   InterestRate: number;
@@ -145,6 +177,10 @@ export interface Installment {
   Name: string;
 }
 
+/**
+ * Teaser information for promotional campaigns
+ * @public
+ */
 export interface Teaser {
   name: string;
   conditions: Conditions;
@@ -152,51 +188,91 @@ export interface Teaser {
   generalValues: object[];
 }
 
+/**
+ * Conditions for promotional campaigns
+ * @public
+ */
 export interface Conditions {
   parameters: Parameter[];
   minimumQuantity: number;
 }
 
+/**
+ * Parameter for promotional campaigns
+ * @public
+ */
 export interface Parameter {
   name: string;
   value: string;
 }
 
+/**
+ * Effects for promotional campaigns
+ * @public
+ */
 export interface Effects {
   parameters: Parameter[];
 }
 
+/**
+ * Product variation information
+ * @public
+ */
 export interface Variation {
   name: string;
   values: string[];
 }
 
+/**
+ * Product price range information
+ * @public
+ */
 export interface PriceRange {
   sellingPrice: Price;
   listPrice: Price;
 }
 
+/**
+ * Price information
+ * @public
+ */
 export interface Price {
   highPrice: number;
   lowPrice: number;
 }
 
+/**
+ * Product property information
+ * @public
+ */
 export interface Property {
   name: string;
   originalName: string;
   values: string[];
 }
 
+/**
+ * SKU specification information
+ * @public
+ */
 export interface SkuSpecification {
   field: Field;
   values: Field[];
 }
 
+/**
+ * Field information
+ * @public
+ */
 export interface Field {
   name: string;
   originalName: string;
 }
 
+/**
+ * Product specification group
+ * @public
+ */
 export interface SpecificationGroup {
   originalName: string;
   name: string;

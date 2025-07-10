@@ -28,7 +28,10 @@ distributing results to child components.
 
 ```jsx
 import { AdsProvider } from "@vtex/ads-react";
-import { fetchWithIS, searchProductMatchesOffer } from "@vtex/ads-core";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "@vtex/ads-core";
 
 const Page = () => {
   return (
@@ -39,8 +42,8 @@ const Page = () => {
       sessionId={sessionId}
       channel={channel}
       hydrationStrategy={{
-        fetcher: fetchWithIS,
-        matcher: searchProductMatchesOffer,
+        fetcher: intelligentSearchFetcher,
+        matcher: intelligentSearchMatcher,
       }}
     >
       <App />
@@ -139,8 +142,8 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
   sessionId={sessionId}
   channel={channel}
   hydrationStrategy={{
-    fetcher: fetchWithIS,
-    matcher: searchProductMatchesOffer,
+    fetcher: intelligentSearchFetcher,
+    matcher: intelligentSearchMatcher,
   }}
   showUniqueAds={true}
 >

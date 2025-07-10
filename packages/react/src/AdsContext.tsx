@@ -3,6 +3,10 @@ import { createContext } from "react";
 import type { Channel } from "@vtex/ads-core/adServer";
 import type { ProductFetcher, ProductMatchesOffer } from "@vtex/ads-core";
 
+/**
+ * Type for the ads context value
+ * @public
+ */
 export interface AdsContextType<TProduct extends object> {
   identity: {
     accountName: string;

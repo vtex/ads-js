@@ -12,8 +12,13 @@ export function Footer() {
             <span className="text-sm text-vtex-gray">Powered by</span>
             <span className="text-sm text-vtex-pink font-medium">VTEX Ads</span>
           </a>
-          <div className="text-sm text-vtex-gray">
-            Build amazing commerce experiences
+          <div className="flex items-center space-x-4">
+            <a
+              href="https://vtex.github.io/ads-js/"
+              className="text-sm text-vtex-pink font-medium"
+            >
+              Documentation
+            </a>
           </div>
         </div>
       </div>

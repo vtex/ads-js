@@ -1,7 +1,7 @@
 {
   "name": "@vtex/ads-core",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -27,5 +27,14 @@
       "import": "./dist/clients/adServer/index.js",
       "types": "./dist/clients/adServer/index.d.ts"
     }
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vtex/ads-js.git",
+    "directory": "packages/ads-core"
+  },
+  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-core#readme"
 }

@@ -5,8 +5,16 @@ import {
   SponsoredProductDetail,
 } from "./clients/adServer";
 
+/**
+ * Record of raw sponsored products grouped by placement
+ * @public
+ */
 export type RawAdsByPlacements = Record<Placement, SponsoredProductDetail[]>;
 
+/**
+ * Response object containing raw advertisements data
+ * @public
+ */
 export type RawAdsResponse = {
   sponsoredProducts: RawAdsByPlacements;
   // TODO: implement other ad responses.
@@ -14,11 +22,19 @@ export type RawAdsResponse = {
   sponsoredBrands: void;
 };
 
+/**
+ * Facet used for filtering search results
+ * @public
+ */
 export interface Facet {
   key: string;
   value: string;
 }
 
+/**
+ * Identity information for ad requests
+ * @public
+ */
 export interface Identity {
   accountName: string;
   publisherId: string;
@@ -27,6 +43,10 @@ export interface Identity {
   channel?: Channel;
 }
 
+/**
+ * Arguments for getting advertisements
+ * @public
+ */
 export interface GetAdsArgs {
   identity: Identity;
   search: {

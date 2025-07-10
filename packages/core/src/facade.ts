@@ -2,8 +2,10 @@ import { getAds } from "./clients/adServer";
 import { getSponsoredProductArray } from "./clients/adServer/mappers";
 import { Product } from "./clients/search";
 import { mergeAdsWithProducts } from "./hydration/mergeAdsWithProducts";
-import { fetchWithIS } from "./hydration/intelligentSearchFetcher/fetchWithIS";
-import { searchProductMatchesOffer } from "./hydration/intelligentSearchFetcher/searchProductMatchesOffer";
+import {
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "./hydration/intelligentSearch";
 import {
   HydratedAdsResponse,
   ProductFetcher,
@@ -19,8 +21,9 @@ import { buildOffers } from "./hydration/mappers";
  * @param args - Targeting arguments to fetch ads.
  * @returns RawAdsResponse - An object where each key is a placement and the
  * value is an array of sponsored products
+ * @public
  */
-export const getRawAds: (_: GetAdsArgs) => Promise<RawAdsResponse> = async (
+export const getRawAds: (args: GetAdsArgs) => Promise<RawAdsResponse> = async (
   args,
 ) => {
   const adServerArgs = toAdServerArgs(args);
@@ -47,32 +50,31 @@ export const getRawAds: (_: GetAdsArgs) => Promise<RawAdsResponse> = async (
 };
 
 /**
- * Fetches and enriches advertisement data with corresponding product details.
+ * Fetches and enriches ad offers with corresponding product details.
  *
  * This function retrieves ads, fetches product information to enrich these ads
  * and then return the search result with the advertisement data.
  *
  * @param args - Targeting arguments to fetch ads.
+ * @param fetcher - Function to fetch product details from given offers.
+ * @param matcher - Function to match products with offers.
  * @returns hydratedAds The sponsored search result consisting of products that
  * are sponsored by the ad server.
+ * @public
  */
 export const getHydratedAds = async <T extends object>(
   args: GetAdsArgs,
-  fetchProducts: ProductFetcher<T>,
-  productMatchesOffer: ProductMatchesOffer<T>,
+  fetcher: ProductFetcher<T>,
+  matcher: ProductMatchesOffer<T>,
 ): Promise<HydratedAdsResponse<T>> => {
   const adServerArgs = toAdServerArgs(args);
   const ads = getSponsoredProductArray(
     await getAds(args.identity.publisherId, adServerArgs),
   );
 
-  const products = await fetchProducts(buildOffers(ads), args.identity);
+  const products = await fetcher(buildOffers(ads), args.identity);
 
-  const mergedResult = mergeAdsWithProducts<T>(
-    products,
-    ads,
-    productMatchesOffer,
-  );
+  const mergedResult = mergeAdsWithProducts<T>(products, ads, matcher);
 
   const response: HydratedAdsResponse<T> = {
     sponsoredProducts: mergedResult,
@@ -90,9 +92,15 @@ export const getHydratedAds = async <T extends object>(
  * Prefer using `getHydratedAds` with a custom fetcher when possible.
  *
  * @param args - Targeting arguments to fetch ads.
+ * @returns Promise resolving to hydrated ads response using Intelligent Search
+ * @public
  */
-export const getISHydratedAdsUncached = (
+export const getHydratedAdsByIS = (
   args: GetAdsArgs,
 ): Promise<HydratedAdsResponse<Product>> => {
-  return getHydratedAds(args, fetchWithIS, searchProductMatchesOffer);
+  return getHydratedAds(
+    args,
+    intelligentSearchFetcher,
+    intelligentSearchMatcher,
+  );
 };
