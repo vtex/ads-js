@@ -82,7 +82,7 @@ const customMatcher = (product, offer) => {
 const hydratedAds = await getHydratedAds(
   adRequest,
   customFetcher,
-  customMatcher
+  customMatcher,
 );
 
 console.log("Hydrated ads:", hydratedAds.sponsoredProducts);
