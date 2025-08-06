@@ -1,21 +1,22 @@
 {
   "name": "@vtex/ads-react",
+  "type": "module",
   "version": "0.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "clean": "rimraf dist",
     "dev": "tsc --watch",
     "check-types": "tsc --noEmit",
     "test": "vitest"
   },
   "dependencies": {
-    "@vtex/ads-core": "workspace:*"
+    "@vtex/ads-core": "0.2.0"
   },
   "devDependencies": {
-    "@faststore/sdk": "^3.0.0",
-    "@types/node": "^22.15.21"
+    "@types/node": "^22.15.21",
+    "tsup": "^8.5.0"
   },
   "publishConfig": {
     "access": "public"

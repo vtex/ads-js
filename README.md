@@ -11,7 +11,6 @@
 [![NPM ads-core](https://img.shields.io/npm/v/@vtex/ads-core?label=ads-core%20npm)](https://ad-server.vtex.systems/swagger-ui/)
 [![NPM ads-react](https://img.shields.io/npm/v/@vtex/ads-react?label=ads-core%20npm)](https://ad-server.vtex.systems/swagger-ui/)
 [![CI](https://github.com/vtex/ads-js/actions/workflows/ci.yml/badge.svg)](https://github.com/vtex/ads-js/actions/workflows/ci.yml)
-https://img.shields.io/badge/documentation-blue
 [![Documentation](https://img.shields.io/badge/documentation-blue)](https://vtex.github.io/ads-js/)
 <!-- prettier-ignore-end -->
 
