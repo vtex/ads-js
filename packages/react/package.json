@@ -12,7 +12,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@vtex/ads-core": "0.2.0"
+    "@vtex/ads-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
