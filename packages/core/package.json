@@ -1,11 +1,11 @@
 {
   "name": "@vtex/ads-core",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "clean": "rimraf dist",
     "dev": "tsc --watch",
     "check-types": "tsc --noEmit",
@@ -16,16 +16,29 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./search": {
+      "types": "./dist/clients/search/index.d.ts",
       "import": "./dist/clients/search/index.js",
-      "types": "./dist/clients/search/index.d.ts"
+      "require": "./dist/clients/search/index.js"
     },
     "./adServer": {
+      "types": "./dist/clients/adServer/index.d.ts",
       "import": "./dist/clients/adServer/index.js",
-      "types": "./dist/clients/adServer/index.d.ts"
+      "require": "./dist/clients/adServer/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "adServer": [
+        "./dist/clients/adServer/index.d.ts"
+      ],
+      "search": [
+        "./dist/clients/search/index.d.ts"
+      ]
     }
   },
   "publishConfig": {
@@ -36,5 +49,8 @@
     "url": "https://github.com/vtex/ads-js.git",
     "directory": "packages/ads-core"
   },
-  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-core#readme"
+  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-core#readme",
+  "devDependencies": {
+    "tsup": "^8.5.0"
+  }
 }
