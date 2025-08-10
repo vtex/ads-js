@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.3
+
+### Patch Changes
+
+- 887a4e2: Fix dependency version
+
 ## 0.2.2
 
 ### Patch Changes
