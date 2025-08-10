@@ -1,18 +1,37 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsup"
 
-export default defineConfig({
-  entry: [
-    "src/index.ts",
-    "src/clients/adServer/index.ts",
-    "src/clients/search/index.ts",
-  ],
-  format: ["esm"],
-  dts: true,
-  sourcemap: true,
-  outDir: "dist",
-  outExtension: () => ({ js: ".js", dts: ".d.ts" }),
-  clean: true,
-  target: "es2020",
-  splitting: false,
-  bundle: true,
-});
+export default defineConfig([
+  // Modern bundle: ESM + ES2020
+  {
+    entry: [
+      "src/index.ts",
+      "src/clients/adServer/index.ts",
+      "src/clients/search/index.ts",
+    ],
+    format: ["esm"],
+    target: "es2020",
+    dts: true,
+    sourcemap: true,
+    outDir: "dist/esm",
+    clean: false,
+    bundle: true,
+    splitting: false,
+  },
+  // Legacy bundle: CJS + ES5
+  {
+    entry: [
+      "src/index.ts",
+      "src/clients/adServer/index.ts",
+      "src/clients/search/index.ts",
+    ],
+    format: ["cjs"],
+    target: "es5",
+    // reuse the same .d.ts from modern build
+    dts: false,
+    sourcemap: true,
+    outDir: "dist/cjs",
+    clean: true,
+    bundle: true,
+    splitting: false,
+  },
+])
