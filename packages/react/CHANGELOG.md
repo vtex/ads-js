@@ -1,5 +1,12 @@
 # @vtex/ads-react
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [38d0b96]
+  - @vtex/ads-core@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

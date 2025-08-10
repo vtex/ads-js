@@ -1,5 +1,11 @@
 # @vtex/ads-core
 
+## 0.2.2
+
+### Patch Changes
+
+- 38d0b96: Add support for CJS build
+
 ## 0.2.1
 
 ### Patch Changes
