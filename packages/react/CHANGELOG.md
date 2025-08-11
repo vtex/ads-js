@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.4-beta.6
+
+### Patch Changes
+
+- 5b5cc0f: Bump bersion
+
 ## 0.2.4-beta.5
 
 ### Patch Changes
