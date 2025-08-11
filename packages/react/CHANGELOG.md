@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.4-beta.1
+
+### Patch Changes
+
+- 6f7e706: Fix return type of AdsContext
+
 ## 0.2.4-beta.0
 
 ### Patch Changes
