@@ -1,7 +1,7 @@
 {
   "name": "@vtex/ads-core",
   "type": "module",
-  "version": "0.2.2",
+  "version": "0.2.3-beta.0",
   "scripts": {
     "build": "tsup",
     "clean": "rimraf dist",

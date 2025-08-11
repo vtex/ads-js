@@ -1,5 +1,11 @@
 # @vtex/ads-core
 
+## 0.2.3-beta.0
+
+### Patch Changes
+
+- 5561258: Fix ads-react CJS build by not including ads-core
+
 ## 0.2.2
 
 ### Patch Changes
