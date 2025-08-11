@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.4-beta.7
+
+### Patch Changes
+
+- 74a70de: Use cross-bundle reference
+
 ## 0.2.4-beta.6
 
 ### Patch Changes
