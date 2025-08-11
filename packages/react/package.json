@@ -1,7 +1,7 @@
 {
   "name": "@vtex/ads-react",
   "type": "module",
-  "version": "0.2.4-beta.3",
+  "version": "0.2.4-beta.4",
   "main": "dist/cjs/index.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -25,7 +25,7 @@
   "peerDependencies": {
     "react": ">=16.9 <19",
     "react-dom": ">=16.9 <19",
-    "@vtex/ads-core": "^0.2.4"
+    "@vtex/ads-core": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@vtex/ads-core": {
