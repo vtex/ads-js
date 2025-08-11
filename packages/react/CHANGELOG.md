@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.4-beta.5
+
+### Patch Changes
+
+- d6abb05: Bump version
+
 ## 0.2.4-beta.4
 
 ### Patch Changes
