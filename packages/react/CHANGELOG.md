@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.2.4-beta.3
+
+### Patch Changes
+
+- b44f58c: Fix peer dependency version
+
 ## 0.2.4-beta.2
 
 ### Patch Changes
