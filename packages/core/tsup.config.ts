@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup"
+import { defineConfig } from "tsup";
 
 export default defineConfig([
   // Modern bundle: ESM + ES2018
@@ -34,4 +34,4 @@ export default defineConfig([
     bundle: true,
     splitting: false,
   },
-])
+]);

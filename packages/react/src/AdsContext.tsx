@@ -27,21 +27,19 @@ export interface AdsContextType<TProduct extends object> {
 // This avoids provider/consumer mismatches when separate bundles import
 // their own copies of this package.
 const globalObject: Record<string | symbol, unknown> =
-  (typeof globalThis !== "undefined" && (globalThis as unknown as object))
+  typeof globalThis !== "undefined" && (globalThis as unknown as object)
     ? (globalThis as unknown as Record<string | symbol, unknown>)
-    : (typeof window !== "undefined"
+    : typeof window !== "undefined"
       ? (window as unknown as Record<string | symbol, unknown>)
-      : (typeof global !== "undefined"
+      : typeof global !== "undefined"
         ? (global as unknown as Record<string | symbol, unknown>)
-        : {}));
+        : {};
 
 const ADS_CONTEXT_SINGLETON_KEY = Symbol.for("vtex.ads.react.context");
 
-const existingContext = globalObject[
-  ADS_CONTEXT_SINGLETON_KEY
-] as ReturnType<
-  typeof createContext<AdsContextType<object> | undefined>
-> | undefined;
+const existingContext = globalObject[ADS_CONTEXT_SINGLETON_KEY] as
+  | ReturnType<typeof createContext<AdsContextType<object> | undefined>>
+  | undefined;
 
 export const AdsContext =
   existingContext ??
