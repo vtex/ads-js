@@ -1,6 +1,6 @@
 import { getHydratedAds } from "@vtex/ads-core";
 import { Facet } from "@vtex/ads-core";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import type { GetAdsArgs, ProductFetcher } from "@vtex/ads-core";
 import type { HydratedSponsoredProduct } from "@vtex/ads-core";
@@ -10,6 +10,7 @@ import type {
   SponsoredProductDetail,
 } from "@vtex/ads-core/adServer";
 import { AdsContext } from "./AdsContext";
+import { detectRuntimeEnv, logByRuntimeEnv } from "./utils/runtime";
 
 /**
  * Props for the useAds hook
@@ -22,6 +23,11 @@ export interface UseAdsProps {
   term?: string;
   selectedFacets?: Facet[];
   skuId?: string;
+  /**
+   * When false, the hook will not request ads and will return
+   * a no-op state. Defaults to true.
+   */
+  enabled?: boolean;
 }
 
 /**
@@ -47,16 +53,14 @@ export interface UseAdsReturn<TProduct extends object>
 /**
  * Fetches and returns hydrated ads
  *
- * It must be used within an AdsProvider component, which supplies the
- * necessary context such as identity and hydration strategy.
+ * If used outside of an `AdsProvider`, this hook degrades gracefully and
+ * returns a no-op result: empty ads, no error, not loading, and a noop refresh.
  *
  * @param props - Configuration object for the ad request including
  * placement, type, amount, and optional search parameters
  *
  * @returns An object containing ads data, loading state, error
  * information, and refresh function
- *
- * @throws Will throw an error if used outside of an AdsProvider.
  *
  * @example
  * ```tsx
@@ -78,27 +82,9 @@ export function useAds<TProduct extends object>({
   term,
   selectedFacets,
   skuId,
+  enabled = true,
 }: UseAdsProps): UseAdsReturn<TProduct> {
   const context = useContext(AdsContext);
-
-  if (!context) {
-    throw new Error("useAds must be used within an AdsProvider");
-  }
-
-  const args: GetAdsArgs = {
-    identity: context.identity,
-    search: {
-      selectedFacets,
-      term,
-      skuId,
-    },
-    placements: {
-      [placement]: {
-        quantity: amount,
-        types: [type],
-      },
-    },
-  };
 
   const selectedFacetsString = selectedFacets
     ? selectedFacets.map((facet) => `${facet.key}:${facet.value}`).join(", ")
@@ -107,21 +93,63 @@ export function useAds<TProduct extends object>({
   const [state, setState] = useState<AdsState<TProduct>>({
     ads: [],
     failed: [],
-    isLoading: true,
+    isLoading: Boolean(context) && enabled,
     error: undefined,
   });
 
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const hasWarnedNoProviderRef = useRef(false);
+  const latestContextRef = useRef(context);
+  // Keep a ref to the latest context to detect late-mounted providers
+  latestContextRef.current = context;
 
   const refresh = () => {
     setRefreshCounter((prev) => (prev + 1) % 100);
   };
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ ads: [], failed: [], isLoading: false, error: undefined });
+      return;
+    }
+
+    if (!context) {
+      // Defer the warning by a tick to allow late-mounted providers in
+      // dynamically composed trees. Only warn if still missing.
+      const timeoutId = setTimeout(() => {
+        if (!hasWarnedNoProviderRef.current && !latestContextRef.current) {
+          hasWarnedNoProviderRef.current = true;
+          const env = detectRuntimeEnv();
+          const message =
+            "[vtex-ads-react] useAds was called without an AdsProvider. " +
+            "Returning a no-op result. Wrap your tree with <AdsProvider>.";
+          logByRuntimeEnv(message, env);
+        }
+      }, 0);
+
+      setState({ ads: [], failed: [], isLoading: false, error: undefined });
+      return () => clearTimeout(timeoutId);
+    }
+
     setState((prev) => ({
       ...prev,
       isLoading: true,
     }));
+
+    const args: GetAdsArgs = {
+      identity: context.identity,
+      search: {
+        selectedFacets,
+        term,
+        skuId,
+      },
+      placements: {
+        [placement]: {
+          quantity: amount,
+          types: [type],
+        },
+      },
+    };
 
     getHydratedAds<TProduct>(
       args,
@@ -151,9 +179,10 @@ export function useAds<TProduct extends object>({
     term,
     selectedFacetsString,
     skuId,
-    context.identity.accountName,
-    context.identity.publisherId,
-    context.hydrationStrategy.key,
+    enabled,
+    context?.identity?.accountName,
+    context?.identity?.publisherId,
+    context?.hydrationStrategy?.key,
     refreshCounter,
   ]);
 

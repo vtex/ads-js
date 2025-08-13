@@ -1,5 +1,27 @@
 # @vtex/ads-core
 
+## 0.3.0
+
+### Minor Changes
+
+- 7562799: Add support for CJS build, `enabled` prop and cross-build context
+
+### Patch Changes
+
+- 5561258: Fix ads-react CJS build by not including ads-core
+
+## 0.2.3-beta.0
+
+### Patch Changes
+
+- 5561258: Fix ads-react CJS build by not including ads-core
+
+## 0.2.2
+
+### Patch Changes
+
+- 38d0b96: Add support for CJS build
+
 ## 0.2.1
 
 ### Patch Changes

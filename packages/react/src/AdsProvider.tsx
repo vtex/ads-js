@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { PropsWithChildren, ReactElement } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
 import { ProductMatchesOffer } from "@vtex/ads-core";
 
@@ -6,7 +6,7 @@ import { ProductMatchesOffer } from "@vtex/ads-core";
  * Props for the AdsProvider component
  * @public
  */
-export type AdsProviderProps<TProduct extends object> = React.PropsWithChildren<
+export type AdsProviderProps<TProduct extends object> = PropsWithChildren<
   AdsContextType<TProduct>
 >;
 
@@ -50,7 +50,7 @@ export function AdsProvider<TProduct extends object>({
   identity,
   hydrationStrategy,
   children,
-}: AdsProviderProps<TProduct>): ReactNode {
+}: AdsProviderProps<TProduct>): ReactElement {
   if (!identity || !hydrationStrategy) {
     throw new Error(
       "AdsProvider requires both identity and hydrationStrategy props",

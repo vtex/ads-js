@@ -9,7 +9,7 @@
     "sourceMap": true,
     "strict": true,
     "types": ["node"],
-    "jsx": "react-jsx",
+    "jsx": "react",
     "lib": ["DOM", "DOM.Iterable", "ESNext", "ES2021.WeakRef"]
   },
   "include": ["src"],

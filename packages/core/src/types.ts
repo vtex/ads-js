@@ -38,7 +38,7 @@ export interface Facet {
 export interface Identity {
   accountName: string;
   publisherId: string;
-  userId: string;
+  userId?: string;
   sessionId: string;
   channel?: Channel;
 }

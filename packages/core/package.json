@@ -1,9 +1,7 @@
 {
   "name": "@vtex/ads-core",
   "type": "module",
-  "version": "0.2.1",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "version": "0.3.0",
   "scripts": {
     "build": "tsup",
     "clean": "rimraf dist",
@@ -12,23 +10,27 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@swc/core": "^1.13.3",
     "cross-fetch": "^4.1.0"
   },
+  "main": "dist/cjs/index.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs.js"
     },
     "./search": {
-      "types": "./dist/clients/search/index.d.ts",
-      "import": "./dist/clients/search/index.js",
-      "require": "./dist/clients/search/index.js"
+      "types": "./dist/esm/clients/search/index.d.ts",
+      "import": "./dist/esm/clients/search/index.js",
+      "require": "./dist/cjs/clients/search/index.js"
     },
     "./adServer": {
-      "types": "./dist/clients/adServer/index.d.ts",
-      "import": "./dist/clients/adServer/index.js",
-      "require": "./dist/clients/adServer/index.js"
+      "types": "./dist/esm/clients/adServer/index.d.ts",
+      "import": "./dist/esm/clients/adServer/index.js",
+      "require": "./dist/cjs/clients/adServer/index.js"
     }
   },
   "typesVersions": {
