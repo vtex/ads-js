@@ -51,7 +51,7 @@ export interface AdRequest {
   term?: string;
   brand_name?: string;
   category_name?: string;
-  user_id: string;
+  user_id?: string;
   session_id: string;
   tags?: string[];
   placements: Partial<Record<Placement, PlacementBody>>;
