@@ -24,18 +24,14 @@
   },
   "peerDependencies": {
     "react": ">=16.9 <19",
-    "react-dom": ">=16.9 <19",
-    "@vtex/ads-core": "workspace:^"
+    "react-dom": ">=16.9 <19"
   },
-  "peerDependenciesMeta": {
-    "@vtex/ads-core": {
-      "optional": false
-    }
+  "dependencies": {
+    "@vtex/ads-core": "workspace:^"
   },
   "devDependencies": {
     "react": "16.14.0",
     "react-dom": "16.14.0",
-    "@vtex/ads-core": "workspace:*",
     "@types/node": "^22.15.21",
     "tsup": "^8.5.0"
   },
