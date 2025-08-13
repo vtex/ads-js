@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.3.0-beta.8
+
+### Minor Changes
+
+- e2956b9: Use ads-core as dependency on ads-react
+
 ## 0.2.4-beta.7
 
 ### Patch Changes
