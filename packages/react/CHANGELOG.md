@@ -1,5 +1,26 @@
 # @vtex/ads-react
 
+## 0.3.0
+
+### Minor Changes
+
+- e2956b9: Use ads-core as dependency on ads-react
+- 7562799: Add support for CJS build, `enabled` prop and cross-build context
+
+### Patch Changes
+
+- d6abb05: Bump version
+- 96c21fc: Fix return type of AdsContext
+- 6f7e706: Fix return type of AdsContext
+- 5561258: Fix ads-react CJS build by not including ads-core
+- 8f3103e: Bump version
+- 5b5cc0f: Bump bersion
+- b44f58c: Fix peer dependency version
+- 74a70de: Use cross-bundle reference
+- Updated dependencies [5561258]
+- Updated dependencies [7562799]
+  - @vtex/ads-core@0.3.0
+
 ## 0.3.0-beta.8
 
 ### Minor Changes
