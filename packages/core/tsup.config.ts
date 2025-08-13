@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig([
-  // Modern bundle: ESM + ES2020
+  // Modern bundle: ESM + ES2018
   {
     entry: [
       "src/index.ts",
@@ -9,7 +9,7 @@ export default defineConfig([
       "src/clients/search/index.ts",
     ],
     format: ["esm"],
-    target: "es2020",
+    target: "es2018",
     dts: true,
     sourcemap: true,
     outDir: "dist/esm",
