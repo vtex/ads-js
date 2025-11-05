@@ -1,7 +1,7 @@
 {
   "name": "@vtex/ads-react",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "main": "dist/cjs/index.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
