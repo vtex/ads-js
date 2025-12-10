@@ -5,12 +5,13 @@
   "scripts": {
     "build": "tsup",
     "clean": "rimraf dist",
-    "dev": "tsc --watch",
+    "dev": "tsc --watch --noEmit",
     "check-types": "tsc --noEmit",
     "test": "vitest"
   },
   "dependencies": {
     "@swc/core": "^1.13.3",
+    "@vtex/diagnostics-web": "^5.1.1",
     "cross-fetch": "^4.1.0"
   },
   "main": "dist/cjs/index.cjs.js",
