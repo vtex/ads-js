@@ -59,8 +59,6 @@ export async function createLogsClient(
 
     const isInitialized = true;
 
-    // vtex.search_index must be included in each log call
-    // to appear in logRecords.attributes
     const defaultLogAttributes: LogAttributes = {
       "vtex.search_index": "ads_sdk",
       ...attributes,

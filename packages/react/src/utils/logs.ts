@@ -4,6 +4,8 @@ import type { LogsClient } from "@vtex/ads-core";
 let logsClientPromise: Promise<LogsClient> | null = null;
 let logsClientInstance: LogsClient | null = null;
 
+const endpoint = "https://stable.vtexobservability.com";
+
 /**
  * Pre-initializes the logs client to ensure it's ready when needed
  * This helps prevent log requests from being cancelled during component unmount
@@ -15,13 +17,10 @@ function preInitializeLogsClient(
     return;
   }
 
-  // If already initialized or initializing, skip
   if (logsClientInstance?.isReady() || logsClientPromise) {
     return;
   }
 
-  // Start initialization in background
-  const endpoint = "http://stable.vtexobservability.com/";
   logsClientPromise = createLogsClient({
     appName: "@vtex/ads-react",
     componentName: "AdsProvider",
@@ -75,7 +74,6 @@ async function getLogsClient(
   }
 
   // Use fixed endpoint for logs
-  const endpoint = "http://stable.vtexobservability.com/";
 
   // Initialize the logs client
   logsClientPromise = createLogsClient({
@@ -109,7 +107,9 @@ export async function logError(
 ): Promise<void> {
   try {
     // Wait for client initialization if needed
+    console.log("Antes do logError");
     const client = await getLogsClient(environment);
+    console.log("Depois do logError");
     if (client) {
       // Always try to send, even if not ready
       // The underlying client may handle queuing
@@ -131,18 +131,8 @@ export function logErrorSync(
   attributes?: Record<string, string | number | boolean>,
   environment: "development" | "production" = "development",
 ): void {
-  // Pre-initialize client if not already done
   preInitializeLogsClient(environment);
-
-  // Start the async log process immediately using Promise.resolve()
-  // This ensures the promise chain starts before component unmounts
-  Promise.resolve().then(() => {
-    logError(message, attributes, environment).catch(() => {
-      // Silently fail - errors are already logged in logError
-    });
-  });
-
-  // Also use setTimeout as a fallback
+  console.log("Vai logar ou não mano????");
   setTimeout(() => {
     logError(message, attributes, environment).catch(() => {
       // Silently fail - errors are already logged in logError

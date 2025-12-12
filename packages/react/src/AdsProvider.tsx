@@ -68,6 +68,7 @@ export function AdsProvider<TProduct extends object>({
   if (!identity) {
     const errorMessage =
       "AdsProvider requires identity prop with accountName, publisherId, and sessionId";
+    console.log("Deveria logar esse erro: identity não está presente");
     logErrorSync(
       errorMessage,
       {
@@ -76,11 +77,15 @@ export function AdsProvider<TProduct extends object>({
       },
       environment,
     );
+    console.log(
+      "Deveria lançar esse erro: identity não está presente Depois do logErrorSync",
+    );
     throw new Error(errorMessage);
   }
 
   if (!identity?.publisherId) {
     const errorMessage = "AdsProvider requires publisherId prop";
+    console.log("Deveria logar esse erro: publisherId não está presente");
     logErrorSync(
       errorMessage,
       {
@@ -89,11 +94,15 @@ export function AdsProvider<TProduct extends object>({
       },
       environment,
     );
+    console.log(
+      "Deveria lançar esse erro: publisherId não está presente Depois do logErrorSync",
+    );
   }
 
   if (!hydrationStrategy) {
     const errorMessage =
       "AdsProvider requires hydrationStrategy prop with fetcher and matcher";
+    console.log("Deveria logar esse erro: hydrationStrategy não está presente");
     logErrorSync(
       errorMessage,
       {
@@ -101,6 +110,9 @@ export function AdsProvider<TProduct extends object>({
         missingProp: "hydrationStrategy",
       },
       environment,
+    );
+    console.log(
+      "Deveria lançar esse erro: hydrationStrategy não está presente Depois do logErrorSync",
     );
     throw new Error(errorMessage);
   }
