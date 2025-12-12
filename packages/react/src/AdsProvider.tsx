@@ -65,6 +65,7 @@ export function AdsProvider<TProduct extends object>({
   children,
   environment = "development",
 }: AdsProviderProps<TProduct>): ReactElement {
+
   if (!identity) {
     const errorMessage =
       "AdsProvider requires identity prop with accountName, publisherId, and sessionId";
@@ -73,6 +74,15 @@ export function AdsProvider<TProduct extends object>({
       missingProp: "identity",
     }, environment);
     throw new Error(errorMessage);
+  }
+
+  if (!identity?.publisherId) {
+    const errorMessage =
+      "AdsProvider requires publisherId prop";
+    logErrorSync(errorMessage, {
+      component: "AdsProvider",
+      missingProp: "publisherId",
+    }, environment);
   }
 
   if (!hydrationStrategy) {

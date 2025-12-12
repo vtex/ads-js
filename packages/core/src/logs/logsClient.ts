@@ -54,7 +54,7 @@ export async function createLogsClient(
         "otlp",
         Config.ExporterProfile.BACKOFFICE,
       ),
-      flushIntervalMs: 1000, // Flush logs every 1 second
+      flushIntervalMs: 100, // Flush logs every 100ms for faster delivery
     });
 
     const isInitialized = true;

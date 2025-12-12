@@ -5,6 +5,41 @@ let logsClientPromise: Promise<LogsClient> | null = null;
 let logsClientInstance: LogsClient | null = null;
 
 /**
+ * Pre-initializes the logs client to ensure it's ready when needed
+ * This helps prevent log requests from being cancelled during component unmount
+ */
+function preInitializeLogsClient(
+  environment: "development" | "production" = "development",
+): void {
+  if (environment === "development") {
+    return;
+  }
+
+  // If already initialized or initializing, skip
+  if (logsClientInstance?.isReady() || logsClientPromise) {
+    return;
+  }
+
+  // Start initialization in background
+  const endpoint = "http://stable.vtexobservability.com/";
+  logsClientPromise = createLogsClient({
+    appName: "@vtex/ads-react",
+    componentName: "AdsProvider",
+    version: "0.3.1",
+    endpoint,
+    enabled: true,
+  });
+
+  logsClientPromise
+    .then((client) => {
+      logsClientInstance = client;
+    })
+    .catch(() => {
+      logsClientPromise = null;
+    });
+}
+
+/**
  * Gets or initializes the logs client
  * Uses a fixed endpoint for VTEX observability
  * @param environment - Environment where the app is running.
@@ -75,10 +110,8 @@ export async function logError(
   try {
     // Wait for client initialization if needed
     const client = await getLogsClient(environment);
-    if (client && client.isReady()) {
-      client.error(message, attributes);
-    } else if (client) {
-      // If client exists but not ready, try to send anyway
+    if (client) {
+      // Always try to send, even if not ready
       // The underlying client may handle queuing
       client.error(message, attributes);
     }
@@ -90,31 +123,29 @@ export async function logError(
 
 /**
  * Synchronous version that logs without blocking
- * Uses setTimeout to avoid blocking the main thread
- * Ensures the log is sent even if client initialization is in progress
+ * Starts the log process immediately to ensure it's sent
+ * Uses microtask queue to avoid blocking the main thread
  */
 export function logErrorSync(
   message: string,
   attributes?: Record<string, string | number | boolean>,
   environment: "development" | "production" = "development",
 ): void {
-  // Use requestIdleCallback if available, otherwise setTimeout
-  // This ensures the log is sent even if client initialization is in progress
-  if (typeof requestIdleCallback !== "undefined") {
-    requestIdleCallback(
-      () => {
-        logError(message, attributes, environment).catch(() => {
-          // Silently fail - errors are already logged in logError
-        });
-      },
-      { timeout: 1000 },
-    );
-  } else {
-    // Fallback to setTimeout with a small delay to allow initialization
-    setTimeout(() => {
-      logError(message, attributes, environment).catch(() => {
-        // Silently fail - errors are already logged in logError
-      });
-    }, 100);
-  }
+  // Pre-initialize client if not already done
+  preInitializeLogsClient(environment);
+
+  // Start the async log process immediately using Promise.resolve()
+  // This ensures the promise chain starts before component unmounts
+  Promise.resolve().then(() => {
+    logError(message, attributes, environment).catch(() => {
+      // Silently fail - errors are already logged in logError
+    });
+  });
+
+  // Also use setTimeout as a fallback
+  setTimeout(() => {
+    logError(message, attributes, environment).catch(() => {
+      // Silently fail - errors are already logged in logError
+    });
+  }, 0);
 }

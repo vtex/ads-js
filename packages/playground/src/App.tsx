@@ -5,7 +5,6 @@ import { PageHeader } from "./components/PageHeader";
 import { ConfigForm } from "./components/ConfigForm";
 import { AdsShowcase } from "./components/AdsShowcase";
 import { ConfigurationRequired } from "./components/ConfigurationRequired";
-import { LogsTest } from "./components/LogsTest";
 import { usePlaygroundConfig } from "./hooks/usePlaygroundConfig";
 
 export function App() {
@@ -32,7 +31,6 @@ export function App() {
                 setConfig={setConfig}
                 onRefresh={handleRefresh}
               />
-              <LogsTest />
             </div>
 
             <div>
