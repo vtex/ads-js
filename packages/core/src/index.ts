@@ -48,3 +48,10 @@ export type {
   Effects,
   Parameter,
 } from "./clients/search/types";
+export { createLogsClient } from "./logs";
+export type {
+  LogsClient,
+  LogsClientConfig,
+  LogLevel,
+  LogAttributes,
+} from "./logs";
