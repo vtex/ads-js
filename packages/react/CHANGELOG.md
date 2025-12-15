@@ -1,5 +1,16 @@
 # @vtex/ads-react
 
+## 0.5.0
+
+### Minor Changes
+
+- a92f76f: Add OTLP log errors
+
+### Patch Changes
+
+- Updated dependencies [a92f76f]
+  - @vtex/ads-core@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
