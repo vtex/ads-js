@@ -1,5 +1,11 @@
 # @vtex/ads-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 6633592: Add OTLP log errors
+
 ## 0.3.1
 
 ### Patch Changes
