@@ -28,7 +28,7 @@ jobs:
           node-version: 20
 
       - name: Clear pnpm cache
-        run: pnpm cache delete
+        run: pnpm --version
 
       - name: Install dependencies
         run: pnpm install
@@ -60,7 +60,7 @@ jobs:
           node-version: 20
 
       - name: Clear pnpm cache
-        run: pnpm cache delete
+        run: pnpm --version
 
       - name: Install Node.js dependencies
         run: pnpm install
