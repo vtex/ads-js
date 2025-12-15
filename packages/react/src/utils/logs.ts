@@ -107,9 +107,7 @@ export async function logError(
 ): Promise<void> {
   try {
     // Wait for client initialization if needed
-    console.log("Antes do logError");
     const client = await getLogsClient(environment);
-    console.log("Depois do logError");
     if (client) {
       // Always try to send, even if not ready
       // The underlying client may handle queuing
@@ -132,7 +130,6 @@ export function logErrorSync(
   environment: "development" | "production" = "development",
 ): void {
   preInitializeLogsClient(environment);
-  console.log("Vai logar ou não mano????");
   setTimeout(() => {
     logError(message, attributes, environment).catch(() => {
       // Silently fail - errors are already logged in logError
