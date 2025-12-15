@@ -1,10 +1,6 @@
 import React from "react";
 
-interface HeaderProps {
-  onNavigateHome?: () => void;
-}
-
-export function Header({ onNavigateHome }: HeaderProps) {
+export function Header() {
   return (
     <header className="bg-white border-b border-vtex-gray-winter">
       <div className="vtex-container">
@@ -23,36 +19,11 @@ export function Header({ onNavigateHome }: HeaderProps) {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-6">
-            <nav className="flex items-center space-x-4">
-              {onNavigateHome && (
-                <button
-                  onClick={onNavigateHome}
-                  className="text-sm text-vtex-pink hover:text-vtex-pink-dark font-medium transition-colors"
-                >
-                  ← Voltar
-                </button>
-              )}
-              <a
-                href="?test-error"
-                className="text-sm text-vtex-pink hover:text-vtex-pink-dark font-medium transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const url = new URL(window.location.href);
-                  url.searchParams.set("test-error", "");
-                  window.history.pushState({}, "", url.toString());
-                  window.dispatchEvent(new PopStateEvent("popstate"));
-                }}
-              >
-                Teste de Erro
-              </a>
-            </nav>
-            <div className="text-right">
-              <p className="text-sm text-vtex-gray">The Enterprise Digital</p>
-              <p className="text-sm text-vtex-pink font-medium -mt-1">
-                Commerce Platform
-              </p>
-            </div>
+          <div className="text-right">
+            <p className="text-sm text-vtex-gray">The Enterprise Digital</p>
+            <p className="text-sm text-vtex-pink font-medium -mt-1">
+              Commerce Platform
+            </p>
           </div>
         </div>
       </div>
