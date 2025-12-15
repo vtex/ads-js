@@ -13,9 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clear pnpm cache
-        run: pnpm cache delete
-
       - name: Check out code
         uses: actions/checkout@v4
         with:
@@ -29,6 +26,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Clear pnpm cache
+        run: pnpm cache delete
 
       - name: Install dependencies
         run: pnpm install
@@ -47,9 +47,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clear pnpm cache
-        run: pnpm cache delete
-
       - name: Check out Git repository
         uses: actions/checkout@v4
 
@@ -61,6 +58,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Clear pnpm cache
+        run: pnpm cache delete
 
       - name: Install Node.js dependencies
         run: pnpm install
