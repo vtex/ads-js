@@ -63,7 +63,7 @@ export function AdsProvider<TProduct extends object>({
   identity,
   hydrationStrategy,
   children,
-  environment = "development",
+  environment = "production",
 }: AdsProviderProps<TProduct>): ReactElement {
   if (!identity) {
     const errorMessage =
