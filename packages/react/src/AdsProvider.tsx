@@ -2,20 +2,14 @@ import React, { PropsWithChildren, ReactElement } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
 import { ProductMatchesOffer } from "@vtex/ads-core";
 import { logErrorSync } from "./utils/logs";
+import { detectRuntimeEnv } from "./utils/runtime";
 
 /**
  * Props for the AdsProvider component
  * @public
  */
 export type AdsProviderProps<TProduct extends object> = PropsWithChildren<
-  AdsContextType<TProduct> & {
-    /**
-     * Environment where the app is running
-     * If set to "production", logs will be sent to the observability endpoint
-     * @default "development"
-     */
-    environment?: "development" | "production";
-  }
+  AdsContextType<TProduct>
 >;
 
 /**
@@ -51,7 +45,6 @@ export type AdsProviderProps<TProduct extends object> = PropsWithChildren<
  *     sessionId: "session456"
  *   \}\}
  *   hydrationStrategy=\{\{ fetcher, matcher \}\}
- *   environment="production"
  * >
  *   <MyApp />
  * </AdsProvider>
@@ -63,8 +56,10 @@ export function AdsProvider<TProduct extends object>({
   identity,
   hydrationStrategy,
   children,
-  environment = "production",
 }: AdsProviderProps<TProduct>): ReactElement {
+  const env = detectRuntimeEnv();
+  const environment = env === "prod" ? "production" : "development";
+
   if (!identity) {
     const errorMessage =
       "AdsProvider requires identity prop with accountName, publisherId, and sessionId";

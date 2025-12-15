@@ -47,7 +47,6 @@ const Page = () => {
         fetcher: intelligentSearchFetcher,
         matcher: intelligentSearchMatcher,
       }}
-      environment="production"
     >
       <App />
     </AdsProvider>
@@ -75,8 +74,6 @@ The `AdsProvider` accepts the following props:
   - `"development"`: Logs will not be sent to the observability endpoint (default)
   - `"production"`: Logs will be sent to the observability endpoint
   - Default: `"development"`
-
-**Note:** By default, logs are **not** sent to prevent accidental log pollution during development. You must explicitly set `environment="production"` to enable log sending to the VTEX observability endpoint.
 
 You only need one `<AdsProvider>` around the subtree where ads will be
 requested.
@@ -173,7 +170,6 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
     fetcher: intelligentSearchFetcher,
     matcher: intelligentSearchMatcher,
   }}
-  environment="production"
   showUniqueAds={true}
 >
   <App />
