@@ -123,12 +123,7 @@ export function useAds<TProduct extends object>({
           const message =
             "[vtex-ads-react] useAds was called without an AdsProvider. " +
             "Returning a no-op result. Wrap your tree with <AdsProvider>.";
-          logByRuntimeEnv(message, env, {
-            type,
-            placement,
-            term: term || "undefined",
-            amount,
-          });
+          logByRuntimeEnv(message, env);
         }
       }, 0);
 
