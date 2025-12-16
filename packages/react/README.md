@@ -36,13 +36,11 @@ import {
 const Page = () => {
   return (
     <AdsProvider
-      identity={{
-        accountName: accountName,
-        publisherId: publisherId,
-        userId: userId,
-        sessionId: sessionId,
-        channel: channel,
-      }}
+      accountName={accountName}
+      publisherId={publisherId}
+      userId={userId}
+      sessionId={sessionId}
+      channel={channel}
       hydrationStrategy={{
         fetcher: intelligentSearchFetcher,
         matcher: intelligentSearchMatcher,
@@ -53,27 +51,6 @@ const Page = () => {
   );
 };
 ```
-
-### Props
-
-The `AdsProvider` accepts the following props:
-
-- **`identity`** (required): An object containing:
-  - `accountName` (string): Your VTEX account name
-  - `publisherId` (string): Publisher identifier
-  - `sessionId` (string): Session identifier
-  - `userId` (string, optional): User identifier
-  - `channel` (string, optional): Channel identifier
-
-- **`hydrationStrategy`** (required): An object containing:
-  - `fetcher`: Function to fetch products based on offers
-  - `matcher`: Function to match products with offers
-  - `key` (optional): Optional key for the strategy
-
-- **`environment`** (optional): Environment where the app is running
-  - `"development"`: Logs will not be sent to the observability endpoint (default)
-  - `"production"`: Logs will be sent to the observability endpoint
-  - Default: `"development"`
 
 You only need one `<AdsProvider>` around the subtree where ads will be
 requested.
@@ -159,13 +136,11 @@ To make ads unique across placements, set the `showUniqueAds` prop on the
 
 ```jsx
 <AdsProvider
-  identity={{
-    accountName: accountName,
-    publisherId: publisherId,
-    userId: userId,
-    sessionId: sessionId,
-    channel: channel,
-  }}
+  accountName={accountName}
+  publisherId={publisherId}
+  userId={userId}
+  sessionId={sessionId}
+  channel={channel}
   hydrationStrategy={{
     fetcher: intelligentSearchFetcher,
     matcher: intelligentSearchMatcher,

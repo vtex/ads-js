@@ -1,8 +1,6 @@
 import React, { PropsWithChildren, ReactElement } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
 import { ProductMatchesOffer } from "@vtex/ads-core";
-import { logErrorSync } from "./utils/logs";
-import { detectRuntimeEnv } from "./utils/runtime";
 
 /**
  * Props for the AdsProvider component
@@ -21,8 +19,8 @@ export type AdsProviderProps<TProduct extends object> = PropsWithChildren<
  * generic type parameter to ensure type consistency between fetcher and
  * matcher functions.
  *
- * @param props - The provider props including children, identity,
- * hydration strategy, and environment
+ * @param props - The provider props including children, identity, and
+ * hydration strategy
  *
  * @returns A ReactNode that provides ads context to its children
  *
@@ -39,12 +37,8 @@ export type AdsProviderProps<TProduct extends object> = PropsWithChildren<
  * const matcher: ProductMatchesOffer<MyProduct> = // ...
  *
  * <AdsProvider
- *   identity=\{\{
- *     accountName: "myaccount",
- *     publisherId: "pub123",
- *     sessionId: "session456"
- *   \}\}
  *   hydrationStrategy=\{\{ fetcher, matcher \}\}
+ *   // ... other props
  * >
  *   <MyApp />
  * </AdsProvider>
@@ -57,47 +51,10 @@ export function AdsProvider<TProduct extends object>({
   hydrationStrategy,
   children,
 }: AdsProviderProps<TProduct>): ReactElement {
-  const env = detectRuntimeEnv();
-  const environment = env === "prod" ? "production" : "development";
-
-  if (!identity) {
-    const errorMessage =
-      "AdsProvider requires identity prop with accountName, publisherId, and sessionId";
-    logErrorSync(
-      errorMessage,
-      {
-        component: "AdsProvider",
-        missingProp: "identity",
-      },
-      environment,
+  if (!identity || !hydrationStrategy) {
+    throw new Error(
+      "AdsProvider requires both identity and hydrationStrategy props",
     );
-    throw new Error(errorMessage);
-  }
-
-  if (!identity?.publisherId) {
-    const errorMessage = "AdsProvider requires publisherId prop";
-    logErrorSync(
-      errorMessage,
-      {
-        component: "AdsProvider",
-        missingProp: "publisherId",
-      },
-      environment,
-    );
-  }
-
-  if (!hydrationStrategy) {
-    const errorMessage =
-      "AdsProvider requires hydrationStrategy prop with fetcher and matcher";
-    logErrorSync(
-      errorMessage,
-      {
-        component: "AdsProvider",
-        missingProp: "hydrationStrategy",
-      },
-      environment,
-    );
-    throw new Error(errorMessage);
   }
 
   return (

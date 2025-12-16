@@ -1,5 +1,3 @@
-import { logErrorSync } from "./logs";
-
 export type RuntimeEnv = "dev" | "prod" | "unknown";
 
 /**
@@ -30,15 +28,8 @@ export function detectRuntimeEnv(): RuntimeEnv {
   }
 }
 
-export function logByRuntimeEnv(
-  message: string,
-  env: RuntimeEnv,
-  details?: Record<string, string | number | boolean>,
-): void {
+export function logByRuntimeEnv(message: string, env: RuntimeEnv): void {
   if (env === "dev" || env === "unknown") {
     console.warn(message);
-  }
-  if (env === "prod") {
-    logErrorSync(message, details, "production");
   }
 }
