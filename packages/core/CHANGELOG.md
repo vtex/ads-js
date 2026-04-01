@@ -1,5 +1,11 @@
 # @vtex/ads-core
 
+## 0.5.1
+
+### Patch Changes
+
+- 8bedc97: Remove unused dependency (`@vtex/diagnostics-web`)
+
 ## 0.5.0
 
 ### Minor Changes
