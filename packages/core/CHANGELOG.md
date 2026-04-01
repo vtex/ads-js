@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- 8bedc97: Remove unused dependency (diagnostics-web)
+- 8bedc97: Remove unused dependency (`@vtex/diagnostics-web`)
 
 ## 0.5.0
 
