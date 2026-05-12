@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ads-js
+  annotations:
+    github.com/project-slug: vtex/ads-js
+spec:
+  type: other
+  lifecycle: unknown
+  owner: te-0059
