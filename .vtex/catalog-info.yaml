@@ -4,7 +4,8 @@ metadata:
   name: ads-js
   annotations:
     github.com/project-slug: vtex/ads-js
+    vtex.com/application-id: T8O9XHQS
 spec:
-  type: other
-  lifecycle: unknown
+  type: tool
+  lifecycle: production
   owner: te-0059
