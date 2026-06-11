@@ -3,20 +3,14 @@ name: Publish from CodeArtifact to npm
 on:
   workflow_dispatch:
     inputs:
-      package:
-        description: "Package to publish"
-        required: true
-        type: choice
-        options:
-          - "@vtex/ads-core"
-          - "@vtex/ads-react"
       version:
-        description: "Package version (e.g. 1.2.3)"
+        description: "Full tag name (e.g. @vtex/ads-core@1.2.3)"
         required: true
         type: string
       environment:
         description: "Environment (production or beta)"
-        required: true
+        required: false
+        default: production
         type: choice
         options:
           - production
@@ -51,6 +45,21 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Parse package name and version from tag
+        id: parse
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.version }}"
+          # Tag format: @vtex/ads-core@0.5.2
+          # Extract package name (everything before the last @)
+          PACKAGE_NAME="${TAG%@*}"
+          # Extract version (everything after the last @)
+          PACKAGE_VERSION="${TAG##*@}"
+
+          echo "package_name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "package_version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+          echo "Parsed: ${PACKAGE_NAME}@${PACKAGE_VERSION}"
+
       - name: Configure npm for CodeArtifact
         run: |
           set -euo pipefail
@@ -72,11 +81,11 @@ jobs:
       - name: Download package from CodeArtifact
         run: |
           set -euo pipefail
-          NPM_PACKAGE_NAME="${{ github.event.inputs.package }}"
-          VERSION="${{ github.event.inputs.version }}"
+          PACKAGE_NAME="${{ steps.parse.outputs.package_name }}"
+          PACKAGE_VERSION="${{ steps.parse.outputs.package_version }}"
 
-          echo "Downloading ${NPM_PACKAGE_NAME}@${VERSION} from CodeArtifact..."
-          npm pack "${NPM_PACKAGE_NAME}@${VERSION}"
+          echo "Downloading ${PACKAGE_NAME}@${PACKAGE_VERSION} from CodeArtifact..."
+          npm pack "${PACKAGE_NAME}@${PACKAGE_VERSION}"
 
           echo "Generated files:"
           ls -1 *.tgz
