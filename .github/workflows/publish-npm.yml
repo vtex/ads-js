@@ -50,7 +50,13 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ github.event.inputs.version }}"
-          # Tag format: @vtex/ads-core@0.5.2
+
+          if [[ ! "$TAG" =~ ^@vtex/(ads-core|ads-react)@[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "Invalid tag format: $TAG"
+            echo "Expected: @vtex/ads-core@1.2.3 or @vtex/ads-react@1.2.3"
+            exit 1
+          fi
+
           # Extract package name (everything before the last @)
           PACKAGE_NAME="${TAG%@*}"
           # Extract version (everything after the last @)

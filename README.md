@@ -106,8 +106,13 @@ This bumps the `package.json` versions and updates `CHANGELOG.md` for each affec
 Create and push a Git tag for each bumped package:
 
 ```bash
-git tag @vtex/ads-core@<version>
-git push origin @vtex/ads-core@<version>
+# Production release
+git tag @vtex/ads-core@1.2.3
+git push origin @vtex/ads-core@1.2.3
+
+# Beta release
+git tag @vtex/ads-core@1.2.3-beta.0
+git push origin @vtex/ads-core@1.2.3-beta.0
 ```
 
 Pushing the tag triggers the `npm-publish-v1` pipeline, which builds the package and publishes it to AWS CodeArtifact.
