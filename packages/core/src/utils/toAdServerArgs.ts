@@ -16,12 +16,14 @@ import { getAdServerContext } from "./getNavigationContext";
 export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
   args: GetAdsArgs,
 ): AdRequest => {
-  const { category, brand, tags } = getParametersFromFacets(
+  const { category, brand, tags, seller } = getParametersFromFacets(
     args.search.selectedFacets,
   );
 
+  const term = args.search.term ?? seller;
+
   const context = getAdServerContext({
-    term: args.search.term,
+    term,
     category,
     brand,
     skuId: args.search.skuId,
@@ -35,7 +37,7 @@ export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
 
     placements: args.placements,
     channel: args.identity.channel,
-    term: args.search.term,
+    term,
     session_id: args.identity.sessionId,
     user_id: args.identity.userId,
     product_sku: args.search.skuId,

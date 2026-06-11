@@ -115,10 +115,28 @@ export const getTagsFromFacets = (selectedFacets?: Facet[]) => {
   })?.map((facet) => `product_cluster/${facet.value}`);
 };
 
+/**
+ * Extracts the seller identifier from selected facets.
+ *
+ * Recognizes keys `"sellerName"` (IS admin redirect) and `"seller"` (native
+ * VTEX seller store URL). Used as a term fallback so seller pages send
+ * `context: "search"` instead of `context: "home"`.
+ *
+ * @param selectedFacets - Raw facets from Intelligent Search
+ * @returns The seller identifier, or `undefined` if not found
+ */
+export const getSellerFromFacets = (selectedFacets?: Facet[]) => {
+  return getAttributeFromFacets({
+    selectedFacets,
+    attributeSynonyms: ["sellerName", "seller"],
+  })?.map((facet) => facet.value)[0];
+};
+
 export interface ParametersFromFacets {
   category?: string;
   brand?: string;
   tags?: string[];
+  seller?: string;
 }
 
 export const getParametersFromFacets: (
@@ -128,4 +146,5 @@ export const getParametersFromFacets: (
     category: getCategoryFromFacets(selectedFacets),
     brand: getBrandFromFacets(selectedFacets),
     tags: getTagsFromFacets(selectedFacets),
+    seller: getSellerFromFacets(selectedFacets),
   }) as ParametersFromFacets;
