@@ -76,3 +76,48 @@ Comprehensive guides & API reference at <https://vtex.github.io/ads-js/docs>.
 
 Spin up the **playground** locally with `pnpm playground:dev` or try it online
 at <https://vtex.github.io/ads-js/>.
+
+## Release & Publishing
+
+This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and the DK CI/CD `npm-publish-v1` pipeline for publishing to npm.
+
+### 1. Create a changeset
+
+After your change is merged, or as part of your PR:
+
+```bash
+pnpm changeset
+```
+
+Select the affected package(s), choose the bump type (`patch` / `minor` / `major`), and describe the change. This generates a file under `.changeset/` that should be committed alongside your code.
+
+### 2. Version packages
+
+Once the changeset PR is merged into `main`:
+
+```bash
+pnpm version-packages
+```
+
+This bumps the `package.json` versions and updates `CHANGELOG.md` for each affected package. Commit and push the result.
+
+### 3. Tag and trigger the pipeline
+
+Create and push a Git tag for each bumped package:
+
+```bash
+git tag @vtex/ads-core@<version>
+git push origin @vtex/ads-core@<version>
+```
+
+Pushing the tag triggers the `npm-publish-v1` pipeline, which builds the package and publishes it to AWS CodeArtifact.
+
+### 4. Publish to npm
+
+After the pipeline completes, go to **Actions → Publish from CodeArtifact to npm** and trigger it manually with:
+
+- **version**: the full tag name (e.g. `@vtex/ads-core@0.5.2`)
+- **CA_TOKEN** and **CA_OWNER**: provided by the pipeline run output
+- **environment**: `production` (default) or `beta`
+
+> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo and the `publish-npm.yml` workflow. This is a one-time setup per package.
