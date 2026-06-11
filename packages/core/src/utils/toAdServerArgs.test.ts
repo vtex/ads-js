@@ -74,4 +74,40 @@ describe("toAdServerArgs — seller page term fallback", () => {
     expect(result.term).toBeUndefined();
     expect(result.context).toBe("category");
   });
+
+  it("does not use seller facet as term when category is also present", () => {
+    const args: GetAdsArgs = {
+      ...baseArgs,
+      search: {
+        term: undefined,
+        selectedFacets: [
+          { key: "category-1", value: "eletronicos" },
+          { key: "seller", value: "ofertec" },
+        ],
+      },
+    };
+
+    const result = toAdServerArgs(args);
+
+    expect(result.term).toBeUndefined();
+    expect(result.context).toBe("category");
+  });
+
+  it("does not use seller facet as term when brand is also present", () => {
+    const args: GetAdsArgs = {
+      ...baseArgs,
+      search: {
+        term: undefined,
+        selectedFacets: [
+          { key: "brand", value: "nike" },
+          { key: "seller", value: "ofertec" },
+        ],
+      },
+    };
+
+    const result = toAdServerArgs(args);
+
+    expect(result.term).toBeUndefined();
+    expect(result.context).toBe("brand_page");
+  });
 });

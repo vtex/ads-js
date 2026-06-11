@@ -20,7 +20,7 @@ export const toAdServerArgs: (_: GetAdsArgs) => AdRequest = (
     args.search.selectedFacets,
   );
 
-  const term = args.search.term ?? seller;
+  const term = args.search.term ?? (!category && !brand ? seller : undefined);
 
   const context = getAdServerContext({
     term,
