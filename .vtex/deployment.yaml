@@ -10,7 +10,7 @@ pipelines:
         - build
       publishViaGithubWorkflow: true
       workflowFile: publish-npm.yml
-      workflowVersion: '{{ ref_name }}'
+      workflowVersion: "{{ ref_name }}"
     when:
       - event: push
         source: tag

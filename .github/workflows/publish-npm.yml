@@ -4,29 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Package to publish'
+        description: "Package to publish"
         required: true
         type: choice
         options:
-          - '@vtex/ads-core'
-          - '@vtex/ads-react'
+          - "@vtex/ads-core"
+          - "@vtex/ads-react"
       version:
-        description: 'Package version (e.g. 1.2.3)'
+        description: "Package version (e.g. 1.2.3)"
         required: true
         type: string
       environment:
-        description: 'Environment (production or beta)'
+        description: "Environment (production or beta)"
         required: true
         type: choice
         options:
           - production
           - beta
       CA_TOKEN:
-        description: 'CodeArtifact Token'
+        description: "CodeArtifact Token"
         required: true
         type: string
       CA_OWNER:
-        description: 'CodeArtifact Domain Owner'
+        description: "CodeArtifact Domain Owner"
         required: true
         type: string
 
@@ -49,7 +49,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: "24"
 
       - name: Configure npm for CodeArtifact
         run: |
