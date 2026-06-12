@@ -93,13 +93,16 @@ Select the affected package(s), choose the bump type (`patch` / `minor` / `major
 
 ### 2. Version packages
 
-Once the changeset PR is merged into `main`:
+Once the changeset PR is merged into `main`, pull the latest and run:
 
 ```bash
+git checkout main && git pull
 pnpm version-packages
 ```
 
-This bumps the `package.json` versions and updates `CHANGELOG.md` for each affected package. Commit and push the result.
+This reads all pending changesets, bumps the `package.json` versions, updates `CHANGELOG.md`, and removes the consumed changeset files.
+
+**Open a separate PR** with this commit — `pnpm version-packages` must run after the changesets land on `main`, so it cannot be part of the same PR as the code change. After this PR is merged, proceed to step 3.
 
 ### 3. Tag and trigger the pipeline
 
