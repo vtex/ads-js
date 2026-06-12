@@ -81,31 +81,24 @@ at <https://vtex.github.io/ads-js/>.
 
 This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and the DK CI/CD `npm-publish-v1` pipeline for publishing to npm.
 
-### 1. Create a changeset
+### 1. Prepare the PR
 
-After your change is merged, or as part of your PR:
+In your feature branch, create the changeset and version in one go:
 
 ```bash
-pnpm changeset
+pnpm changeset        # describe the change and bump type
+pnpm version-packages # bump package.json, update CHANGELOG, delete the changeset file
 ```
 
-Select the affected package(s), choose the bump type (`patch` / `minor` / `major`), and describe the change. This generates a file under `.changeset/` that should be committed alongside your code.
+Open a single PR with everything: code changes, updated `package.json`, updated `CHANGELOG.md`.
 
-### 2. Version packages
+### 2. Tag and trigger the pipeline
 
-Once the changeset PR is merged into `main`:
-
-```bash
-pnpm version-packages
-```
-
-This bumps the `package.json` versions and updates `CHANGELOG.md` for each affected package. Commit and push the result.
-
-### 3. Tag and trigger the pipeline
-
-Create and push a Git tag for each bumped package:
+After the PR is merged, pull `main` and push a Git tag for each bumped package:
 
 ```bash
+git checkout main && git pull
+
 # Production release
 git tag @vtex/ads-core@1.2.3
 git push origin @vtex/ads-core@1.2.3
@@ -117,7 +110,7 @@ git push origin @vtex/ads-core@1.2.3-beta.0
 
 Pushing the tag triggers the `npm-publish-v1` pipeline, which builds the package and publishes it to AWS CodeArtifact.
 
-### 4. Publish to npm
+### 3. Publish to npm
 
 After the pipeline completes, go to **Actions → Publish from CodeArtifact to npm** and trigger it manually with:
 

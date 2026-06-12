@@ -1,5 +1,11 @@
 # @vtex/ads-core
 
+## 0.5.2
+
+### Patch Changes
+
+- fa11fc2: Infer term from sellerName/seller facets when search.term is undefined, so seller pages send context "search" instead of "home"
+
 ## 0.5.1
 
 ### Patch Changes

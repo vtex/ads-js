@@ -1,5 +1,13 @@
 # @vtex/ads-react
 
+## 0.5.1
+
+### Patch Changes
+
+- fa11fc2: Bump @vtex/ads-core to pick up seller page context fix: seller pages now send context "search" instead of "home"
+- Updated dependencies [fa11fc2]
+  - @vtex/ads-core@0.5.2
+
 ## 0.5.0
 
 ### Minor Changes
