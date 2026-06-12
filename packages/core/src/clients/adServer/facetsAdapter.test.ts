@@ -4,6 +4,7 @@ import {
   getCategoryFromFacets,
   getBrandFromFacets,
   getTagsFromFacets,
+  getSellerFromFacets,
 } from "./facetsAdapter";
 import { describe, it, expect } from "vitest";
 
@@ -118,6 +119,37 @@ describe("getTagsFromFacets", () => {
   it("returns undefined if no productClusterIds found", () => {
     const facets: Facet[] = [{ key: "brand", value: "Acme" }];
     const result = getTagsFromFacets(facets);
+    expect(result).toBeUndefined();
+  });
+});
+
+describe("getSellerFromFacets", () => {
+  it("returns seller value from sellerName facet (IS admin redirect)", () => {
+    const facets: Facet[] = [{ key: "sellerName", value: "ofertec" }];
+    const result = getSellerFromFacets(facets);
+    expect(result).toBe("ofertec");
+  });
+
+  it("returns seller value from seller facet (native VTEX seller store)", () => {
+    const facets: Facet[] = [{ key: "seller", value: "shpseller382" }];
+    const result = getSellerFromFacets(facets);
+    expect(result).toBe("shpseller382");
+  });
+
+  it("is case-insensitive for the facet key", () => {
+    const facets: Facet[] = [{ key: "SELLERNAME", value: "ofertec" }];
+    const result = getSellerFromFacets(facets);
+    expect(result).toBe("ofertec");
+  });
+
+  it("returns undefined when no seller facet exists", () => {
+    const facets: Facet[] = [{ key: "category-1", value: "eletronicos" }];
+    const result = getSellerFromFacets(facets);
+    expect(result).toBeUndefined();
+  });
+
+  it("returns undefined when selectedFacets is undefined", () => {
+    const result = getSellerFromFacets(undefined);
     expect(result).toBeUndefined();
   });
 });
