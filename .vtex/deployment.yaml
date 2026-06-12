@@ -1,16 +1,18 @@
-apiVersion: vtex.io/v0
-application: T8O9XHQS
-pipelines:
-  - name: npm-publish-v1
-    parameters:
-      nodeVersion: "24-bookworm"
-      packageManager: pnpm
-      skipInstall: false
-      nodeCommands:
-        - build
-      publishViaGithubWorkflow: true
-      workflowFile: publish-npm.yml
-      workflowVersion: "{{ ref_name }}"
-    when:
-      - event: push
-        source: tag
+- name: ads-js
+  referenceId: T8O9XHQS
+  build:
+    provider: dkcicd
+    pipelines:
+      - name: npm-publish-v1
+        parameters:
+          nodeVersion: "24-bookworm"
+          packageManager: pnpm
+          skipInstall: false
+          nodeCommands:
+            - build
+          publishViaGithubWorkflow: true
+          workflowFile: publish-npm.yml
+          workflowVersion: "{{ ref_name }}"
+        when:
+          - event: push
+            source: tag
