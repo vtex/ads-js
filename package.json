@@ -25,7 +25,12 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.14.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["@swc/core", "core-js", "core-js-pure", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "core-js",
+      "core-js-pure",
+      "esbuild"
+    ]
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
