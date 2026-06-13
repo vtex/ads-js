@@ -2,6 +2,12 @@
   "name": "@vtex/ads-core",
   "type": "module",
   "version": "0.5.2",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rimraf dist",
@@ -10,7 +16,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@swc/core": "^1.13.3",
     "cross-fetch": "^4.1.0"
   },
   "main": "dist/cjs/index.cjs.js",
@@ -53,6 +58,7 @@
   },
   "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-core#readme",
   "devDependencies": {
+    "@swc/core": "^1.13.3",
     "tsup": "^8.5.0"
   }
 }
