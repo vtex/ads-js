@@ -3,6 +3,17 @@
   build:
     provider: dkcicd
     pipelines:
+      - name: node-ci-v2
+        parameters:
+          nodeVersion: "24-bookworm"
+          packageManager: pnpm
+          skipInstall: false
+          nodeCommands:
+            - build
+        when:
+          - event: pull_request
+            source: branch
+
       - name: npm-publish-v1
         parameters:
           nodeVersion: "24-bookworm"
