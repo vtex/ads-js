@@ -1,5 +1,13 @@
 packages:
-  - 'packages/core'
-  - 'packages/react'
-  - 'packages/playground'
-  - 'packages/ads-docs'
+  - "packages/core"
+  - "packages/react"
+  - "packages/playground"
+  - "packages/ads-docs"
+
+onlyBuiltDependencies:
+  - "@swc/core"
+  - core-js
+  - core-js-pure
+  - esbuild
+
+managePackageManagerVersions: false
