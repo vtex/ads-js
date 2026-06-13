@@ -12,7 +12,14 @@
       "import": "./dist/esm/index.js"
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
+    "prebuild": "pnpm --filter @vtex/ads-core run build",
     "build": "tsup",
     "clean": "rimraf dist",
     "dev": "tsc --watch",
