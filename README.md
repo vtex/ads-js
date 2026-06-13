@@ -94,28 +94,29 @@ Open a single PR with everything: code changes, updated `package.json`, updated 
 
 ### 2. Tag and trigger the pipeline
 
-After the PR is merged, pull `main` and push a Git tag for each bumped package:
+After the PR is merged, pull `main` and push a single Git tag for both packages (they are always kept at the same version):
 
 ```bash
 git checkout main && git pull
 
 # Production release
-git tag @vtex/ads-core@1.2.3
-git push origin @vtex/ads-core@1.2.3
+git tag v1.2.3
+git push origin v1.2.3
 
 # Beta release
-git tag @vtex/ads-core@1.2.3-beta.0
-git push origin @vtex/ads-core@1.2.3-beta.0
+git tag v1.2.3-beta.0
+git push origin v1.2.3-beta.0
 ```
 
-Pushing the tag triggers the `npm-publish-v1` pipeline, which builds the package and publishes it to AWS CodeArtifact.
+Pushing the tag triggers two `npm-publish-v1` pipelines in parallel — one for `ads-core` and one for `ads-react` — which build each package and publish them to AWS CodeArtifact.
 
 ### 3. Publish to npm
 
-After the pipeline completes, go to **Actions → Publish from CodeArtifact to npm** and trigger it manually with:
+After both pipelines complete, the DK automatically triggers the corresponding GitHub Actions workflows:
 
-- **version**: the full tag name (e.g. `@vtex/ads-core@0.5.2`)
-- **CA_TOKEN** and **CA_OWNER**: provided by the pipeline run output
-- **environment**: `production` (default) or `beta`
+- **Actions → Publish ads-core to npm** (`publish-core.yml`)
+- **Actions → Publish ads-react to npm** (`publish-react.yml`)
 
-> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo and the `publish-npm.yml` workflow. This is a one-time setup per package.
+Each workflow reads the version from its own `package.json`, downloads the tarball from CodeArtifact, and publishes it to npmjs. The `CA_TOKEN` and `CA_OWNER` inputs are filled automatically by DK. You can also trigger them manually if needed.
+
+> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo — `publish-core.yml` for `@vtex/ads-core` and `publish-react.yml` for `@vtex/ads-react`. This is a one-time setup per package.
