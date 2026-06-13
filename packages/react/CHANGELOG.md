@@ -1,5 +1,11 @@
 # @vtex/ads-react
 
+## 0.5.3
+
+### Patch Changes
+
+- Version bump to retrigger publish pipeline with corrected pack configuration
+
 ## 0.5.2
 
 ### Patch Changes
