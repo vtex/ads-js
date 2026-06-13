@@ -2,10 +2,15 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ads-js
+  description: JavaScript SDK for integrating VTEX Ads into storefronts
+  tags:
+    - typescript
+    - ads
   annotations:
     github.com/project-slug: vtex/ads-js
     vtex.com/application-id: T8O9XHQS
+    vtex.com/platform-flow-id: CommDev#1
 spec:
-  type: tool
+  type: library
   lifecycle: production
   owner: te-0059
