@@ -23,6 +23,9 @@
   "keywords": [],
   "author": "",
   "license": "UNLICENSED",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@swc/core", "core-js", "core-js-pure", "esbuild"]
+  },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.5",
