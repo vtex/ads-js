@@ -3,17 +3,45 @@
   build:
     provider: dkcicd
     pipelines:
-      - name: npm-publish-v1
+      - name: node-ci-v2
         parameters:
           nodeVersion: "24-bookworm"
           packageManager: pnpm
           skipInstall: false
           nodeCommands:
             - build
+        when:
+          - event: pull_request
+            source: branch
+
+      - name: npm-publish-v1
+        parameters:
+          nodeVersion: "24-bookworm"
+          packageManager: pnpm
+          skipInstall: false
+          contextPath: packages/core
+          nodeCommands:
+            - build
           publishViaGithubWorkflow: true
-          workflowFile: publish-npm.yml
+          workflowFile: publish-core.yml
           workflowVersion: "{{ ref_name }}"
         when:
           - event: push
             source: tag
-            regex: ^(ads-core|ads-react)-v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$
+            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$
+
+      - name: npm-publish-v1
+        parameters:
+          nodeVersion: "24-bookworm"
+          packageManager: pnpm
+          skipInstall: false
+          contextPath: packages/react
+          nodeCommands:
+            - build
+          publishViaGithubWorkflow: true
+          workflowFile: publish-react.yml
+          workflowVersion: "{{ ref_name }}"
+        when:
+          - event: push
+            source: tag
+            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$

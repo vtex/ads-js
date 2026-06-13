@@ -1,0 +1,76 @@
+name: Publish ads-react to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (production or beta)"
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - beta
+      CA_TOKEN:
+        description: "CodeArtifact Token"
+        required: true
+        type: string
+      CA_OWNER:
+        description: "CodeArtifact Domain Owner"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CODEARTIFACT_DOMAIN: main
+  CODEARTIFACT_REPOSITORY: internal-npm
+  AWS_REGION: us-east-1
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Read package version
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./packages/react/package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Publishing @vtex/ads-react@${VERSION}"
+
+      - name: Configure npm for CodeArtifact
+        run: |
+          set -euo pipefail
+          CODEARTIFACT_URL="https://${CODEARTIFACT_DOMAIN}-${{ github.event.inputs.CA_OWNER }}.d.codeartifact.${AWS_REGION}.amazonaws.com/npm/${CODEARTIFACT_REPOSITORY}/"
+          npm config set registry "${CODEARTIFACT_URL}"
+          npm config set "//${CODEARTIFACT_DOMAIN}-${{ github.event.inputs.CA_OWNER }}.d.codeartifact.${AWS_REGION}.amazonaws.com/npm/${CODEARTIFACT_REPOSITORY}/:_authToken" "${{ github.event.inputs.CA_TOKEN }}"
+
+      - name: Download package from CodeArtifact
+        run: |
+          set -euo pipefail
+          npm pack "@vtex/ads-react@${{ steps.pkg.outputs.version }}"
+          echo "Downloaded:"
+          ls -1 *.tgz
+
+      - name: Set npm registry to npmjs
+        run: npm config set registry https://registry.npmjs.org
+
+      - name: Publish tarball to npmjs
+        run: |
+          set -euo pipefail
+          TARBALL=$(ls -1 *.tgz | head -n 1)
+          TAG_FLAG=""
+          if [ "${{ github.event.inputs.environment }}" = "beta" ]; then
+            TAG_FLAG="--tag beta"
+          fi
+          npm publish "${TARBALL}" --access public ${TAG_FLAG}
