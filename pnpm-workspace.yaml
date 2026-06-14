@@ -4,10 +4,21 @@ packages:
   - "packages/playground"
   - "packages/ads-docs"
 
+# pnpm@10
 onlyBuiltDependencies:
   - "@swc/core"
   - core-js
   - core-js-pure
   - esbuild
 
+# pnpm@11
+allowBuilds:
+  "@swc/core": true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+
+# pnpm@10: desabilita gerenciamento de versão
 managePackageManagerVersions: false
+# pnpm@11: ignora mismatch de versão (DK instala pnpm@latest, nosso packageManager é pnpm@10.x)
+pmOnFail: ignore
