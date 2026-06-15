@@ -3,6 +3,10 @@ name: Publish ads-react to npm
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: "Version being published (sent by DK pipeline)"
+        required: false
+        type: string
       environment:
         description: "Environment (production or beta)"
         required: false
@@ -40,6 +44,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
+          registry-url: https://registry.npmjs.org
 
       - name: Read package version
         id: pkg
@@ -73,4 +78,4 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" = "beta" ]; then
             TAG_FLAG="--tag beta"
           fi
-          npm publish "${TARBALL}" --access public ${TAG_FLAG}
+          npm publish "${TARBALL}" --access public --provenance ${TAG_FLAG}
