@@ -127,22 +127,22 @@ export function TestAds({
             Hydration Summary
           </h4>
           <div className="flex items-center space-x-6 text-sm">
-            <a
-              href="#"
+            <button
+              type="button"
               className="flex items-center space-x-2"
               onClick={scrollToSucessSection}
             >
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span className="text-vtex-black">{ads.length} successful</span>
-            </a>
-            <a
-              href="#"
+            </button>
+            <button
+              type="button"
               className="flex items-center space-x-2"
               onClick={scrollToFailedSection}
             >
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               <span className="text-vtex-black">{failed.length} failed</span>
-            </a>
+            </button>
           </div>
         </div>
       )}

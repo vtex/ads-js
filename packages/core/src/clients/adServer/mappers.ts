@@ -20,7 +20,7 @@ export const getSponsoredProductArray = (
   adResponse: AdResponse,
 ): AdsByPlacement[] => {
   return Object.entries(adResponse)
-    .filter(([, ads]) => ads instanceof Array)
+    .filter(([, ads]) => Array.isArray(ads))
     .map(
       ([placement, ads]) =>
         [

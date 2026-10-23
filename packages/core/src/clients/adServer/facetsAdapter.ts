@@ -39,7 +39,7 @@ export const getAttributeFromFacets: (
   attributeSynonyms,
   attributePrefix,
 }) => {
-  if (!selectedFacets || !selectedFacets.length) {
+  if (!selectedFacets?.length) {
     return undefined;
   }
 
