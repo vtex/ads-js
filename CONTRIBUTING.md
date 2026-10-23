@@ -34,12 +34,12 @@ pnpm build   # required once: the playground and docs consume the built packages
 | Goal                             | Command               |
 | -------------------------------- | --------------------- |
 | Run the playground               | `pnpm playground:dev` |
-| Run all dev/watch tasks (turbo)  | `pnpm dev`            |
+| Run all dev tasks (turbo)        | `pnpm dev`            |
 | Run the docs site (builds first) | `pnpm docs:start`     |
 
 The playground is served at <http://localhost:5173/ads-js/playground/>. It calls the VTEX ad server, so you need a real `account` and `region` to get ads back.
 
-After changing `packages/core` or `packages/react`, rebuild them (`pnpm build`) for the playground to pick up the changes, or run `pnpm dev` to rebuild in watch mode.
+After changing `packages/core` or `packages/react`, run `pnpm build` so the playground picks up the changes. `pnpm dev` does not do this: it runs `tsc --watch`, which does not update the `dist/esm` and `dist/cjs` bundles (built by `tsup`) that the playground consumes.
 
 ## Quality checks
 
