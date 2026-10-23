@@ -1,25 +1,34 @@
 ---
+# pnpm workspace configuration
+#
+# Lists the monorepo packages and the install settings shared by all of them.
+# Settings for pnpm@10 and pnpm@11 live side by side: local development uses
+# the version pinned in package.json (pnpm@10), while the DK CI/CD pipeline
+# installs the latest pnpm (pnpm@11).
+# See https://pnpm.io/pnpm-workspace_yaml
+
+# Packages included in the workspace
 packages:
   - "packages/core"
   - "packages/react"
   - "packages/playground"
   - "packages/ads-docs"
 
-# pnpm@10
+# pnpm@10: dependencies allowed to run build scripts
 onlyBuiltDependencies:
   - "@swc/core"
   - core-js
   - core-js-pure
   - esbuild
 
-# pnpm@11
+# pnpm@11: dependencies allowed to run build scripts
 allowBuilds:
   "@swc/core": true
   core-js: true
   core-js-pure: true
   esbuild: true
 
-# pnpm@10: desabilita gerenciamento de versão
+# pnpm@10: disable package manager version management
 managePackageManagerVersions: false
-# pnpm@11: ignora mismatch de versão (DK instala pnpm@latest, nosso packageManager é pnpm@10.x)
+# pnpm@11: ignore version mismatch (DK installs pnpm@latest, our packageManager is pnpm@10.x)
 pmOnFail: ignore
