@@ -77,46 +77,6 @@ Comprehensive guides & API reference at <https://vtex.github.io/ads-js/docs>.
 Spin up the **playground** locally with `pnpm playground:dev` or try it online
 at <https://vtex.github.io/ads-js/>.
 
-## Release & Publishing
+## Contributing
 
-This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and the DK CI/CD `npm-publish-v1` pipeline for publishing to npm.
-
-### 1. Prepare the PR
-
-In your feature branch, create the changeset and version in one go:
-
-```bash
-pnpm changeset        # describe the change and bump type
-pnpm version-packages # bump package.json, update CHANGELOG, delete the changeset file
-```
-
-Open a single PR with everything: code changes, updated `package.json`, updated `CHANGELOG.md`.
-
-### 2. Tag and trigger the pipeline
-
-After the PR is merged, pull `main` and push a single Git tag for both packages (they are always kept at the same version):
-
-```bash
-git checkout main && git pull
-
-# Production release
-git tag v1.2.3
-git push origin v1.2.3
-
-# Beta release
-git tag v1.2.3-beta.0
-git push origin v1.2.3-beta.0
-```
-
-Pushing the tag triggers two `npm-publish-v1` pipelines in parallel — one for `ads-core` and one for `ads-react` — which build each package and publish them to AWS CodeArtifact.
-
-### 3. Publish to npm
-
-After both pipelines complete, the DK automatically triggers the corresponding GitHub Actions workflows:
-
-- **Actions → Publish ads-core to npm** (`publish-core.yml`)
-- **Actions → Publish ads-react to npm** (`publish-react.yml`)
-
-Each workflow reads the version from its own `package.json`, downloads the tarball from CodeArtifact, and publishes it to npmjs. The `CA_TOKEN` and `CA_OWNER` inputs are filled automatically by DK. You can also trigger them manually if needed.
-
-> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo — `publish-core.yml` for `@vtex/ads-core` and `publish-react.yml` for `@vtex/ads-react`. This is a one-time setup per package.
+Want to run the project locally, contribute a change or publish a release? See [CONTRIBUTING.md](./CONTRIBUTING.md).
