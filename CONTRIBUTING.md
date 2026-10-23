@@ -17,7 +17,7 @@ This is a **monorepo** managed with [pnpm](https://pnpm.io/) workspaces and [Tur
 
 **Prerequisites**
 
-- Node.js 22 or later (CI runs on Node 22)
+- Node.js 20 (CI runs on Node 20; run `nvm use` to pick it up from `.nvmrc`)
 - pnpm 10.14.0 (pinned in `packageManager`)
 
 ```bash
