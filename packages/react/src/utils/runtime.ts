@@ -8,9 +8,9 @@ export type RuntimeEnv = "dev" | "prod" | "unknown";
  */
 export function detectRuntimeEnv(): RuntimeEnv {
   try {
-    if (typeof window !== "undefined") {
+    if (typeof globalThis.window !== "undefined") {
       const runtime = (
-        window as unknown as {
+        globalThis.window as unknown as {
           __RUNTIME__?: { production?: boolean };
         }
       ).__RUNTIME__;

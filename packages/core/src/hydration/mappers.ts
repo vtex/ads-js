@@ -1,7 +1,6 @@
 import { SponsoredProductDetail } from "../clients/adServer";
-import { AdsByPlacement } from "../clients/adServer/mappers";
+import { AdsByPlacement, getOffer } from "../clients/adServer/mappers";
 import { HydratedSponsoredProduct, Offer } from "./types";
-import { getOffer } from "../clients/adServer/mappers";
 
 export const buildHydratedProduct = <T extends object>(
   product: T,

@@ -12,18 +12,13 @@ export type NavigationContext =
   | "home";
 
 /**
- * Placement identifier for ad positions
+ * Placement identifier for ad positions. Known values include
+ * `search_top_product`, `search_top-shelf_product`, `home_shelf_product`,
+ * `pdp_shelf_product`, `plp_shelf_product`, `autocomplete_product`, and
+ * `search_top_brand`, but any string is accepted.
  * @public
  */
-export type Placement =
-  | "search_top_product"
-  | "search_top-shelf_product"
-  | "home_shelf_product"
-  | "pdp_shelf_product"
-  | "plp_shelf_product"
-  | "autocomplete_product"
-  | "search_top_brand"
-  | string;
+export type Placement = string;
 
 /**
  * Type of advertisement

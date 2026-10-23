@@ -77,7 +77,7 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
 
     if (!hasUserInteracted) return; // Don't update URL during initialization
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.location.search);
 
     if (categoryPath) {
       params.set("categoryPath", categoryPath);
@@ -98,10 +98,10 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
     }
 
     const newUrl = params.toString()
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname;
+      ? `${globalThis.location.pathname}?${params.toString()}`
+      : globalThis.location.pathname;
 
-    window.history.replaceState({}, "", newUrl);
+    globalThis.history.replaceState({}, "", newUrl);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -134,10 +134,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="account-name"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Account Name
             </label>
             <input
+              id="account-name"
               type="text"
               value={localAccountName}
               onChange={(e) => setLocalAccountName(e.target.value)}
@@ -147,10 +151,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="publisher-id"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Publisher ID
             </label>
             <input
+              id="publisher-id"
               type="text"
               value={localPublisherId}
               onChange={(e) => setLocalPublisherId(e.target.value)}
@@ -161,10 +169,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium text-vtex-black">
+          <label
+            htmlFor="hydration-strategy"
+            className="block mb-2 text-sm font-medium text-vtex-black"
+          >
             Hydration Strategy
           </label>
           <select
+            id="hydration-strategy"
             value={localHydrationStrategy}
             onChange={(e) =>
               setLocalHydrationStrategy(e.target.value as HydrationStrategyKey)
@@ -191,10 +203,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="search-term"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Search Term
             </label>
             <input
+              id="search-term"
               type="text"
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
@@ -204,16 +220,20 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="sponsored-count"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Sponsored Count
             </label>
             <input
+              id="sponsored-count"
               type="number"
               min="1"
               max="20"
               value={localSponsoredCount}
               onChange={(e) =>
-                setLocalSponsoredCount(parseInt(e.target.value) || 1)
+                setLocalSponsoredCount(Number.parseInt(e.target.value) || 1)
               }
               placeholder="Number of ads to request"
               className="vtex-input"
@@ -222,10 +242,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
         </div>
 
         <div className="mb-6">
-          <label className="block mb-2 text-sm font-medium text-vtex-black">
+          <label
+            htmlFor="category-path"
+            className="block mb-2 text-sm font-medium text-vtex-black"
+          >
             Category Path
           </label>
           <input
+            id="category-path"
             type="text"
             value={categoryPath}
             onChange={(e) => {
@@ -242,10 +266,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="brand"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Brand
             </label>
             <input
+              id="brand"
               type="text"
               value={brand}
               onChange={(e) => {
@@ -258,10 +286,14 @@ export function ConfigForm({ config, setConfig, onRefresh }: ConfigFormProps) {
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-vtex-black">
+            <label
+              htmlFor="product-cluster-id"
+              className="block mb-2 text-sm font-medium text-vtex-black"
+            >
               Product Cluster ID
             </label>
             <input
+              id="product-cluster-id"
               type="text"
               value={productClusterId}
               onChange={(e) => {
