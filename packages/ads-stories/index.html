@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VTEX Ads Stories - Dev</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0 auto;
+        max-width: 960px;
+        padding: 24px 16px;
+      }
+
+      section {
+        margin-bottom: 32px;
+      }
+
+      .themed {
+        --vtex-ads-story-font-family: Georgia, serif;
+        --vtex-ads-story-color-text: #c2185b;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>VTEX Ads Stories Playground</h1>
+    <p>Source: <strong id="source"></strong></p>
+
+    <section>
+      <h2>Default</h2>
+      <vtex-ads-story></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>With name</h2>
+      <vtex-ads-story name="VTEX Ads"></vtex-ads-story>
+    </section>
+
+    <section class="themed">
+      <h2>Themed with CSS variables</h2>
+      <vtex-ads-story></vtex-ads-story>
+    </section>
+
+    <!--
+      Default: loads the source through Vite (reloads on save).
+      ?cdn: loads the built standalone script from dist/cdn, the same file
+      the CDN serves. Run `pnpm build` first.
+    -->
+    <script type="module">
+      const useCdn = new URLSearchParams(location.search).has("cdn");
+      document.getElementById("source").textContent = useCdn
+        ? "dist/cdn/vtex-ads-stories.js"
+        : "src/cdn.ts";
+
+      if (useCdn) {
+        const script = document.createElement("script");
+        script.src = "/dist/cdn/vtex-ads-stories.js";
+        document.head.appendChild(script);
+      } else {
+        import("/src/cdn.ts");
+      }
+    </script>
+  </body>
+</html>

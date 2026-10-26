@@ -13,10 +13,40 @@ const styles = `
   }
 `;
 
+const DEFAULT_NAME = "world";
+
 export class VtexAdsStoryElement extends BaseElement {
+  static get observedAttributes() {
+    return ["name"];
+  }
+
+  get name(): string {
+    return this.getAttribute("name")?.trim() ?? "";
+  }
+
+  set name(value: string) {
+    this.setAttribute("name", value);
+  }
+
+  private render() {
+    const container = this.shadowRoot?.querySelector("[part='root']");
+    if (!container) return;
+
+    // textContent keeps the name as plain text (no HTML injection).
+    container.textContent = `Hello ${this.name || DEFAULT_NAME}!`;
+  }
+
   connectedCallback() {
-    const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
-    root.innerHTML = `<style>${styles}</style><div part="root">Hello world</div>`;
+    if (!this.shadowRoot) {
+      const root = this.attachShadow({ mode: "open" });
+      root.innerHTML = `<style>${styles}</style><div part="root"></div>`;
+    }
+
+    this.render();
+  }
+
+  attributeChangedCallback() {
+    this.render();
   }
 }
 
