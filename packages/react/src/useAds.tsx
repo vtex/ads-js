@@ -1,9 +1,12 @@
-import { getHydratedAds } from "@vtex/ads-core";
-import { Facet } from "@vtex/ads-core";
+import {
+  getHydratedAds,
+  type Facet,
+  type GetAdsArgs,
+  type HydratedSponsoredProduct,
+  type ProductFetcher,
+} from "@vtex/ads-core";
 import { useContext, useEffect, useRef, useState } from "react";
 
-import type { GetAdsArgs, ProductFetcher } from "@vtex/ads-core";
-import type { HydratedSponsoredProduct } from "@vtex/ads-core";
 import type {
   AdType,
   Placement,

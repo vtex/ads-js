@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { AdsContext, AdsContextType } from "./AdsContext";
 import { ProductMatchesOffer } from "@vtex/ads-core";
 
@@ -51,24 +51,23 @@ export function AdsProvider<TProduct extends object>({
   hydrationStrategy,
   children,
 }: AdsProviderProps<TProduct>): ReactElement {
+  const value = useMemo(
+    () => ({
+      identity: identity,
+      hydrationStrategy: {
+        fetcher: hydrationStrategy?.fetcher,
+        matcher: hydrationStrategy?.matcher as ProductMatchesOffer<object>,
+        key: hydrationStrategy?.key,
+      },
+    }),
+    [identity, hydrationStrategy],
+  );
+
   if (!identity || !hydrationStrategy) {
     throw new Error(
       "AdsProvider requires both identity and hydrationStrategy props",
     );
   }
 
-  return (
-    <AdsContext.Provider
-      value={{
-        identity: identity,
-        hydrationStrategy: {
-          fetcher: hydrationStrategy.fetcher,
-          matcher: hydrationStrategy.matcher as ProductMatchesOffer<object>,
-          key: hydrationStrategy.key,
-        },
-      }}
-    >
-      {children}
-    </AdsContext.Provider>
-  );
+  return <AdsContext.Provider value={value}>{children}</AdsContext.Provider>;
 }

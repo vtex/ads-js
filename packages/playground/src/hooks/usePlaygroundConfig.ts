@@ -15,7 +15,7 @@ export interface PlaygroundConfig {
 export function usePlaygroundConfig() {
   // Initialize state with URL parameters
   const getInitialValues = (): PlaygroundConfig => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.location.search);
 
     // Build initial facets from URL using utility function
     const facetFields = {
@@ -28,7 +28,7 @@ export function usePlaygroundConfig() {
       accountName: params.get("accountName") || "",
       publisherId: params.get("publisherId") || "",
       searchTerm: params.get("searchTerm") || "",
-      sponsoredCount: parseInt(params.get("sponsoredCount") || "4"),
+      sponsoredCount: Number.parseInt(params.get("sponsoredCount") || "4"),
       hydrationStrategy:
         (params.get("hydrationStrategy") as HydrationStrategyKey) ||
         "intelligentSearch",
@@ -42,7 +42,7 @@ export function usePlaygroundConfig() {
   // Update URL when form values change
   useEffect(() => {
     console.log("useEffect config");
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.location.search);
 
     // Update or remove App-level parameters
     if (config.accountName) {
@@ -63,23 +63,23 @@ export function usePlaygroundConfig() {
       params.delete("searchTerm");
     }
 
-    if (config.sponsoredCount !== 4) {
-      params.set("sponsoredCount", config.sponsoredCount.toString());
-    } else {
+    if (config.sponsoredCount === 4) {
       params.delete("sponsoredCount");
+    } else {
+      params.set("sponsoredCount", config.sponsoredCount.toString());
     }
 
-    if (config.hydrationStrategy !== "intelligentSearch") {
-      params.set("hydrationStrategy", config.hydrationStrategy);
-    } else {
+    if (config.hydrationStrategy === "intelligentSearch") {
       params.delete("hydrationStrategy");
+    } else {
+      params.set("hydrationStrategy", config.hydrationStrategy);
     }
 
     const newUrl = params.toString()
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname;
+      ? `${globalThis.location.pathname}?${params.toString()}`
+      : globalThis.location.pathname;
 
-    window.history.replaceState({}, "", newUrl);
+    globalThis.history.replaceState({}, "", newUrl);
   }, [config]);
 
   // Handle browser back/forward button
@@ -88,8 +88,8 @@ export function usePlaygroundConfig() {
       setConfig(getInitialValues());
     };
 
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    globalThis.addEventListener("popstate", handlePopState);
+    return () => globalThis.removeEventListener("popstate", handlePopState);
   }, []);
 
   const handleRefresh = () => {
