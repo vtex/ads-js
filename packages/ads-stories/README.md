@@ -39,3 +39,13 @@ vtex-ads-story {
   --vtex-ads-story-color-text: #1f1f1f;
 }
 ```
+
+## Development
+
+Run from the repository root:
+
+```bash
+pnpm stories:dev
+```
+
+This starts a dev server with `index.html`, reloading on save.
