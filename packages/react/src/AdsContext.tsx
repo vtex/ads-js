@@ -26,7 +26,17 @@ export interface AdsContextType<TProduct extends object> {
 // @vtex/ads-react share the same React Context instance.
 // This avoids provider/consumer mismatches when separate bundles import
 // their own copies of this package.
-const globalObject = globalThis as unknown as Record<string | symbol, unknown>;
+// The build targets es2018, so `globalThis` (ES2020) may be missing in older
+// browsers; fall back to `window`/`global` instead of throwing at import time.
+// NOSONAR: the `window`/`global` fallbacks are intentional.
+const globalObject: Record<string | symbol, unknown> =
+  typeof globalThis === "object" // NOSONAR
+    ? (globalThis as unknown as Record<string | symbol, unknown>)
+    : typeof window === "object" // NOSONAR
+      ? (window as unknown as Record<string | symbol, unknown>)
+      : typeof global === "object" // NOSONAR
+        ? (global as unknown as Record<string | symbol, unknown>)
+        : {};
 
 const ADS_CONTEXT_SINGLETON_KEY = Symbol.for("vtex.ads.react.context");
 
