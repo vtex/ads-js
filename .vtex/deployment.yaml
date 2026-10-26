@@ -10,6 +10,7 @@
           skipInstall: false
           nodeCommands:
             - build
+            - test
         when:
           - event: pull_request
             source: branch
