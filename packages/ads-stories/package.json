@@ -30,7 +30,7 @@
     "dev": "vite",
     "preview:cdn": "tsup && vite --open /?cdn",
     "check-types": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest run --coverage"
   },
   "repository": {
     "type": "git",

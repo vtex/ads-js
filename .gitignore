@@ -5,3 +5,4 @@ node_modules/
 /packages/ads-docs/.docusaurus
 .turbo
 .DS_Store
+coverage/
