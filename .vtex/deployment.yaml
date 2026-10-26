@@ -9,8 +9,8 @@
           packageManager: pnpm
           skipInstall: false
           nodeCommands:
-            - build
-            - test
+            - ci:dkcicd
+          sonarExclusions: "pnpm-lock.yaml,packages/playground/**,**/*test*.ts,**/*test*.tsx,**/*test*.js,**/*test*.jsx,**/coverage,node_modules/**"
         when:
           - event: pull_request
             source: branch
