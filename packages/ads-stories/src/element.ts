@@ -1,9 +1,7 @@
 export const TAG_NAME = "vtex-ads-story";
 
 // Keeps the module importable where HTMLElement doesn't exist (SSR, Node).
-const BaseElement = (
-  typeof HTMLElement === "undefined" ? class {} : HTMLElement
-) as typeof HTMLElement;
+const BaseElement = (globalThis.HTMLElement ?? Object) as typeof HTMLElement;
 
 const styles = `
   :host {
