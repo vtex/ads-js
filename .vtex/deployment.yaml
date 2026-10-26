@@ -8,6 +8,7 @@
           nodeVersion: "24-bookworm"
           packageManager: pnpm
           skipInstall: false
+          shallowClone: false
           nodeCommands:
             - ci:dkcicd
           sonarExclusions: "pnpm-lock.yaml,packages/playground/**,**/*test*.ts,**/*test*.tsx,**/*test*.js,**/*test*.jsx,**/coverage,node_modules/**"
