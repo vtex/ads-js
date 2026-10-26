@@ -30,13 +30,13 @@ describe("vtex-ads-story", () => {
 
   it("renders hello world when no name is given", () => {
     const el = mount();
-    expect(getText(el)).toBe("Hello world");
+    expect(getText(el)).toBe("Hello world!");
     el.remove();
   });
 
   it("renders the name attribute", () => {
     const el = mount({ name: "VTEX" });
-    expect(getText(el)).toBe("Hello VTEX");
+    expect(getText(el)).toBe("Hello VTEX!");
     el.remove();
   });
 
@@ -44,27 +44,27 @@ describe("vtex-ads-story", () => {
     const el = mount({ name: "VTEX" });
 
     el.setAttribute("name", "Ads");
-    expect(getText(el)).toBe("Hello Ads");
+    expect(getText(el)).toBe("Hello Ads!");
 
     (el as VtexAdsStoryElement).name = "Stories";
     expect(el.getAttribute("name")).toBe("Stories");
-    expect(getText(el)).toBe("Hello Stories");
+    expect(getText(el)).toBe("Hello Stories!");
 
     el.removeAttribute("name");
-    expect(getText(el)).toBe("Hello world");
+    expect(getText(el)).toBe("Hello world!");
 
     el.remove();
   });
 
   it("falls back to world when the name is blank", () => {
     const el = mount({ name: "   " });
-    expect(getText(el)).toBe("Hello world");
+    expect(getText(el)).toBe("Hello world!");
     el.remove();
   });
 
   it("renders the name as text, not HTML", () => {
     const el = mount({ name: "<b>bold</b>" });
-    expect(getText(el)).toBe("Hello <b>bold</b>");
+    expect(getText(el)).toBe("Hello <b>bold</b>!");
     expect(el.shadowRoot?.querySelector("b")).toBeNull();
     el.remove();
   });
