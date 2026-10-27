@@ -40,7 +40,19 @@ export class VtexAdsStoryElement extends BaseElement {
       root.innerHTML = `<style>${styles}</style><div part="root"></div>`;
     }
 
+    this.upgradeProperty("name");
     this.render();
+  }
+
+  // A property set before the element is defined (e.g. while the CDN script
+  // loads) becomes an own property that shadows the class getter/setter.
+  // Remove it and set it again so it goes through the setter.
+  private upgradeProperty(prop: "name") {
+    if (!Object.prototype.hasOwnProperty.call(this, prop)) return;
+
+    const value = this[prop];
+    Reflect.deleteProperty(this, prop);
+    this[prop] = value;
   }
 
   attributeChangedCallback() {
@@ -48,9 +60,9 @@ export class VtexAdsStoryElement extends BaseElement {
   }
 }
 
-export function defineVtexAdsStories(tagName: string = TAG_NAME) {
+export function defineVtexAdsStories() {
   if (typeof customElements === "undefined") return;
-  if (customElements.get(tagName)) return;
+  if (customElements.get(TAG_NAME)) return;
 
-  customElements.define(tagName, VtexAdsStoryElement);
+  customElements.define(TAG_NAME, VtexAdsStoryElement);
 }

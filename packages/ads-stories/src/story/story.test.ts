@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterEach } from "vitest";
-import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./element";
+import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
 
 function mount(attributes: Record<string, string> = {}) {
   const el = document.createElement(TAG_NAME);

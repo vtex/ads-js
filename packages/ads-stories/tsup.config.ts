@@ -20,7 +20,9 @@ export default defineConfig([
     entry: ["src/index.ts"],
     format: ["cjs"],
     target: "es2018",
-    dts: false,
+    // Emits index.d.cts: CJS consumers need CJS declarations, since this
+    // package is "type": "module" and index.d.ts is read as ESM.
+    dts: true,
     sourcemap: true,
     outDir: "dist/cjs",
     clean: false,
