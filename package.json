@@ -8,13 +8,15 @@
     "check-types": "tsc --noEmit",
     "build": "turbo build",
     "clean": "turbo clean",
-    "test": "turbo run test",
+    "test": "vitest run",
+    "test:watch": "vitest --coverage.enabled=false",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "autoformat": "pnpm format:write && pnpm lint:fix",
     "playground:dev": "cd packages/playground && pnpm dev",
+    "stories:dev": "cd packages/ads-stories && pnpm dev",
     "docs:start": "pnpm build && cd packages/ads-docs && pnpm start",
     "changeset": "changeset",
     "version-packages": "changeset version",
@@ -31,6 +33,7 @@
     "@eslint/js": "^9.27.0",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.2",
+    "@vitest/coverage-v8": "^3.2.7",
     "concurrently": "^9.1.2",
     "docusaurus-plugin-typedoc": "^1.4.0",
     "eslint": "^9.26.0",
@@ -38,7 +41,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.1",
     "globals": "^16.2.0",
-    "happy-dom": "^17.6.3",
+    "jsdom": "^29.1.1",
     "prettier": "^3.5.3",
     "react": "^18.0.0",
     "rimraf": "^6.0.1",
@@ -47,6 +50,6 @@
     "typedoc-plugin-markdown": "^4.7.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.0",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.7"
   }
 }

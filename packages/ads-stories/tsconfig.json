@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "types": ["node"],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

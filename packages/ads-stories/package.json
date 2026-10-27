@@ -1,0 +1,52 @@
+{
+  "name": "@vtex/ads-stories",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "VTEX Ads Stories web component",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./cdn": "./dist/cdn/vtex-ads-stories.js"
+  },
+  "sideEffects": [
+    "./dist/cdn/*"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "clean": "rimraf dist",
+    "dev": "vite",
+    "preview:cdn": "tsup && vite --open /?cdn",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest --coverage.enabled=false"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vtex/ads-js.git",
+    "directory": "packages/ads-stories"
+  },
+  "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-stories#readme",
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsup": "^8.5.0",
+    "vite": "^5.0.0"
+  }
+}

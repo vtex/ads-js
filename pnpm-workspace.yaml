@@ -11,6 +11,7 @@
 packages:
   - "packages/core"
   - "packages/react"
+  - "packages/ads-stories"
   - "packages/playground"
   - "packages/ads-docs"
 
