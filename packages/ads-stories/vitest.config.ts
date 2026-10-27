@@ -8,6 +8,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       name: "ads-stories",
+      environment: "jsdom",
       coverage: { include: ["src/**/*.{js,jsx,ts,tsx}"] },
     },
   }),

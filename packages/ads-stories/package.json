@@ -41,7 +41,6 @@
   "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-stories#readme",
   "devDependencies": {
     "@types/node": "^22.15.21",
-    "happy-dom": "^17.6.3",
     "tsup": "^8.5.0",
     "vite": "^5.0.0"
   }
