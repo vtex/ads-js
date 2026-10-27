@@ -7,29 +7,11 @@ including VTEX IO, FastStore and non-VTEX storefronts.
 
 ## npm
 
-```bash
-npm install @vtex/ads-stories
-```
-
-```javascript
-import { defineVtexAdsStories } from "@vtex/ads-stories";
-
-defineVtexAdsStories();
-```
-
-Importing the package has no side effects; call `defineVtexAdsStories()` to
-register `<vtex-ads-story>`. Both ESM (`import`) and CJS (`require`) builds
-are published.
+WIP: To be defined
 
 ## CDN
 
-The standalone script registers the element on load:
-
-```html
-<script src="https://<cdn>/@vtex/ads-stories@<version>/dist/cdn/vtex-ads-stories.js"></script>
-
-<vtex-ads-story></vtex-ads-story>
-```
+WIP: To be defined
 
 ## Customization
 
