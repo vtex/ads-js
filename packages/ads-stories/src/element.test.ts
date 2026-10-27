@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterEach } from "vitest";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./element";
 
 function mount(attributes: Record<string, string> = {}) {
@@ -20,6 +20,10 @@ describe("vtex-ads-story", () => {
     defineVtexAdsStories();
   });
 
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
   it("registers the custom element", () => {
     expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryElement);
   });
@@ -31,13 +35,11 @@ describe("vtex-ads-story", () => {
   it("renders hello world when no name is given", () => {
     const el = mount();
     expect(getText(el)).toBe("Hello world!");
-    el.remove();
   });
 
   it("renders the name attribute", () => {
     const el = mount({ name: "VTEX" });
     expect(getText(el)).toBe("Hello VTEX!");
-    el.remove();
   });
 
   it("updates when the name changes", () => {
@@ -52,20 +54,16 @@ describe("vtex-ads-story", () => {
 
     el.removeAttribute("name");
     expect(getText(el)).toBe("Hello world!");
-
-    el.remove();
   });
 
   it("falls back to world when the name is blank", () => {
     const el = mount({ name: "   " });
     expect(getText(el)).toBe("Hello world!");
-    el.remove();
   });
 
   it("renders the name as text, not HTML", () => {
     const el = mount({ name: "<b>bold</b>" });
     expect(getText(el)).toBe("Hello <b>bold</b>!");
     expect(el.shadowRoot?.querySelector("b")).toBeNull();
-    el.remove();
   });
 });
