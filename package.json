@@ -10,7 +10,6 @@
     "clean": "turbo clean",
     "test": "vitest run",
     "test:watch": "vitest --coverage.enabled=false",
-    "ci:dkcicd": "pnpm build && pnpm test",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --check .",

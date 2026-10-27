@@ -10,7 +10,8 @@
           skipInstall: false
           shallowClone: false
           nodeCommands:
-            - ci:dkcicd
+            - build
+            - test
           sonarExclusions: "pnpm-lock.yaml,packages/playground/**,**/*test*.ts,**/*test*.tsx,**/*test*.js,**/*test*.jsx,**/coverage,node_modules/**"
         when:
           - event: pull_request
