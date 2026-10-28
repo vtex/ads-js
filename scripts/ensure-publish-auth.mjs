@@ -16,13 +16,20 @@
  * writing anything.
  *
  * `prepack` runs for both `pnpm pack` and `pnpm publish`, so lines already
- * present in a target file are not added again. The token is never printed.
+ * present in a target file are not added again. The token is never printed,
+ * and files that receive it are made readable by their owner only.
  *
  * Same approach as vtex/vtex-stack-net (emitters/scripts/ensure-publish-auth).
  * Remove this script if DK's task starts writing the token where pnpm reads
  * it in a workspace.
  */
-import { existsSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
+import {
+  appendFileSync,
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -88,8 +95,11 @@ for (const target of targets) {
     continue;
   }
 
-  mkdirSync(dirname(target), { recursive: true });
-  appendFileSync(target, `\n${missing.join("\n")}\n`);
+  // Owner-only: 0700 for a created directory, 0600 for the file. chmod also
+  // covers a file that already existed (the root .npmrc).
+  mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+  appendFileSync(target, `\n${missing.join("\n")}\n`, { mode: 0o600 });
+  chmodSync(target, 0o600);
 
   const hosts = authLines.map((line) => line.split(":_authToken=")[0]);
   console.log(
