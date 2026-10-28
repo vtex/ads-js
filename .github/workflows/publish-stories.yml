@@ -34,12 +34,23 @@ env:
   AWS_REGION: us-east-1
   NPM_PACKAGE_NAME: "@vtex/ads-stories"
 
+# Workflow inputs are never interpolated into `run:` scripts with ${{ }}; they
+# are passed through step-level `env:` and used as quoted shell variables.
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      # First step: the dispatched CodeArtifact token is a plain input, not a
+      # secret, so it is masked before any step can print it. It is read from
+      # the event payload so this step's own log header doesn't show it.
+      - name: Mask CodeArtifact token
+        run: echo "::add-mask::$(jq -r '.inputs.CA_TOKEN' "$GITHUB_EVENT_PATH")"
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # No later step runs git, so the GitHub token isn't kept in .git/config.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -51,15 +62,15 @@ jobs:
         id: pkg
         run: |
           VERSION=$(node -p "require('./packages/ads-stories/package.json').version")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Publishing @vtex/ads-stories@${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${NPM_PACKAGE_NAME}@${VERSION}"
 
       - name: Configure npm for CodeArtifact
+        env:
+          CODEARTIFACT_TOKEN: ${{ inputs.CA_TOKEN }}
+          CODEARTIFACT_DOMAIN_OWNER: ${{ inputs.CA_OWNER }}
         run: |
           set -euo pipefail
-
-          export CODEARTIFACT_TOKEN="${{ github.event.inputs.CA_TOKEN}}"
-          export CODEARTIFACT_DOMAIN_OWNER="${{ github.event.inputs.CA_OWNER}}"
 
           if [ -z "${CODEARTIFACT_TOKEN:-}" ]; then
             echo "CODEARTIFACT_TOKEN not set"; exit 1
@@ -73,9 +84,10 @@ jobs:
           npm config set "//${CODEARTIFACT_DOMAIN}-${CODEARTIFACT_DOMAIN_OWNER}.d.codeartifact.${AWS_REGION}.amazonaws.com/npm/${CODEARTIFACT_REPOSITORY}/:_authToken" "${CODEARTIFACT_TOKEN}"
 
       - name: Download package from CodeArtifact
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
         run: |
           set -euo pipefail
-          VERSION="${{ steps.pkg.outputs.version }}"
 
           echo "Downloading ${NPM_PACKAGE_NAME}@${VERSION} from CodeArtifact..."
           npm pack "${NPM_PACKAGE_NAME}@${VERSION}"
@@ -90,12 +102,14 @@ jobs:
           npm install -g npm@latest
 
       - name: Publish tarball to npmjs
+        env:
+          PUBLISH_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           set -euo pipefail
 
           TARBALL=$(ls -1 *.tgz | head -n 1)
           TAG_FLAG=""
-          if [ "${{ github.event.inputs.environment }}" = "beta" ]; then
+          if [ "${PUBLISH_ENVIRONMENT}" = "beta" ]; then
             TAG_FLAG="--tag beta"
           fi
           echo "Publishing ${TARBALL} to npmjs..."
