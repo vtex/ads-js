@@ -35,7 +35,7 @@ CommonJS (`require`) builds are published, with type declarations.
 out of the box.
 
 To use `<vtex-ads-story>` in `.tsx` files, enable its JSX types once in your
-project (requires `@types/react` 18 or 19):
+project (requires `@types/react` 18.2.6 or newer, including 19):
 
 ```tsx
 // e.g. in your app's entry file or a .d.ts file
@@ -74,9 +74,12 @@ page. Always pin an exact version: a pinned URL never changes.
   is not exactly the published one. Get the hash for a version with:
 
   ```bash
-  curl -sL https://unpkg.com/@vtex/ads-stories@<version>/dist/cdn/vtex-ads-stories.js \
-    | openssl dgst -sha384 -binary | openssl base64 -A
+  curl -fsSLo vtex-ads-stories.js https://unpkg.com/@vtex/ads-stories@<version>/dist/cdn/vtex-ads-stories.js \
+    && openssl dgst -sha384 -binary vtex-ads-stories.js | openssl base64 -A
   ```
+
+  The hash is only printed if the download succeeded, so a wrong version
+  shows an error instead of a hash of an error page.
 
 - Stores with a Content-Security-Policy must allow the CDN host in
   `script-src` (`https://unpkg.com` or `https://cdn.jsdelivr.net`).

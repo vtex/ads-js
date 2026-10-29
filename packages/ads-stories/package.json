@@ -62,7 +62,7 @@
   },
   "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-stories#readme",
   "peerDependencies": {
-    "@types/react": ">=18"
+    "@types/react": ">=18.2.6"
   },
   "peerDependenciesMeta": {
     "@types/react": {
