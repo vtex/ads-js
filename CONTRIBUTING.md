@@ -116,13 +116,11 @@ Pushing the tag triggers only the `ads-stories` `npm-publish-v1` pipeline. There
 
 #### Test builds of `ads-stories` from a PR
 
-To try `ads-stories` from an open PR before merging, add the `publish-test` label to the PR. `publish-stories.yml` builds the PR branch and publishes `<version>-test.pr<N>.<sha>` (e.g. `0.1.0-test.pr53.3a3f9d2`) to npmjs under the `test` dist-tag, so `latest` is unchanged. Each new push to the labeled PR publishes another version; remove the label to stop. The version and install command are in the run summary:
+Every push to a PR that changes `packages/ads-stories` publishes a test build to the internal CodeArtifact registry (never to npmjs): DK dispatches `publish-stories-test.yml`, which publishes `<version>-test.<sha>` (e.g. `0.1.0-test.3a3f9d2`) under the `test` dist-tag, so `latest` is unchanged. The version is in the run summary; install it with `@vtex` scoped to CodeArtifact:
 
 ```bash
-npm install @vtex/ads-stories@0.1.0-test.pr53.3a3f9d2
+pnpm add @vtex/ads-stories@0.1.0-test.3a3f9d2
 ```
-
-This runs only for PRs from branches in this repo, and only after `@vtex/ads-stories` exists on npm with the trusted publisher configured (see [Adding a new package](#adding-a-new-package)).
 
 ### 3. Publish to npm
 

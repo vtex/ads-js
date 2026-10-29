@@ -23,12 +23,6 @@ on:
         description: "CodeArtifact Domain Owner"
         required: true
         type: string
-  # Test builds from an open PR: add the `publish-test` label to publish
-  # `<version>-test.pr<N>.<sha>` under the `test` dist-tag; every new push to the
-  # labeled PR publishes again. This lives in this file because npm trusted
-  # publishing accepts only the workflow configured on npmjs.com.
-  pull_request:
-    types: [labeled, synchronize]
 
 permissions:
   contents: read
@@ -44,7 +38,6 @@ env:
 # are passed through step-level `env:` and used as quoted shell variables.
 jobs:
   publish:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       # First step: the dispatched CodeArtifact token is a plain input, not a
@@ -121,63 +114,3 @@ jobs:
           fi
           echo "Publishing ${TARBALL} to npmjs..."
           npm publish "${TARBALL}" --access public --provenance ${TAG_FLAG}
-
-  # Builds and publishes straight from the PR branch, without DK or CodeArtifact.
-  # Only same-repo PRs: fork PRs get no OIDC token.
-  publish-test:
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'publish-test') &&
-      (github.event.action != 'labeled' || github.event.label.name == 'publish-test')
-    runs-on: ubuntu-latest
-    concurrency:
-      group: publish-stories-test-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "pnpm"
-          registry-url: https://registry.npmjs.org
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm --filter "${NPM_PACKAGE_NAME}" build
-
-      - name: Set test version
-        id: pkg
-        working-directory: packages/ads-stories
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
-          VERSION="${BASE_VERSION}-test.pr${PR_NUMBER}.${HEAD_SHA:0:7}"
-          npm version "${VERSION}" --no-git-tag-version
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Publish to npmjs
-        working-directory: packages/ads-stories
-        env:
-          VERSION: ${{ steps.pkg.outputs.version }}
-        run: |
-          set -euo pipefail
-          npm install -g npm@latest
-          # `test` dist-tag so `latest` keeps pointing at the last release.
-          npm publish --access public --provenance --tag test
-          echo "Published ${NPM_PACKAGE_NAME}@${VERSION}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Install with: npm install ${NPM_PACKAGE_NAME}@${VERSION}" >> "$GITHUB_STEP_SUMMARY"
