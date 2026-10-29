@@ -60,6 +60,14 @@ export class VtexAdsStoryElement extends BaseElement {
   }
 }
 
+// Types `document.createElement("vtex-ads-story")` and `querySelector` results
+// as VtexAdsStoryElement in any TypeScript project, no framework needed.
+declare global {
+  interface HTMLElementTagNameMap {
+    "vtex-ads-story": VtexAdsStoryElement;
+  }
+}
+
 export function defineVtexAdsStories() {
   if (typeof customElements === "undefined") return;
   if (customElements.get(TAG_NAME)) return;

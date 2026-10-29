@@ -28,6 +28,27 @@ Importing the package has no side effects: nothing is registered until
 rendering, where `defineVtexAdsStories()` does nothing. Both ESM (`import`) and
 CommonJS (`require`) builds are published, with type declarations.
 
+### TypeScript and React
+
+`document.createElement("vtex-ads-story")` and
+`document.querySelector("vtex-ads-story")` are typed as `VtexAdsStoryElement`
+out of the box.
+
+To use `<vtex-ads-story>` in `.tsx` files, enable its JSX types once in your
+project (requires `@types/react` 18 or 19):
+
+```tsx
+// e.g. in your app's entry file or a .d.ts file
+import type {} from "@vtex/ads-stories/react";
+
+export const Ad = () => <vtex-ads-story name="VTEX Ads" />;
+```
+
+Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in `tsconfig.json`.
+Without it, TypeScript reports
+`Property 'vtex-ads-story' does not exist on type 'JSX.IntrinsicElements'`.
+The types are opt-in so projects without React don't need `@types/react`.
+
 ## CDN
 
 WIP: To be defined

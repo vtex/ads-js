@@ -123,6 +123,9 @@ importers:
       '@types/node':
         specifier: ^22.15.21
         version: 22.16.0
+      '@types/react':
+        specifier: ^19.1.2
+        version: 19.1.8
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.13.3)(jiti@1.21.7)(postcss@8.5.32)(typescript@5.8.3)(yaml@2.8.0)

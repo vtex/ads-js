@@ -1,4 +1,11 @@
-import { describe, it, expect, beforeAll, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  expectTypeOf,
+  beforeAll,
+  afterEach,
+} from "vitest";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
 
 function mount(attributes: Record<string, string> = {}) {
@@ -25,6 +32,15 @@ describe("vtex-ads-story", () => {
 
   it("registers the custom element", () => {
     expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryElement);
+  });
+
+  it("types the tag as VtexAdsStoryElement in the DOM", () => {
+    const el = document.createElement("vtex-ads-story");
+    expect(el).toBeInstanceOf(VtexAdsStoryElement);
+    expectTypeOf(el).toEqualTypeOf<VtexAdsStoryElement>();
+    expectTypeOf(
+      document.querySelector("vtex-ads-story"),
+    ).toEqualTypeOf<VtexAdsStoryElement | null>();
   });
 
   it("does not throw when defined twice", () => {
