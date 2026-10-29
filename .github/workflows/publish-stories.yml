@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version being published (sent by DK pipeline); `test` publishes a PR test build"
+        description: "Version being published (sent by DK pipeline)"
         required: false
         type: string
       environment:
@@ -24,8 +24,9 @@ on:
         required: true
         type: string
 
-# No permissions by default; each job declares only what it needs.
-permissions: {}
+permissions:
+  contents: read
+  id-token: write
 
 env:
   CODEARTIFACT_DOMAIN: main
@@ -37,11 +38,7 @@ env:
 # are passed through step-level `env:` and used as quoted shell variables.
 jobs:
   publish:
-    if: inputs.version != 'test'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # npm trusted publishing and provenance
     steps:
       # First step: the dispatched CodeArtifact token is a plain input, not a
       # secret, so it is masked before any step can print it. It is read from
@@ -117,86 +114,3 @@ jobs:
           fi
           echo "Publishing ${TARBALL} to npmjs..."
           npm publish "${TARBALL}" --access public --provenance ${TAG_FLAG}
-
-  # PR test build: DK skips its pack and dispatches this workflow with version
-  # `test` on every push to a PR touching the package, so this job skips unless
-  # the PR carries the `publish-test` label.
-  gate-test:
-    if: inputs.version == 'test'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      run: ${{ steps.gate.outputs.run }}
-    steps:
-      # Fails closed: no PR found for the dispatched sha, or no label, skips.
-      - name: Check publish-test label
-        id: gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          LABELS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[].labels[].name')
-          if printf '%s\n' "${LABELS}" | grep -qx 'publish-test'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No open PR with the \`publish-test\` label for ${GITHUB_SHA}, skipping" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-  # Built from source here so the release version is never taken in CodeArtifact
-  # or npm; kept in this file because npm trusted publishing accepts only the
-  # workflow configured on npmjs.com.
-  publish-test:
-    needs: gate-test
-    if: needs.gate-test.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # npm trusted publishing and provenance
-    steps:
-      - name: Mask CodeArtifact token
-        run: echo "::add-mask::$(jq -r '.inputs.CA_TOKEN' "$GITHUB_EVENT_PATH")"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "pnpm"
-          registry-url: https://registry.npmjs.org
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm --filter "${NPM_PACKAGE_NAME}" build
-
-      - name: Set test version
-        working-directory: packages/ads-stories
-        run: |
-          set -euo pipefail
-          BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
-          # "test-<sha>" is one alphanumeric identifier; with a dot, an all-digit
-          # sha starting with 0 would be an invalid semver numeric identifier.
-          VERSION="${BASE_VERSION}-test-${GITHUB_SHA:0:7}"
-          npm version "${VERSION}" --no-git-tag-version
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-
-      - name: Publish to npmjs
-        working-directory: packages/ads-stories
-        run: |
-          set -euo pipefail
-          npm install -g npm@latest
-          npm publish --access public --provenance --tag test
-          echo "Published ${NPM_PACKAGE_NAME}@${VERSION} to npmjs (dist-tag \`test\`)" >> "$GITHUB_STEP_SUMMARY"
-          echo "Install with: \`npm install ${NPM_PACKAGE_NAME}@${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"

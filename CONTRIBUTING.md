@@ -114,14 +114,6 @@ Pushing the tag triggers only the `ads-stories` `npm-publish-v1` pipeline. There
 
 > The package name goes after the version (`v0.1.0-ads-stories`), not before it: the DK webhook rejects tags that don't start with a semver version, such as `ads-stories-v0.1.0`.
 
-#### Test builds of `ads-stories` from a PR
-
-To try `ads-stories` from an open PR before merging, add the `publish-test` label and push a commit to the PR (DK only fires on pushes, so the label alone starts nothing). On every push touching `packages/ads-stories`, DK skips its pack and dispatches `publish-stories.yml` with version `test`. The workflow skips unless the PR has the label; with it, it builds the PR branch and publishes `<version>-test-<sha>` (e.g. `0.1.0-test-3a3f9d2`) to npmjs under the `test` dist-tag, so `latest` is unchanged. The version is in the run summary.
-
-```bash
-npm install @vtex/ads-stories@0.1.0-test-3a3f9d2
-```
-
 ### 3. Publish to npm
 
 After each pipeline completes, the DK automatically triggers the corresponding GitHub Actions workflow:
