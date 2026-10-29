@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vtex/ads-js.git",
+    "url": "git+https://github.com/vtex/ads-js.git",
     "directory": "packages/ads-stories"
   },
   "homepage": "https://github.com/vtex/ads-js/tree/main/packages/ads-stories#readme",

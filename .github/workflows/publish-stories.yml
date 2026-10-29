@@ -24,9 +24,8 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-  id-token: write
+# No permissions by default; each job declares only what it needs.
+permissions: {}
 
 env:
   CODEARTIFACT_DOMAIN: main
@@ -40,6 +39,9 @@ jobs:
   publish:
     if: inputs.version != 'test'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
     steps:
       # First step: the dispatched CodeArtifact token is a plain input, not a
       # secret, so it is masked before any step can print it. It is read from
@@ -123,6 +125,7 @@ jobs:
     if: inputs.version == 'test'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       run: ${{ steps.gate.outputs.run }}
@@ -149,6 +152,9 @@ jobs:
     needs: gate-test
     if: needs.gate-test.outputs.run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
     steps:
       - name: Mask CodeArtifact token
         run: echo "::add-mask::$(jq -r '.inputs.CA_TOKEN' "$GITHUB_EVENT_PATH")"
@@ -180,7 +186,9 @@ jobs:
         run: |
           set -euo pipefail
           BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
-          VERSION="${BASE_VERSION}-test.${GITHUB_SHA:0:7}"
+          # "test-<sha>" is one alphanumeric identifier; with a dot, an all-digit
+          # sha starting with 0 would be an invalid semver numeric identifier.
+          VERSION="${BASE_VERSION}-test-${GITHUB_SHA:0:7}"
           npm version "${VERSION}" --no-git-tag-version
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 

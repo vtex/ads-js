@@ -69,14 +69,14 @@
       # dispatches publish-stories.yml with workflowVersion "test" on every PR push
       # touching the package (DK can't filter by label); the workflow itself skips
       # unless the PR has the `publish-test` label, then builds the PR branch and
-      # publishes `<version>-test.<sha>` to npm under the `test` dist-tag, so the
+      # publishes `<version>-test-<sha>` to npm under the `test` dist-tag, so the
       # release version is never taken in CodeArtifact or npm.
       - name: npm-publish-v1
         parameters:
           nodeVersion: "24-bookworm"
           packageManager: pnpm
-          skipInstall: "true"
-          skipPackAndPublish: "true"
+          skipInstall: true
+          skipPackAndPublish: true
           contextPath: packages/ads-stories
           nodeCommands:
             - --version
