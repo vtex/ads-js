@@ -6,12 +6,13 @@ Thanks for contributing to the VTEX Ads JavaScript SDK! This guide covers how to
 
 This is a **monorepo** managed with [pnpm](https://pnpm.io/) workspaces and [Turborepo](https://turbo.build/).
 
-| Path                  | Description                                              |
-| --------------------- | -------------------------------------------------------- |
-| `packages/core`       | `@vtex/ads-core` — framework-agnostic SDK                |
-| `packages/react`      | `@vtex/ads-react` — React Provider + hook on top of core |
-| `packages/playground` | Vite app to try the SDK locally                          |
-| `packages/ads-docs`   | Docusaurus documentation site                            |
+| Path                   | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `packages/core`        | `@vtex/ads-core` — framework-agnostic SDK                |
+| `packages/react`       | `@vtex/ads-react` — React Provider + hook on top of core |
+| `packages/ads-stories` | `@vtex/ads-stories` — Story Ads web component            |
+| `packages/playground`  | Vite app to try the SDK locally                          |
+| `packages/ads-docs`    | Docusaurus documentation site                            |
 
 ## Local setup
 
@@ -71,7 +72,18 @@ Open a single PR with everything: code changes, updated `package.json`, updated 
 
 ### 2. Tag and trigger the pipeline
 
-After the PR is merged, pull `main` and push a single Git tag for both packages (they are always kept at the same version):
+Packages are released in two independent groups, each with its own tag format:
+
+| Packages                               | Version                          | Tag                       |
+| -------------------------------------- | -------------------------------- | ------------------------- |
+| `@vtex/ads-core` and `@vtex/ads-react` | Always the same for both         | `v1.2.3`, `v1.2.3-beta.0` |
+| `@vtex/ads-stories`                    | Its own, from its `package.json` | `v0.1.0-ads-stories`      |
+
+The tag version must match the `version` in the released package's `package.json` on the tagged commit.
+
+#### `ads-core` and `ads-react`
+
+After the PR is merged, pull `main` and push a single Git tag for both packages:
 
 ```bash
 git checkout main && git pull
@@ -87,13 +99,39 @@ git push origin v1.2.3-beta.0
 
 Pushing the tag triggers two `npm-publish-v1` pipelines in parallel — one for `ads-core` and one for `ads-react` — which build each package and publish them to AWS CodeArtifact.
 
+#### `ads-stories`
+
+After the PR is merged, pull `main` and push a tag with the `-ads-stories` suffix:
+
+```bash
+git checkout main && git pull
+
+git tag v0.1.0-ads-stories
+git push origin v0.1.0-ads-stories
+```
+
+Pushing the tag triggers only the `ads-stories` `npm-publish-v1` pipeline. There is no beta channel for `ads-stories` yet.
+
+> The package name goes after the version (`v0.1.0-ads-stories`), not before it: the DK webhook rejects tags that don't start with a semver version, such as `ads-stories-v0.1.0`.
+
 ### 3. Publish to npm
 
-After both pipelines complete, the DK automatically triggers the corresponding GitHub Actions workflows:
+After each pipeline completes, the DK automatically triggers the corresponding GitHub Actions workflow:
 
 - **Actions → Publish ads-core to npm** (`publish-core.yml`)
 - **Actions → Publish ads-react to npm** (`publish-react.yml`)
+- **Actions → Publish ads-stories to npm** (`publish-stories.yml`)
 
 Each workflow reads the version from its own `package.json`, downloads the tarball from CodeArtifact, and publishes it to npmjs. The `CA_TOKEN` and `CA_OWNER` inputs are filled automatically by DK. You can also trigger them manually if needed.
 
-> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo — `publish-core.yml` for `@vtex/ads-core` and `publish-react.yml` for `@vtex/ads-react`. This is a one-time setup per package.
+> **Prerequisite:** each package must have a [NPM Trusted Publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com pointing to this repo — `publish-core.yml` for `@vtex/ads-core`, `publish-react.yml` for `@vtex/ads-react` and `publish-stories.yml` for `@vtex/ads-stories`. This is a one-time setup per package.
+
+### Adding a new package
+
+npm only accepts a trusted publisher for a package name that already exists, so the workflow can't publish a brand-new package on its own. Before its first release, someone with publish rights in the `@vtex` npm scope must:
+
+1. Publish a placeholder version (for example `0.0.0-bootstrap.0`, under a `bootstrap` dist-tag so it never becomes `latest`).
+2. Configure the trusted publisher on npmjs.com: organization `vtex`, repository `ads-js`, the package's workflow file, no environment.
+3. After the first real release, deprecate the placeholder version and remove the `bootstrap` dist-tag.
+
+CodeArtifact needs no setup: it creates the package name on the first upload.

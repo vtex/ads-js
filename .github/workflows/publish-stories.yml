@@ -1,0 +1,116 @@
+name: Publish ads-stories to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version being published (sent by DK pipeline)"
+        required: false
+        type: string
+      environment:
+        description: "Environment (production or beta)"
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - beta
+      CA_TOKEN:
+        description: "CodeArtifact Token"
+        required: true
+        type: string
+      CA_OWNER:
+        description: "CodeArtifact Domain Owner"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CODEARTIFACT_DOMAIN: main
+  CODEARTIFACT_REPOSITORY: internal-npm
+  AWS_REGION: us-east-1
+  NPM_PACKAGE_NAME: "@vtex/ads-stories"
+
+# Workflow inputs are never interpolated into `run:` scripts with ${{ }}; they
+# are passed through step-level `env:` and used as quoted shell variables.
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # First step: the dispatched CodeArtifact token is a plain input, not a
+      # secret, so it is masked before any step can print it. It is read from
+      # the event payload so this step's own log header doesn't show it.
+      - name: Mask CodeArtifact token
+        run: echo "::add-mask::$(jq -r '.inputs.CA_TOKEN' "$GITHUB_EVENT_PATH")"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # No later step runs git, so the GitHub token isn't kept in .git/config.
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Read package version
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./packages/ads-stories/package.json').version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${NPM_PACKAGE_NAME}@${VERSION}"
+
+      - name: Configure npm for CodeArtifact
+        env:
+          CODEARTIFACT_TOKEN: ${{ inputs.CA_TOKEN }}
+          CODEARTIFACT_DOMAIN_OWNER: ${{ inputs.CA_OWNER }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CODEARTIFACT_TOKEN:-}" ]; then
+            echo "CODEARTIFACT_TOKEN not set"; exit 1
+          fi
+
+          CODEARTIFACT_URL="https://${CODEARTIFACT_DOMAIN}-${CODEARTIFACT_DOMAIN_OWNER}.d.codeartifact.${AWS_REGION}.amazonaws.com/npm/${CODEARTIFACT_REPOSITORY}/"
+
+          echo "Configuring npm to use ${CODEARTIFACT_URL}"
+
+          npm config set registry "${CODEARTIFACT_URL}"
+          npm config set "//${CODEARTIFACT_DOMAIN}-${CODEARTIFACT_DOMAIN_OWNER}.d.codeartifact.${AWS_REGION}.amazonaws.com/npm/${CODEARTIFACT_REPOSITORY}/:_authToken" "${CODEARTIFACT_TOKEN}"
+
+      - name: Download package from CodeArtifact
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          echo "Downloading ${NPM_PACKAGE_NAME}@${VERSION} from CodeArtifact..."
+          npm pack "${NPM_PACKAGE_NAME}@${VERSION}"
+
+          echo "Generated files:"
+          ls -1 *.tgz
+
+      - name: Set npm registry to npmjs
+        run: |
+          set -euo pipefail
+          npm config set registry https://registry.npmjs.org
+          npm install -g npm@latest
+
+      - name: Publish tarball to npmjs
+        env:
+          PUBLISH_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+
+          TARBALL=$(ls -1 *.tgz | head -n 1)
+          TAG_FLAG=""
+          if [ "${PUBLISH_ENVIRONMENT}" = "beta" ]; then
+            TAG_FLAG="--tag beta"
+          fi
+          echo "Publishing ${TARBALL} to npmjs..."
+          npm publish "${TARBALL}" --access public --provenance ${TAG_FLAG}

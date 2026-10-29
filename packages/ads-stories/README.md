@@ -7,7 +7,26 @@ including VTEX IO, FastStore and non-VTEX storefronts.
 
 ## npm
 
-WIP: To be defined
+```bash
+npm install @vtex/ads-stories
+```
+
+Register the element once, on the client:
+
+```javascript
+import { defineVtexAdsStories } from "@vtex/ads-stories";
+
+defineVtexAdsStories();
+```
+
+```html
+<vtex-ads-story name="VTEX Ads"></vtex-ads-story>
+```
+
+Importing the package has no side effects: nothing is registered until
+`defineVtexAdsStories()` is called. It can be imported during server-side
+rendering, where `defineVtexAdsStories()` does nothing. Both ESM (`import`) and
+CommonJS (`require`) builds are published, with type declarations.
 
 ## CDN
 

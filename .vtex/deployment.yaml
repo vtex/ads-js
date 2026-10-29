@@ -12,7 +12,7 @@
           nodeCommands:
             - build
             - test
-          sonarExclusions: "pnpm-lock.yaml,packages/playground/**,**/*test*.ts,**/*test*.tsx,**/*test*.js,**/*test*.jsx,**/coverage,node_modules/**"
+          sonarExclusions: "pnpm-lock.yaml,packages/playground/**,scripts/**,**/*test*.ts,**/*test*.tsx,**/*test*.js,**/*test*.jsx,**/coverage,node_modules/**"
         when:
           - event: pull_request
             source: branch
@@ -31,7 +31,7 @@
         when:
           - event: push
             source: tag
-            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$
+            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$
 
       - name: npm-publish-v1
         parameters:
@@ -47,4 +47,20 @@
         when:
           - event: push
             source: tag
-            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$
+            regex: ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$
+
+      - name: npm-publish-v1
+        parameters:
+          nodeVersion: "24-bookworm"
+          packageManager: pnpm
+          skipInstall: false
+          contextPath: packages/ads-stories
+          nodeCommands:
+            - build
+          publishViaGithubWorkflow: true
+          workflowFile: publish-stories.yml
+          workflowVersion: "{{ ref_name }}"
+        when:
+          - event: push
+            source: tag
+            regex: ^v[0-9]+\.[0-9]+\.[0-9]+-ads-stories$
