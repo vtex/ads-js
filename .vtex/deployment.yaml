@@ -65,9 +65,10 @@
             source: tag
             regex: ^v[0-9]+\.[0-9]+\.[0-9]+-ads-stories$
 
-      # Test builds of ads-stories from PRs, started by adding the `publish-test`
-      # label. DK skips its own pack/publish and dispatches publish-stories.yml with
-      # workflowVersion "test"; the workflow then builds the PR branch itself and
+      # Test builds of ads-stories from PRs. DK skips its own pack/publish and
+      # dispatches publish-stories.yml with workflowVersion "test" on every PR push
+      # touching the package (DK can't filter by label); the workflow itself skips
+      # unless the PR has the `publish-test` label, then builds the PR branch and
       # publishes `<version>-test.<sha>` to npm under the `test` dist-tag, so the
       # release version is never taken in CodeArtifact or npm.
       - name: npm-publish-v1
@@ -85,5 +86,5 @@
         when:
           - event: pull_request
             source: branch
-            labels:
-              - publish-test
+            path:
+              - packages/ads-stories/**

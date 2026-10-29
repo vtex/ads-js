@@ -116,12 +116,38 @@ jobs:
           echo "Publishing ${TARBALL} to npmjs..."
           npm publish "${TARBALL}" --access public --provenance ${TAG_FLAG}
 
-  # PR test build (label `publish-test`): DK skips its pack and dispatches this
-  # workflow with version `test` on the PR branch. Built from source here so the
-  # release version is never taken in CodeArtifact or npm; kept in this file
-  # because npm trusted publishing accepts only the workflow configured on npmjs.com.
-  publish-test:
+  # PR test build: DK skips its pack and dispatches this workflow with version
+  # `test` on every push to a PR touching the package, so this job skips unless
+  # the PR carries the `publish-test` label.
+  gate-test:
     if: inputs.version == 'test'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      # Fails closed: no PR found for the dispatched sha, or no label, skips.
+      - name: Check publish-test label
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LABELS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[].labels[].name')
+          if printf '%s\n' "${LABELS}" | grep -qx 'publish-test'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No open PR with the \`publish-test\` label for ${GITHUB_SHA}, skipping" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # Built from source here so the release version is never taken in CodeArtifact
+  # or npm; kept in this file because npm trusted publishing accepts only the
+  # workflow configured on npmjs.com.
+  publish-test:
+    needs: gate-test
+    if: needs.gate-test.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Mask CodeArtifact token
