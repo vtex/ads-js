@@ -7,6 +7,7 @@ import {
   afterEach,
 } from "vitest";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import { installDialogMocks } from "../components/player/dialog.mock";
 
 function mount() {
   const el = document.createElement(TAG_NAME);
@@ -16,6 +17,7 @@ function mount() {
 
 describe("vtex-ads-story", () => {
   beforeAll(() => {
+    installDialogMocks();
     defineVtexAdsStories();
   });
 
@@ -77,6 +79,18 @@ describe("vtex-ads-story", () => {
         "https://dummyimage.com/1080x1920/e31c57/fff",
       );
     });
+
+    it.each(["Enter", " "])(
+      "opens the player when %j is pressed on the card",
+      (key) => {
+        const el = mount();
+        getCard(el)?.dispatchEvent(
+          new KeyboardEvent("keydown", { key, bubbles: true }),
+        );
+
+        expect(getPlayers(el)).toHaveLength(1);
+      },
+    );
 
     it("opens the player only once", () => {
       const el = mount();

@@ -38,6 +38,7 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "!src/**/*.mock.ts",
     "README.md",
     "CHANGELOG.md"
   ],

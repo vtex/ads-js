@@ -1,5 +1,5 @@
 import { cardStyles, createCard } from "../components/card";
-import { createPlayer, playerStyles } from "../components/player";
+import { createPlayer, playerStyles, showPlayer } from "../components/player";
 import type { StoryAd } from "../types";
 
 export const TAG_NAME = "vtex-ads-story";
@@ -33,7 +33,7 @@ const LABELS = {
 };
 
 export class VtexAdsStoryElement extends BaseElement {
-  private player: HTMLElement | null = null;
+  private player: HTMLDialogElement | null = null;
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") this.closePlayer();
@@ -62,8 +62,7 @@ export class VtexAdsStoryElement extends BaseElement {
       onClose: () => this.closePlayer(),
     });
     this.shadowRoot.append(this.player);
-    // Without popover support the player is still shown, as a fixed element.
-    this.player.showPopover?.();
+    showPlayer(this.player);
     document.addEventListener("keydown", this.onKeyDown);
 
     this.player.querySelector<HTMLElement>(".player-close")?.focus();
@@ -92,14 +91,6 @@ export class VtexAdsStoryElement extends BaseElement {
 
   disconnectedCallback() {
     this.closePlayer({ restoreFocus: false });
-  }
-}
-
-// Types `document.createElement("vtex-ads-story")` and `querySelector` results
-// as VtexAdsStoryElement in any TypeScript project, no framework needed.
-declare global {
-  interface HTMLElementTagNameMap {
-    "vtex-ads-story": VtexAdsStoryElement;
   }
 }
 

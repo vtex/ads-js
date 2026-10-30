@@ -2,13 +2,15 @@ import { createCard } from "../card";
 import { createIcon, type IconName } from "../icons";
 import type { StoryAd } from "../../types";
 
-// The player is a manual popover, so it opens in the top layer: no store
-// z-index, overflow or transform can hide or move it. Where popovers are not
-// supported it is still a fixed element, with a high z-index.
+// The player is a <dialog> shown in the top layer, so no store z-index,
+// overflow or transform can hide or move it.
 //
-// Mini: the card at the bottom right, with the controls above it.
-// Expanded: the card centered over a dark backdrop, with the controls at the
-// top right of the screen. On narrow screens it fills the screen.
+// Mini: a manual popover (non-modal, the page stays usable), with the card at
+// the bottom right and the controls above it. Without popover support it is a
+// non-modal dialog, fixed with a high z-index.
+// Expanded: a modal dialog (showModal), so the browser makes the page behind
+// it inert. The card is centered over a dark backdrop, with the controls at
+// the top right of the screen. On narrow screens it fills the screen.
 export const playerStyles = `
   .player {
     position: fixed;
@@ -25,6 +27,21 @@ export const playerStyles = `
     color: inherit;
     font: inherit;
     animation: player-in 0.25s ease;
+  }
+
+  /* A <dialog> shown as a popover has no open attribute, which the browser
+     hides by default. */
+  .player:popover-open {
+    display: block;
+  }
+
+  /* Switching modes shows the dialog again; only the first opening fades in. */
+  .player[data-switched] {
+    animation: none;
+  }
+
+  .player::backdrop {
+    background: transparent;
   }
 
   .player-frame {
@@ -75,7 +92,9 @@ export const playerStyles = `
     inset: 0;
     display: grid;
     width: 100%;
+    max-width: none;
     height: 100%;
+    max-height: none;
     place-items: center;
     background: rgba(0, 0, 0, 0.85);
     animation: none;
@@ -158,15 +177,25 @@ function createButton(className: string, label: string, icon: IconName) {
   return button;
 }
 
+function supportsPopover(player: HTMLDialogElement) {
+  return typeof player.showPopover === "function";
+}
+
+/** Shows the player as the mini player. It must already be in the page. */
+export function showPlayer(player: HTMLDialogElement) {
+  if (supportsPopover(player)) player.showPopover();
+  else player.show();
+}
+
 /**
- * The Story player. It opens as the mini player; expand toggles the expanded
- * view. Clicking the backdrop of the expanded view closes it.
+ * The Story player. It opens as the mini player (see showPlayer); expand
+ * switches to the expanded view, a modal dialog, and back. Clicking the
+ * backdrop of the expanded view or pressing Escape in it closes the player.
  */
 export function createPlayer(story: StoryAd, options: PlayerOptions) {
-  const player = document.createElement("div");
+  const player = document.createElement("dialog");
   player.className = "player";
   player.setAttribute("popover", "manual");
-  player.setAttribute("role", "dialog");
   player.setAttribute("aria-label", options.label);
 
   const frame = document.createElement("div");
@@ -180,19 +209,41 @@ export function createPlayer(story: StoryAd, options: PlayerOptions) {
   controls.append(expand, close);
 
   let expanded = false;
+
+  // A dialog can't be shown as a popover and as a modal at the same time, so
+  // switching modes hides it first, the same way it was shown.
+  function hide() {
+    if (!expanded && supportsPopover(player)) player.hidePopover();
+    else player.close();
+  }
+
   expand.addEventListener("click", () => {
+    hide();
     expanded = !expanded;
     player.toggleAttribute("data-expanded", expanded);
+    player.setAttribute("data-switched", "");
     expand.setAttribute(
       "aria-label",
       expanded ? options.collapseLabel : options.expandLabel,
     );
     expand.replaceChildren(createIcon(expanded ? "collapse" : "expand"));
+
+    if (expanded) player.showModal();
+    else showPlayer(player);
+    expand.focus();
   });
 
   close.addEventListener("click", options.onClose);
+
+  // Clicks on the backdrop of the expanded view reach the dialog itself.
   player.addEventListener("click", (event) => {
     if (expanded && event.target === player) options.onClose();
+  });
+
+  // Escape on a modal dialog would only hide it: close the player instead.
+  player.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    options.onClose();
   });
 
   frame.append(controls, createCard(story));
