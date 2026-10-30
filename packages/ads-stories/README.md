@@ -3,7 +3,8 @@
 VTEX Ads Stories web component. Framework-agnostic: works on any HTML5 page,
 including VTEX IO, FastStore and non-VTEX storefronts.
 
-> Work in progress. Currently renders a placeholder.
+> Work in progress. Currently renders one placeholder 9:16 card that opens in a
+> player at the bottom right; video and Stories from the ad API come next.
 
 ## npm
 
@@ -20,7 +21,7 @@ defineVtexAdsStories();
 ```
 
 ```html
-<vtex-ads-story name="VTEX Ads"></vtex-ads-story>
+<vtex-ads-story></vtex-ads-story>
 ```
 
 Importing the package has no side effects: nothing is registered until
@@ -41,7 +42,7 @@ project (requires `@types/react` 18.2.6 or newer, including 19):
 // e.g. in your app's entry file or a .d.ts file
 import type {} from "@vtex/ads-stories/react";
 
-export const Ad = () => <vtex-ads-story name="VTEX Ads" />;
+export const Ad = () => <vtex-ads-story />;
 ```
 
 Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in `tsconfig.json`.
@@ -63,7 +64,7 @@ page. Always pin an exact version: a pinned URL never changes.
   crossorigin="anonymous"
 ></script>
 
-<vtex-ads-story name="VTEX Ads"></vtex-ads-story>
+<vtex-ads-story></vtex-ads-story>
 ```
 
 - The full file URL works too:
@@ -92,8 +93,15 @@ page. Always pin an exact version: a pinned URL never changes.
 vtex-ads-story {
   --vtex-ads-story-font-family: "Inter", sans-serif;
   --vtex-ads-story-color-text: #1f1f1f;
+  --vtex-ads-story-radius: 20px;
 }
 ```
+
+| Variable                       | Default   | Used for     |
+| ------------------------------ | --------- | ------------ |
+| `--vtex-ads-story-font-family` | inherited | All text     |
+| `--vtex-ads-story-color-text`  | inherited | All text     |
+| `--vtex-ads-story-radius`      | `20px`    | Card corners |
 
 ## Development
 
