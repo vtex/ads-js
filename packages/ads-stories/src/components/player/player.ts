@@ -56,10 +56,12 @@ export const playerStyles = `
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   }
 
+  /* Above the card: on narrow screens the expanded card can cover them. */
   .player-controls {
     position: absolute;
     right: 0;
     bottom: calc(100% + 8px);
+    z-index: 1;
     display: flex;
     gap: 8px;
   }
