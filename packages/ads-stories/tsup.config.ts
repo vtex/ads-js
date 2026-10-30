@@ -5,7 +5,7 @@ import { defineConfig } from "tsup";
 export default defineConfig([
   // npm: ESM (modern bundlers)
   {
-    entry: ["src/index.ts"],
+    entry: ["src/index.ts", "src/react.ts"],
     format: ["esm"],
     target: "es2018",
     dts: true,
@@ -17,7 +17,7 @@ export default defineConfig([
   },
   // npm: CJS (require(), Jest, VTEX IO)
   {
-    entry: ["src/index.ts"],
+    entry: ["src/index.ts", "src/react.ts"],
     format: ["cjs"],
     target: "es2018",
     // Emits index.d.cts: CJS consumers need CJS declarations, since this
