@@ -221,7 +221,7 @@ export function createPlayer(story: StoryAd, options: PlayerOptions) {
     hide();
     expanded = !expanded;
     player.toggleAttribute("data-expanded", expanded);
-    player.setAttribute("data-switched", "");
+    player.dataset.switched = "";
     expand.setAttribute(
       "aria-label",
       expanded ? options.collapseLabel : options.expandLabel,
