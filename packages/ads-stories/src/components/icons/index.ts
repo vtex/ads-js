@@ -4,9 +4,11 @@
 // file name. They are bundled as text: `?raw` is handled by Vite in dev and
 // tests, and by the raw plugin in tsup.config.ts.
 import close from "./assets/close.svg?raw";
+import collapse from "./assets/collapse.svg?raw";
+import expand from "./assets/expand.svg?raw";
 import play from "./assets/play-fill.svg?raw";
 
-export const icons = { close, play };
+export const icons = { close, collapse, expand, play };
 
 export type IconName = keyof typeof icons;
 

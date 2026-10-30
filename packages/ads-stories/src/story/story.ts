@@ -27,6 +27,8 @@ const PLACEHOLDER_STORY: StoryAd = {
 const LABELS = {
   watch: "Assistir vídeo",
   player: "Vídeo",
+  expand: "Expandir vídeo",
+  collapse: "Reduzir vídeo",
   close: "Fechar vídeo",
 };
 
@@ -54,6 +56,8 @@ export class VtexAdsStoryElement extends BaseElement {
 
     this.player = createPlayer(PLACEHOLDER_STORY, {
       label: LABELS.player,
+      expandLabel: LABELS.expand,
+      collapseLabel: LABELS.collapse,
       closeLabel: LABELS.close,
       onClose: () => this.closePlayer(),
     });
@@ -62,7 +66,7 @@ export class VtexAdsStoryElement extends BaseElement {
     this.player.showPopover?.();
     document.addEventListener("keydown", this.onKeyDown);
 
-    this.player.querySelector("button")?.focus();
+    this.player.querySelector<HTMLElement>(".player-close")?.focus();
   }
 
   private closePlayer({ restoreFocus = true } = {}) {

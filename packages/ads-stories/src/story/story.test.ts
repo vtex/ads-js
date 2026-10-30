@@ -98,7 +98,7 @@ describe("vtex-ads-story", () => {
     it("closes from the close button and focuses the card again", () => {
       const el = mount();
       getCard(el)?.click();
-      el.shadowRoot?.querySelector<HTMLElement>(".player button")?.click();
+      el.shadowRoot?.querySelector<HTMLElement>(".player-close")?.click();
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(el.shadowRoot?.activeElement).toBe(getCard(el));
