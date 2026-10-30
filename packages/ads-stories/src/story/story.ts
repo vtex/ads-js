@@ -35,7 +35,7 @@ const LABELS = {
 export class VtexAdsStoryElement extends BaseElement {
   private player: HTMLElement | null = null;
 
-  private onKeyDown = (event: KeyboardEvent) => {
+  private readonly onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") this.closePlayer();
   };
 
