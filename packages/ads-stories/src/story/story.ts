@@ -1,3 +1,6 @@
+import { cardStyles, createCard } from "../card";
+import type { StoryAd } from "../types";
+
 export const TAG_NAME = "vtex-ads-story";
 
 // Keeps the module importable where HTMLElement doesn't exist (SSR, Node).
@@ -9,53 +12,29 @@ const styles = `
     font-family: var(--vtex-ads-story-font-family, inherit);
     color: var(--vtex-ads-story-color-text, inherit);
   }
+  ${cardStyles}
 `;
 
-const DEFAULT_NAME = "world";
+// Temporary: rendered until the element reads Stories from the ad API.
+const PLACEHOLDER_STORY: StoryAd = {
+  ad_id: "placeholder",
+  poster_url: "https://dummyimage.com/1080x1920/e31c57/fff",
+};
 
 export class VtexAdsStoryElement extends BaseElement {
-  static get observedAttributes() {
-    return ["name"];
-  }
-
-  get name(): string {
-    return this.getAttribute("name")?.trim() ?? "";
-  }
-
-  set name(value: string) {
-    this.setAttribute("name", value);
-  }
-
   private render() {
-    const container = this.shadowRoot?.querySelector("[part='root']");
+    const container = this.shadowRoot?.querySelector(".root");
     if (!container) return;
 
-    // textContent keeps the name as plain text (no HTML injection).
-    container.textContent = `Hello ${this.name || DEFAULT_NAME}!`;
+    container.replaceChildren(createCard(PLACEHOLDER_STORY));
   }
 
   connectedCallback() {
     if (!this.shadowRoot) {
       const root = this.attachShadow({ mode: "open" });
-      root.innerHTML = `<style>${styles}</style><div part="root"></div>`;
+      root.innerHTML = `<style>${styles}</style><div class="root"></div>`;
     }
 
-    this.upgradeProperty("name");
-    this.render();
-  }
-
-  // A property set before the element is defined (e.g. while the CDN script
-  // loads) becomes an own property that shadows the class getter/setter.
-  // Remove it and set it again so it goes through the setter.
-  private upgradeProperty(prop: "name") {
-    if (!Object.prototype.hasOwnProperty.call(this, prop)) return;
-
-    const value = this[prop];
-    Reflect.deleteProperty(this, prop);
-    this[prop] = value;
-  }
-
-  attributeChangedCallback() {
     this.render();
   }
 }

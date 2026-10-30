@@ -8,17 +8,10 @@ import {
 } from "vitest";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
 
-function mount(attributes: Record<string, string> = {}) {
+function mount() {
   const el = document.createElement(TAG_NAME);
-  for (const [key, value] of Object.entries(attributes)) {
-    el.setAttribute(key, value);
-  }
   document.body.appendChild(el);
   return el;
-}
-
-function getText(el: Element) {
-  return el.shadowRoot?.querySelector("[part='root']")?.textContent;
 }
 
 describe("vtex-ads-story", () => {
@@ -47,38 +40,21 @@ describe("vtex-ads-story", () => {
     expect(() => defineVtexAdsStories()).not.toThrow();
   });
 
-  it("renders hello world when no name is given", () => {
+  it("renders one card", () => {
     const el = mount();
-    expect(getText(el)).toBe("Hello world!");
+    expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
-  it("renders the name attribute", () => {
-    const el = mount({ name: "VTEX" });
-    expect(getText(el)).toBe("Hello VTEX!");
+  it("renders the placeholder cover", () => {
+    const el = mount();
+    const poster = el.shadowRoot?.querySelector<HTMLImageElement>(".poster");
+    expect(poster?.src).toBe("https://dummyimage.com/1080x1920/e31c57/fff");
   });
 
-  it("updates when the name changes", () => {
-    const el = mount({ name: "VTEX" });
-
-    el.setAttribute("name", "Ads");
-    expect(getText(el)).toBe("Hello Ads!");
-
-    (el as VtexAdsStoryElement).name = "Stories";
-    expect(el.getAttribute("name")).toBe("Stories");
-    expect(getText(el)).toBe("Hello Stories!");
-
-    el.removeAttribute("name");
-    expect(getText(el)).toBe("Hello world!");
-  });
-
-  it("falls back to world when the name is blank", () => {
-    const el = mount({ name: "   " });
-    expect(getText(el)).toBe("Hello world!");
-  });
-
-  it("renders the name as text, not HTML", () => {
-    const el = mount({ name: "<b>bold</b>" });
-    expect(getText(el)).toBe("Hello <b>bold</b>!");
-    expect(el.shadowRoot?.querySelector("b")).toBeNull();
+  it("renders the card only once when connected again", () => {
+    const el = mount();
+    el.remove();
+    document.body.appendChild(el);
+    expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 });
