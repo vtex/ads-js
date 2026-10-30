@@ -57,4 +57,67 @@ describe("vtex-ads-story", () => {
     document.body.appendChild(el);
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
+
+  describe("player", () => {
+    function getCard(el: Element) {
+      return el.shadowRoot?.querySelector<HTMLElement>(".root .card");
+    }
+
+    function getPlayers(el: Element) {
+      return el.shadowRoot?.querySelectorAll(".player") ?? [];
+    }
+
+    it("opens the same Story in the player when the card is clicked", () => {
+      const el = mount();
+      getCard(el)?.click();
+
+      const players = getPlayers(el);
+      expect(players).toHaveLength(1);
+      expect(players[0].querySelector(".poster")?.getAttribute("src")).toBe(
+        "https://dummyimage.com/1080x1920/e31c57/fff",
+      );
+    });
+
+    it("opens the player only once", () => {
+      const el = mount();
+      getCard(el)?.click();
+      getCard(el)?.click();
+
+      expect(getPlayers(el)).toHaveLength(1);
+    });
+
+    it("focuses the close button when the player opens", () => {
+      const el = mount();
+      getCard(el)?.click();
+
+      expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
+        "Fechar vídeo",
+      );
+    });
+
+    it("closes from the close button and focuses the card again", () => {
+      const el = mount();
+      getCard(el)?.click();
+      el.shadowRoot?.querySelector<HTMLElement>(".player button")?.click();
+
+      expect(getPlayers(el)).toHaveLength(0);
+      expect(el.shadowRoot?.activeElement).toBe(getCard(el));
+    });
+
+    it("closes on Escape", () => {
+      const el = mount();
+      getCard(el)?.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+      expect(getPlayers(el)).toHaveLength(0);
+    });
+
+    it("closes when the element is removed", () => {
+      const el = mount();
+      getCard(el)?.click();
+      el.remove();
+
+      expect(getPlayers(el)).toHaveLength(0);
+    });
+  });
 });

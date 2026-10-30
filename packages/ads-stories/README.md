@@ -3,8 +3,8 @@
 VTEX Ads Stories web component. Framework-agnostic: works on any HTML5 page,
 including VTEX IO, FastStore and non-VTEX storefronts.
 
-> Work in progress. Currently renders one placeholder 9:16 card; Stories from
-> the ad API come next.
+> Work in progress. Currently renders one placeholder 9:16 card that opens in a
+> player at the bottom right; video and Stories from the ad API come next.
 
 ## npm
 

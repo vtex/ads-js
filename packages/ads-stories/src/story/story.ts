@@ -1,4 +1,5 @@
-import { cardStyles, createCard } from "../card";
+import { cardStyles, createCard } from "../components/card";
+import { createPlayer, playerStyles } from "../components/player";
 import type { StoryAd } from "../types";
 
 export const TAG_NAME = "vtex-ads-story";
@@ -13,6 +14,7 @@ const styles = `
     color: var(--vtex-ads-story-color-text, inherit);
   }
   ${cardStyles}
+  ${playerStyles}
 `;
 
 // Temporary: rendered until the element reads Stories from the ad API.
@@ -21,12 +23,58 @@ const PLACEHOLDER_STORY: StoryAd = {
   poster_url: "https://dummyimage.com/1080x1920/e31c57/fff",
 };
 
+// Temporary: fixed texts until the store can set them by attribute.
+const LABELS = {
+  watch: "Assistir vídeo",
+  player: "Vídeo",
+  close: "Fechar vídeo",
+};
+
 export class VtexAdsStoryElement extends BaseElement {
+  private player: HTMLElement | null = null;
+
+  private onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") this.closePlayer();
+  };
+
   private render() {
     const container = this.shadowRoot?.querySelector(".root");
     if (!container) return;
 
-    container.replaceChildren(createCard(PLACEHOLDER_STORY));
+    container.replaceChildren(
+      createCard(PLACEHOLDER_STORY, {
+        label: LABELS.watch,
+        onSelect: () => this.openPlayer(),
+      }),
+    );
+  }
+
+  private openPlayer() {
+    if (this.player || !this.shadowRoot) return;
+
+    this.player = createPlayer(PLACEHOLDER_STORY, {
+      label: LABELS.player,
+      closeLabel: LABELS.close,
+      onClose: () => this.closePlayer(),
+    });
+    this.shadowRoot.append(this.player);
+    // Without popover support the player is still shown, as a fixed element.
+    this.player.showPopover?.();
+    document.addEventListener("keydown", this.onKeyDown);
+
+    this.player.querySelector("button")?.focus();
+  }
+
+  private closePlayer({ restoreFocus = true } = {}) {
+    if (!this.player) return;
+
+    document.removeEventListener("keydown", this.onKeyDown);
+    this.player.remove();
+    this.player = null;
+
+    if (restoreFocus) {
+      this.shadowRoot?.querySelector<HTMLElement>(".root .card")?.focus();
+    }
   }
 
   connectedCallback() {
@@ -36,6 +84,10 @@ export class VtexAdsStoryElement extends BaseElement {
     }
 
     this.render();
+  }
+
+  disconnectedCallback() {
+    this.closePlayer({ restoreFocus: false });
   }
 }
 
