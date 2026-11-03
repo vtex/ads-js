@@ -286,7 +286,7 @@ function addVideoControls(
   video.addEventListener("error", () => {
     toggle.remove();
     sound.remove();
-    player.removeAttribute("data-paused");
+    delete player.dataset.paused;
   });
 
   toggle.addEventListener("click", (event) => {
