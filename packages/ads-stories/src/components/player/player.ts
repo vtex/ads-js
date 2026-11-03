@@ -180,8 +180,11 @@ export const playerStyles = `
       border-radius: 0;
     }
 
-    /* Below the sound button, which sits at the top right of the video. */
+    /* Below the sound button, at the top right of the video. Placed in the
+       video frame, not the screen: the frame is centered, so on screens
+       taller than 9:16 its top is below the screen's. */
     .player[data-expanded] .player-controls {
+      position: absolute;
       top: 60px;
       right: 12px;
     }
