@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
+import { installMediaMocks } from "./media.mock";
 import { createCard } from "./card";
 
 describe("createCard", () => {
@@ -38,7 +39,15 @@ describe("createCard", () => {
 describe("createCard with options", () => {
   function interactiveCard() {
     const onSelect = vi.fn();
-    const card = createCard({}, { label: "Assistir vídeo", onSelect });
+    const card = createCard(
+      {},
+      {
+        label: "Assistir vídeo",
+        soundOnLabel: "Ativar som",
+        soundOffLabel: "Desativar som",
+        onSelect,
+      },
+    );
     return { card, onSelect };
   }
 
@@ -122,4 +131,65 @@ describe("createCard with a video", () => {
       expect(card.querySelector("video")).toBeNull();
     },
   );
+});
+
+describe("createCard sound button", () => {
+  const options = {
+    label: "Assistir vídeo",
+    soundOnLabel: "Ativar som",
+    soundOffLabel: "Desativar som",
+  };
+  const story = { media_url: "https://example.com/story.mp4" };
+
+  beforeAll(() => {
+    installMediaMocks();
+  });
+
+  function setup() {
+    const onSelect = vi.fn();
+    const card = createCard(story, { ...options, onSelect });
+    const video = card.querySelector("video");
+    const sound = card.querySelector<HTMLButtonElement>(".card-sound");
+    return { card, video, sound, onSelect };
+  }
+
+  it("turns the video's sound on and off", () => {
+    const { video, sound } = setup();
+    expect(sound?.getAttribute("aria-label")).toBe("Ativar som");
+    expect(sound?.querySelectorAll("svg.icon")).toHaveLength(1);
+
+    sound?.click();
+    expect(video?.muted).toBe(false);
+    expect(sound?.getAttribute("aria-label")).toBe("Desativar som");
+
+    sound?.click();
+    expect(video?.muted).toBe(true);
+    expect(sound?.getAttribute("aria-label")).toBe("Ativar som");
+  });
+
+  it("does not open the player", () => {
+    const { sound, onSelect } = setup();
+
+    sound?.click();
+    sound?.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("is only there for a card with a video", () => {
+    const withoutVideo = createCard({}, { ...options, onSelect: vi.fn() });
+    expect(withoutVideo.querySelector(".card-sound")).toBeNull();
+
+    const inPlayer = createCard(story);
+    expect(inPlayer.querySelector(".card-sound")).toBeNull();
+  });
+
+  it("is removed when the video fails to load", () => {
+    const { card, video } = setup();
+    video?.dispatchEvent(new Event("error"));
+
+    expect(card.querySelector(".card-sound")).toBeNull();
+  });
 });

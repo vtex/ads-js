@@ -55,6 +55,8 @@ export class VtexAdsStoryElement extends BaseElement {
     container.replaceChildren(
       createCard(PLACEHOLDER_STORY, {
         label: LABELS.watch,
+        soundOnLabel: LABELS.soundOn,
+        soundOffLabel: LABELS.soundOff,
         onSelect: () => this.openPlayer(),
       }),
     );

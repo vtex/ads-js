@@ -53,6 +53,29 @@ export const cardStyles = `
     color: #fff;
   }
 
+  /* Sound on/off, at the top right of the card (as in the prototype). */
+  .card-sound {
+    position: absolute;
+    top: 22px;
+    right: 12px;
+    z-index: 1;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  }
+
+  .card-sound .icon {
+    width: 20px;
+    height: 20px;
+  }
+
   /* With a mouse, the play button shows only on hover or keyboard focus.
      Touch screens have no hover, so it stays visible there. */
   @media (hover: hover) and (pointer: fine) {
@@ -74,6 +97,9 @@ export interface CardOptions {
   label: string;
   /** Called on click, Enter or Space. */
   onSelect: () => void;
+  /** Accessible names of the sound button, shown when the card has a video. */
+  soundOnLabel: string;
+  soundOffLabel: string;
 }
 
 // Only http(s) URLs reach the DOM. Relative URLs resolve against the page.
@@ -122,10 +148,37 @@ function createVideo(src: string, poster: string | null) {
   return video;
 }
 
+/** Sound on/off for the card's video, which starts muted. */
+function createSoundButton(video: HTMLVideoElement, options: CardOptions) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "card-sound";
+
+  function sync() {
+    button.setAttribute(
+      "aria-label",
+      video.muted ? options.soundOnLabel : options.soundOffLabel,
+    );
+    button.replaceChildren(createIcon(video.muted ? "soundOff" : "soundOn"));
+  }
+
+  video.addEventListener("volumechange", sync);
+  // Without the video, the cover stays and there is no sound to control.
+  video.addEventListener("error", () => button.remove());
+  // It is not the card's own click: it must not open the player.
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    video.muted = !video.muted;
+  });
+
+  sync();
+  return button;
+}
+
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
  * muted over it. With options, the card is a button with a play icon in the
- * middle.
+ * middle, and a sound button when it has a video.
  */
 export function createCard(story: StoryMedia, options?: CardOptions) {
   const card = document.createElement("div");
@@ -141,7 +194,8 @@ export function createCard(story: StoryMedia, options?: CardOptions) {
   }
 
   const mediaUrl = httpUrl(story.media_url);
-  if (mediaUrl) card.append(createVideo(mediaUrl, posterUrl));
+  const video = mediaUrl ? createVideo(mediaUrl, posterUrl) : null;
+  if (video) card.append(video);
 
   if (options) {
     card.setAttribute("role", "button");
@@ -153,9 +207,12 @@ export function createCard(story: StoryMedia, options?: CardOptions) {
     play.setAttribute("aria-hidden", "true");
     play.append(createIcon("play"));
     card.append(play);
+    if (video) card.append(createSoundButton(video, options));
 
     card.addEventListener("click", options.onSelect);
     card.addEventListener("keydown", (event) => {
+      // Keys on the sound button are its own, not the card's.
+      if (event.target !== card) return;
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       options.onSelect();
