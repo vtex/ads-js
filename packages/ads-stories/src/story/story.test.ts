@@ -145,6 +145,24 @@ describe("vtex-ads-story", () => {
       expect(getVideos(el).card?.paused).toBe(false);
     });
 
+    it("plays the card video again when the player closes with Escape", () => {
+      const el = mount();
+      getCard(el)?.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+      expect(getVideos(el).card?.paused).toBe(false);
+    });
+
+    it("plays the card video again when the expanded backdrop is clicked", () => {
+      const el = mount();
+      getCard(el)?.click();
+      el.shadowRoot?.querySelector<HTMLElement>(".player-expand")?.click();
+      el.shadowRoot?.querySelector<HTMLElement>(".player")?.click();
+
+      expect(getPlayers(el)).toHaveLength(0);
+      expect(getVideos(el).card?.paused).toBe(false);
+    });
+
     it("closes from the close button and focuses the card again", () => {
       const el = mount();
       getCard(el)?.click();

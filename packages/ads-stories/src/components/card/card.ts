@@ -102,14 +102,13 @@ export interface CardOptions {
   soundOffLabel: string;
 }
 
-// Only http(s) URLs reach the DOM. Relative URLs resolve against the page.
+// Only absolute http(s) URLs reach the DOM. Relative and protocol-relative
+// ones ("/a.jpg", "//host/a.jpg") don't parse without a base, so they're out.
 function httpUrl(value: string | undefined) {
   if (!value) return null;
   try {
-    const url = new URL(value, document.baseURI);
-    return url.protocol === "https:" || url.protocol === "http:"
-      ? url.href
-      : null;
+    const { protocol } = new URL(value);
+    return protocol === "https:" || protocol === "http:" ? value : null;
   } catch {
     return null;
   }

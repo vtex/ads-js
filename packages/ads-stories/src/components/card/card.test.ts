@@ -18,17 +18,13 @@ describe("createCard", () => {
     expect(card.querySelector(".poster")).toBeNull();
   });
 
-  it("resolves a relative poster_url against the page", () => {
-    const card = createCard({ poster_url: "/stories/cover.jpg" });
-
-    const poster = card.querySelector<HTMLImageElement>(".poster");
-    expect(poster?.getAttribute("src")).toBe(
-      new URL("/stories/cover.jpg", document.baseURI).href,
-    );
-  });
-
-  it.each(["javascript:alert(1)", "data:image/png;base64,AAAA"])(
-    "ignores a poster_url that is not an http(s) URL: %s",
+  it.each([
+    "javascript:alert(1)",
+    "data:image/png;base64,AAAA",
+    "/stories/cover.jpg",
+    "//attacker.example/cover.jpg",
+  ])(
+    "ignores a poster_url that is not an absolute http(s) URL: %s",
     (posterUrl) => {
       const card = createCard({ poster_url: posterUrl });
       expect(card.querySelector(".poster")).toBeNull();
@@ -124,8 +120,13 @@ describe("createCard with a video", () => {
     expect(card.querySelector(".poster")).not.toBeNull();
   });
 
-  it.each(["javascript:alert(1)", "data:video/mp4;base64,AAAA"])(
-    "ignores a media_url that is not an http(s) URL: %s",
+  it.each([
+    "javascript:alert(1)",
+    "data:video/mp4;base64,AAAA",
+    "/stories/story.mp4",
+    "//attacker.example/story.mp4",
+  ])(
+    "ignores a media_url that is not an absolute http(s) URL: %s",
     (mediaUrl) => {
       const card = createCard({ ...story, media_url: mediaUrl });
       expect(card.querySelector("video")).toBeNull();
