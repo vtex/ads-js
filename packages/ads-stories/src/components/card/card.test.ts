@@ -47,33 +47,32 @@ describe("createCard with options", () => {
     return { card, onSelect };
   }
 
-  it("is a focusable button with a play icon", () => {
+  it("has a button with a play icon", () => {
     const { card } = interactiveCard();
+    const open = card.querySelector(".card-open");
 
-    expect(card.getAttribute("role")).toBe("button");
-    expect(card.getAttribute("aria-label")).toBe("Assistir vídeo");
-    expect(card.tabIndex).toBe(0);
-    expect(card.querySelector(".play")?.getAttribute("aria-hidden")).toBe(
+    // A native button: Enter and Space click it.
+    expect(open).toBeInstanceOf(HTMLButtonElement);
+    expect(open?.getAttribute("type")).toBe("button");
+    expect(open?.getAttribute("aria-label")).toBe("Assistir vídeo");
+    expect(open?.querySelector(".play")?.getAttribute("aria-hidden")).toBe(
       "true",
     );
-    expect(card.querySelector(".play svg.icon")).not.toBeNull();
+    expect(open?.querySelector(".play svg.icon")).not.toBeNull();
   });
 
-  it("calls onSelect on click, Enter and Space", () => {
+  it("calls onSelect when its button is clicked", () => {
     const { card, onSelect } = interactiveCard();
 
-    card.click();
-    card.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
-    card.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
-    card.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    card.querySelector<HTMLButtonElement>(".card-open")?.click();
 
-    expect(onSelect).toHaveBeenCalledTimes(3);
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("is not a button without options", () => {
+  it("has no button without options", () => {
     const card = createCard({});
 
-    expect(card.getAttribute("role")).toBeNull();
+    expect(card.querySelector("button")).toBeNull();
     expect(card.querySelector(".play")).toBeNull();
   });
 });
@@ -172,11 +171,15 @@ describe("createCard sound button", () => {
     const { sound, onSelect } = setup();
 
     sound?.click();
-    sound?.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-    );
 
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("is beside the card's button, not inside it", () => {
+    const { card, sound } = setup();
+
+    expect(sound?.parentElement).toBe(card);
+    expect(sound?.closest(".card-open")).toBeNull();
   });
 
   it("is only there for a card with a video", () => {

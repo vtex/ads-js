@@ -105,7 +105,7 @@ export class VtexAdsStoryElement extends BaseElement {
     const video = this.cardVideo();
     if (video?.autoplay) playVideo(video);
 
-    this.shadowRoot?.querySelector<HTMLElement>(".root .card")?.focus();
+    this.shadowRoot?.querySelector<HTMLElement>(".root .card-open")?.focus();
   }
 
   connectedCallback() {

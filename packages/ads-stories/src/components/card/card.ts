@@ -12,8 +12,25 @@ export const cardStyles = `
     background: #000;
   }
 
-  .card[role="button"] {
+  /* The card's button covers it. The focus ring goes on the card, since the
+     card's overflow would clip the button's own. */
+  .card-open {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
+  }
+
+  .card-open:focus-visible {
+    outline: none;
+  }
+
+  .card:has(> .card-open:focus-visible) {
+    outline: auto;
   }
 
   .poster,
@@ -85,7 +102,7 @@ export const cardStyles = `
     }
 
     .card:hover .play,
-    .card:focus-visible .play {
+    .card-open:focus-visible .play {
       opacity: 1;
       transform: translate(-50%, -50%);
     }
@@ -164,9 +181,7 @@ function createSoundButton(video: HTMLVideoElement, options: CardOptions) {
   video.addEventListener("volumechange", sync);
   // Without the video, the cover stays and there is no sound to control.
   video.addEventListener("error", () => button.remove());
-  // It is not the card's own click: it must not open the player.
-  button.addEventListener("click", (event) => {
-    event.stopPropagation();
+  button.addEventListener("click", () => {
     video.muted = !video.muted;
   });
 
@@ -176,8 +191,9 @@ function createSoundButton(video: HTMLVideoElement, options: CardOptions) {
 
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
- * muted over it. With options, the card is a button with a play icon in the
- * middle, and a sound button when it has a video.
+ * muted over it. With options, a button with a play icon in the middle covers
+ * the card, and a card with a video gets a sound button. The sound button is
+ * beside the card's button, not inside it: a button can't contain another.
  */
 export function createCard(story: StoryMedia, options?: CardOptions) {
   const card = document.createElement("div");
@@ -197,25 +213,20 @@ export function createCard(story: StoryMedia, options?: CardOptions) {
   if (video) card.append(video);
 
   if (options) {
-    card.setAttribute("role", "button");
-    card.setAttribute("aria-label", options.label);
-    card.tabIndex = 0;
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "card-open";
+    open.setAttribute("aria-label", options.label);
 
     const play = document.createElement("span");
     play.className = "play";
     play.setAttribute("aria-hidden", "true");
     play.append(createIcon("play"));
-    card.append(play);
-    if (video) card.append(createSoundButton(video, options));
+    open.append(play);
+    open.addEventListener("click", options.onSelect);
 
-    card.addEventListener("click", options.onSelect);
-    card.addEventListener("keydown", (event) => {
-      // Keys on the sound button are its own, not the card's.
-      if (event.target !== card) return;
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      options.onSelect();
-    });
+    card.append(open);
+    if (video) card.append(createSoundButton(video, options));
   }
 
   return card;

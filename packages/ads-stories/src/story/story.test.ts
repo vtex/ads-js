@@ -69,8 +69,9 @@ describe("vtex-ads-story", () => {
   });
 
   describe("player", () => {
+    // The card's button, which opens the player.
     function getCard(el: Element) {
-      return el.shadowRoot?.querySelector<HTMLElement>(".root .card");
+      return el.shadowRoot?.querySelector<HTMLElement>(".root .card-open");
     }
 
     function getPlayers(el: Element) {
@@ -87,18 +88,6 @@ describe("vtex-ads-story", () => {
         COVER,
       );
     });
-
-    it.each(["Enter", " "])(
-      "opens the player when %j is pressed on the card",
-      (key) => {
-        const el = mount();
-        getCard(el)?.dispatchEvent(
-          new KeyboardEvent("keydown", { key, bubbles: true }),
-        );
-
-        expect(getPlayers(el)).toHaveLength(1);
-      },
-    );
 
     it("opens the player only once", () => {
       const el = mount();

@@ -18,7 +18,7 @@ describe("vtex-ads-story before definition", () => {
     defineVtexAdsStories();
 
     expect(el).toBeInstanceOf(VtexAdsStoryElement);
-    const card = el?.shadowRoot?.querySelector<HTMLElement>(".root .card");
+    const card = el?.shadowRoot?.querySelector<HTMLElement>(".root .card-open");
     expect(card).toBeTruthy();
 
     card?.click();
