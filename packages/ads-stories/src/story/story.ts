@@ -92,19 +92,20 @@ export class VtexAdsStoryElement extends BaseElement {
     this.player.querySelector<HTMLElement>(".player-close")?.focus();
   }
 
-  private closePlayer({ restoreFocus = true } = {}) {
+  // `removed`: the element is leaving the page, so there is no card to give
+  // focus back to or to resume playing (it would play out of sight).
+  private closePlayer({ removed = false } = {}) {
     if (!this.player) return;
 
     document.removeEventListener("keydown", this.onKeyDown);
     this.player.remove();
     this.player = null;
+    if (removed) return;
 
     const video = this.cardVideo();
     if (video?.autoplay) playVideo(video);
 
-    if (restoreFocus) {
-      this.shadowRoot?.querySelector<HTMLElement>(".root .card")?.focus();
-    }
+    this.shadowRoot?.querySelector<HTMLElement>(".root .card")?.focus();
   }
 
   connectedCallback() {
@@ -117,7 +118,7 @@ export class VtexAdsStoryElement extends BaseElement {
   }
 
   disconnectedCallback() {
-    this.closePlayer({ restoreFocus: false });
+    this.closePlayer({ removed: true });
   }
 }
 

@@ -180,6 +180,17 @@ describe("vtex-ads-story", () => {
       expect(getPlayers(el)).toHaveLength(0);
     });
 
+    it("does not resume the card video when the element is removed", () => {
+      const el = mount();
+      getCard(el)?.click();
+      expect(getVideos(el).card?.paused).toBe(true);
+
+      el.remove();
+
+      expect(getPlayers(el)).toHaveLength(0);
+      expect(getVideos(el).card?.paused).toBe(true);
+    });
+
     it("closes when the element is removed", () => {
       const el = mount();
       getCard(el)?.click();
