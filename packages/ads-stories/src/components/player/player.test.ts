@@ -192,14 +192,15 @@ describe("createPlayer", () => {
     });
 
     it("turns the sound on and off", () => {
-      const { video, sound } = setupWithVideo();
+      const { player, video, sound } = setupWithVideo();
+      playPlayer(player);
       expect(sound?.getAttribute("aria-label")).toBe("Ativar som");
 
       sound?.click();
       expect(video?.muted).toBe(false);
       expect(sound?.getAttribute("aria-label")).toBe("Desativar som");
-      // The sound button does not also pause the video.
-      expect(video?.paused).toBe(true);
+      // The click stays on the sound button: it does not also pause the video.
+      expect(video?.paused).toBe(false);
 
       sound?.click();
       expect(video?.muted).toBe(true);
