@@ -1,5 +1,5 @@
 import { createIcon } from "../icons";
-import type { StoryAd } from "../../types";
+import type { StoryMedia } from "../../types";
 
 export const cardStyles = `
   .card {
@@ -16,7 +16,8 @@ export const cardStyles = `
     cursor: pointer;
   }
 
-  .poster {
+  .poster,
+  .video {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -75,31 +76,72 @@ export interface CardOptions {
   onSelect: () => void;
 }
 
-// Only absolute http(s) URLs reach the DOM.
-function isHttpUrl(value: string) {
+// Only http(s) URLs reach the DOM. Relative URLs resolve against the page.
+function httpUrl(value: string | undefined) {
+  if (!value) return null;
   try {
-    const { protocol } = new URL(value);
-    return protocol === "https:" || protocol === "http:";
+    const url = new URL(value, document.baseURI);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.href
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
+function prefersReducedMotion() {
+  return (
+    globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+  );
+}
+
 /**
- * A 9:16 card with the Story cover. With options, the card is a button with
- * a play icon in the middle.
+ * Plays a video. A blocked play is ignored: the cover or the paused state
+ * stays.
  */
-export function createCard(story: StoryAd, options?: CardOptions) {
+export function playVideo(video: HTMLVideoElement) {
+  video.play()?.catch(() => undefined);
+}
+
+function createVideo(src: string, poster: string | null) {
+  const video = document.createElement("video");
+  video.className = "video";
+  // Muted and inline is what browsers, iOS included, allow to autoplay.
+  video.muted = true;
+  video.setAttribute("muted", "");
+  video.setAttribute("playsinline", "");
+  video.loop = true;
+  video.preload = "metadata";
+  // No autoplay for people who asked for reduced motion.
+  video.autoplay = !prefersReducedMotion();
+  if (poster) video.poster = poster;
+  video.src = src;
+
+  // If the video can't load, the cover underneath stays.
+  video.addEventListener("error", () => video.remove());
+  return video;
+}
+
+/**
+ * A 9:16 card with the Story cover and, with a media_url, the video looping
+ * muted over it. With options, the card is a button with a play icon in the
+ * middle.
+ */
+export function createCard(story: StoryMedia, options?: CardOptions) {
   const card = document.createElement("div");
   card.className = "card";
 
-  if (story.poster_url && isHttpUrl(story.poster_url)) {
+  const posterUrl = httpUrl(story.poster_url);
+  if (posterUrl) {
     const poster = document.createElement("img");
     poster.className = "poster";
     poster.alt = "";
-    poster.src = story.poster_url;
+    poster.src = posterUrl;
     card.append(poster);
   }
+
+  const mediaUrl = httpUrl(story.media_url);
+  if (mediaUrl) card.append(createVideo(mediaUrl, posterUrl));
 
   if (options) {
     card.setAttribute("role", "button");

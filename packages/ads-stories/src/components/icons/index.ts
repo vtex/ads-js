@@ -6,9 +6,20 @@
 import close from "./assets/close.svg?raw";
 import collapse from "./assets/collapse.svg?raw";
 import expand from "./assets/expand.svg?raw";
+import pause from "./assets/pause-fill.svg?raw";
 import play from "./assets/play-fill.svg?raw";
+import soundOff from "./assets/speaker-x-fill.svg?raw";
+import soundOn from "./assets/speaker-high-fill.svg?raw";
 
-export const icons = { close, collapse, expand, play };
+export const icons = {
+  close,
+  collapse,
+  expand,
+  pause,
+  play,
+  soundOff,
+  soundOn,
+};
 
 export type IconName = keyof typeof icons;
 

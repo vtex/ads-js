@@ -1,6 +1,6 @@
-import { createCard } from "../card";
+import { createCard, playVideo } from "../card";
 import { createIcon, type IconName } from "../icons";
-import type { StoryAd } from "../../types";
+import type { StoryMedia } from "../../types";
 
 // The player is a <dialog> shown in the top layer, so no store z-index,
 // overflow or transform can hide or move it.
@@ -54,6 +54,46 @@ export const playerStyles = `
     width: 100%;
     height: 100%;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .player .card:has(.video) {
+    cursor: pointer;
+  }
+
+  /* Play/pause reuses the card's glass .play button, as a real button. */
+  .player-toggle {
+    padding: 0;
+    border: 0;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .player[data-paused] .player-toggle,
+  .player-toggle:focus-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  /* On touch, tapping the video pauses it; the button shows while paused. */
+  @media (hover: none) {
+    .player:not([data-paused]) .player-toggle {
+      opacity: 0;
+    }
+  }
+
+  .player-sound {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+    border-color: transparent;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .player-sound .icon {
+    width: 20px;
+    height: 20px;
   }
 
   /* Above the card: on narrow screens the expanded card can cover them. */
@@ -140,8 +180,9 @@ export const playerStyles = `
       border-radius: 0;
     }
 
+    /* Below the sound button, which sits at the top right of the video. */
     .player[data-expanded] .player-controls {
-      top: 12px;
+      top: 60px;
       right: 12px;
     }
   }
@@ -167,6 +208,10 @@ export interface PlayerOptions {
   expandLabel: string;
   collapseLabel: string;
   closeLabel: string;
+  playLabel: string;
+  pauseLabel: string;
+  soundOnLabel: string;
+  soundOffLabel: string;
   onClose: () => void;
 }
 
@@ -189,12 +234,85 @@ export function showPlayer(player: HTMLDialogElement) {
   else player.show();
 }
 
+/** Plays the player's video, if it has one. */
+export function playPlayer(player: HTMLDialogElement) {
+  const video = player.querySelector("video");
+  if (video) playVideo(video);
+}
+
+/**
+ * Play/pause in the middle of the video and sound on/off at its top right.
+ * Clicking the video also plays or pauses it. The buttons follow the video's
+ * own events, so a blocked autoplay shows as paused.
+ */
+function addVideoControls(
+  player: HTMLDialogElement,
+  card: HTMLElement,
+  video: HTMLVideoElement,
+  options: PlayerOptions,
+) {
+  // Not a .player-button: it keeps the card's larger glass look.
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "play player-toggle";
+  const sound = createButton("player-sound", "", "soundOff");
+
+  function syncPlayback() {
+    player.toggleAttribute("data-paused", video.paused);
+    toggle.setAttribute(
+      "aria-label",
+      video.paused ? options.playLabel : options.pauseLabel,
+    );
+    toggle.replaceChildren(createIcon(video.paused ? "play" : "pause"));
+  }
+
+  function syncSound() {
+    sound.setAttribute(
+      "aria-label",
+      video.muted ? options.soundOnLabel : options.soundOffLabel,
+    );
+    sound.replaceChildren(createIcon(video.muted ? "soundOff" : "soundOn"));
+  }
+
+  function togglePlayback() {
+    if (video.paused) playVideo(video);
+    else video.pause();
+  }
+
+  video.addEventListener("play", syncPlayback);
+  video.addEventListener("pause", syncPlayback);
+  video.addEventListener("volumechange", syncSound);
+  // Without the video, the cover stays and there is nothing to control.
+  video.addEventListener("error", () => {
+    toggle.remove();
+    sound.remove();
+    player.removeAttribute("data-paused");
+  });
+
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    togglePlayback();
+  });
+  sound.addEventListener("click", (event) => {
+    event.stopPropagation();
+    video.muted = !video.muted;
+  });
+  card.addEventListener("click", () => {
+    if (video.isConnected) togglePlayback();
+  });
+
+  syncPlayback();
+  syncSound();
+  card.append(toggle, sound);
+}
+
 /**
  * The Story player. It opens as the mini player (see showPlayer); expand
  * switches to the expanded view, a modal dialog, and back. Clicking the
  * backdrop of the expanded view or pressing Escape in it closes the player.
+ * The video starts muted (see playPlayer).
  */
-export function createPlayer(story: StoryAd, options: PlayerOptions) {
+export function createPlayer(story: StoryMedia, options: PlayerOptions) {
   const player = document.createElement("dialog");
   player.className = "player";
   player.setAttribute("popover", "manual");
@@ -248,7 +366,11 @@ export function createPlayer(story: StoryAd, options: PlayerOptions) {
     options.onClose();
   });
 
-  frame.append(controls, createCard(story));
+  const card = createCard(story);
+  const video = card.querySelector("video");
+  if (video) addVideoControls(player, card, video, options);
+
+  frame.append(controls, card);
   player.append(frame);
   return player;
 }

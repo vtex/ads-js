@@ -1,10 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { createCard } from "./card";
 
 describe("createCard", () => {
   it("renders the poster", () => {
     const card = createCard({
-      ad_id: "1",
       poster_url: "https://example.com/cover.jpg",
     });
 
@@ -14,14 +13,23 @@ describe("createCard", () => {
   });
 
   it("renders no poster without a poster_url", () => {
-    const card = createCard({ ad_id: "1" });
+    const card = createCard({});
     expect(card.querySelector(".poster")).toBeNull();
   });
 
-  it.each(["javascript:alert(1)", "data:image/png;base64,AAAA", "/cover.jpg"])(
-    "ignores a poster_url that is not an absolute http(s) URL: %s",
+  it("resolves a relative poster_url against the page", () => {
+    const card = createCard({ poster_url: "/stories/cover.jpg" });
+
+    const poster = card.querySelector<HTMLImageElement>(".poster");
+    expect(poster?.getAttribute("src")).toBe(
+      new URL("/stories/cover.jpg", document.baseURI).href,
+    );
+  });
+
+  it.each(["javascript:alert(1)", "data:image/png;base64,AAAA"])(
+    "ignores a poster_url that is not an http(s) URL: %s",
     (posterUrl) => {
-      const card = createCard({ ad_id: "1", poster_url: posterUrl });
+      const card = createCard({ poster_url: posterUrl });
       expect(card.querySelector(".poster")).toBeNull();
     },
   );
@@ -30,10 +38,7 @@ describe("createCard", () => {
 describe("createCard with options", () => {
   function interactiveCard() {
     const onSelect = vi.fn();
-    const card = createCard(
-      { ad_id: "1" },
-      { label: "Assistir vídeo", onSelect },
-    );
+    const card = createCard({}, { label: "Assistir vídeo", onSelect });
     return { card, onSelect };
   }
 
@@ -61,9 +66,60 @@ describe("createCard with options", () => {
   });
 
   it("is not a button without options", () => {
-    const card = createCard({ ad_id: "1" });
+    const card = createCard({});
 
     expect(card.getAttribute("role")).toBeNull();
     expect(card.querySelector(".play")).toBeNull();
   });
+});
+
+describe("createCard with a video", () => {
+  const story = {
+    poster_url: "https://example.com/cover.jpg",
+    media_url: "https://example.com/story.mp4",
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("loops the video muted and inline over the cover", () => {
+    const card = createCard(story);
+
+    const video = card.querySelector("video");
+    expect(video?.getAttribute("src")).toBe("https://example.com/story.mp4");
+    expect(video?.getAttribute("poster")).toBe("https://example.com/cover.jpg");
+    expect(video?.muted).toBe(true);
+    expect(video?.hasAttribute("muted")).toBe(true);
+    expect(video?.hasAttribute("playsinline")).toBe(true);
+    expect(video?.loop).toBe(true);
+    expect(video?.autoplay).toBe(true);
+    // The cover stays underneath for when the video can't play.
+    expect(card.querySelector(".poster")).not.toBeNull();
+  });
+
+  it("does not autoplay for people who prefer reduced motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+
+    const video = createCard(story).querySelector("video");
+    expect(video?.autoplay).toBe(false);
+  });
+
+  it("removes the video when it fails to load, leaving the cover", () => {
+    const card = createCard(story);
+    card.querySelector("video")?.dispatchEvent(new Event("error"));
+
+    expect(card.querySelector("video")).toBeNull();
+    expect(card.querySelector(".poster")).not.toBeNull();
+  });
+
+  it.each(["javascript:alert(1)", "data:video/mp4;base64,AAAA"])(
+    "ignores a media_url that is not an http(s) URL: %s",
+    (mediaUrl) => {
+      const card = createCard({ ...story, media_url: mediaUrl });
+      expect(card.querySelector("video")).toBeNull();
+    },
+  );
 });

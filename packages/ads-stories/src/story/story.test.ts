@@ -7,7 +7,12 @@ import {
   afterEach,
 } from "vitest";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import { installMediaMocks } from "../components/card/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
+
+// The fixed test Story in story.ts.
+const COVER = "https://dummyimage.com/1080x1920/e31c57/fff";
+const VIDEO = "https://samplelib.com/mp4/sample-10s-vp9.mp4";
 
 function mount() {
   const el = document.createElement(TAG_NAME);
@@ -18,6 +23,7 @@ function mount() {
 describe("vtex-ads-story", () => {
   beforeAll(() => {
     installDialogMocks();
+    installMediaMocks();
     defineVtexAdsStories();
   });
 
@@ -47,10 +53,12 @@ describe("vtex-ads-story", () => {
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
-  it("renders the placeholder cover", () => {
+  it("renders the test Story's cover and video", () => {
     const el = mount();
-    const poster = el.shadowRoot?.querySelector<HTMLImageElement>(".poster");
-    expect(poster?.src).toBe("https://dummyimage.com/1080x1920/e31c57/fff");
+    const card = el.shadowRoot?.querySelector(".card");
+
+    expect(card?.querySelector(".poster")?.getAttribute("src")).toBe(COVER);
+    expect(card?.querySelector("video")?.getAttribute("src")).toBe(VIDEO);
   });
 
   it("renders the card only once when connected again", () => {
@@ -76,7 +84,7 @@ describe("vtex-ads-story", () => {
       const players = getPlayers(el);
       expect(players).toHaveLength(1);
       expect(players[0].querySelector(".poster")?.getAttribute("src")).toBe(
-        "https://dummyimage.com/1080x1920/e31c57/fff",
+        COVER,
       );
     });
 
@@ -107,6 +115,34 @@ describe("vtex-ads-story", () => {
       expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
         "Fechar vídeo",
       );
+    });
+
+    function getVideos(el: Element) {
+      return {
+        card: el.shadowRoot?.querySelector<HTMLVideoElement>(
+          ".root .card video",
+        ),
+        player: el.shadowRoot?.querySelector<HTMLVideoElement>(".player video"),
+      };
+    }
+
+    it("pauses the card video and plays the player's while open", () => {
+      const el = mount();
+      getVideos(el).card?.play();
+      getCard(el)?.click();
+
+      const { card, player } = getVideos(el);
+      expect(card?.paused).toBe(true);
+      expect(player?.paused).toBe(false);
+      expect(player?.muted).toBe(true);
+    });
+
+    it("plays the card video again when the player closes", () => {
+      const el = mount();
+      getCard(el)?.click();
+      el.shadowRoot?.querySelector<HTMLElement>(".player-close")?.click();
+
+      expect(getVideos(el).card?.paused).toBe(false);
     });
 
     it("closes from the close button and focuses the card again", () => {
