@@ -28,7 +28,7 @@ const LABELS = {
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
 export class VtexAdsStoryElement extends LitElement {
-  static styles = [
+  static readonly styles = [
     css`
       :host {
         display: block;
