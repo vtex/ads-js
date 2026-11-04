@@ -40,11 +40,10 @@ describe("PlayerController", () => {
     if (!player) throw new Error("The player did not render");
     const expand = player.querySelector<HTMLButtonElement>(".player-expand");
     const close = player.querySelector<HTMLButtonElement>(".player-close");
-    // Waits for the mode switch, which shows the dialog after an update.
+    // Waits for the mode switch, which shows the dialog again after an update.
     const toggleExpanded = async () => {
       expand?.click();
-      await Promise.resolve();
-      await Promise.resolve();
+      await vi.waitFor(() => expect(shownAs(player)).not.toBeNull());
     };
     return {
       controller,
@@ -119,6 +118,21 @@ describe("PlayerController", () => {
     expect(player.hasAttribute("data-expanded")).toBe(false);
     expect(expand?.getAttribute("aria-label")).toBe("Expandir vídeo");
     expect(document.activeElement).toBe(expand);
+  });
+
+  it("survives two expand clicks in the same task", async () => {
+    const { player, expand } = await setup();
+
+    // The second click toggles back before the first one shows the dialog.
+    expand?.click();
+    expand?.click();
+    await vi.waitFor(() => expect(shownAs(player)).toBe("popover"));
+    // Any error from showing the dialog twice would surface by now.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(shownAs(player)).toBe("popover");
+    expect(player.hasAttribute("data-expanded")).toBe(false);
+    expect(expand?.getAttribute("aria-label")).toBe("Expandir vídeo");
   });
 
   it("only fades in on the first opening", async () => {

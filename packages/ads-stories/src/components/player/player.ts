@@ -296,7 +296,10 @@ export class PlayerController implements ReactiveController {
 
   // Mini: a manual popover, or a non-modal dialog without popover support.
   // Expanded: a modal dialog.
+  // Already showing: a second expand click in the same task resumes after the
+  // first one has shown the dialog, and showing it again would throw.
   private show(dialog: HTMLDialogElement) {
+    if (this.shown) return;
     if (this.expanded) dialog.showModal();
     else if (supportsPopover(dialog)) dialog.showPopover();
     else dialog.show();
