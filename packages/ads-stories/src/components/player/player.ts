@@ -1,5 +1,8 @@
-import { createCard, playVideo } from "../card";
-import { createIcon, type IconName } from "../icons";
+import { css, html, nothing } from "lit";
+import type { ReactiveController, ReactiveControllerHost } from "lit";
+import { createRef, ref } from "lit/directives/ref.js";
+import { icon } from "../icons";
+import { hasVideo, renderMedia, VideoController } from "../media";
 import type { StoryMedia } from "../../types";
 
 // The player is a <dialog> shown in the top layer, so no store z-index,
@@ -11,7 +14,7 @@ import type { StoryMedia } from "../../types";
 // Expanded: a modal dialog (showModal), so the browser makes the page behind
 // it inert. The card is centered over a dark backdrop, with the controls at
 // the top right of the screen. On narrow screens it fills the screen.
-export const playerStyles = `
+export const playerStyles = css`
   .player {
     position: fixed;
     inset: auto 16px 16px auto;
@@ -215,165 +218,222 @@ export interface PlayerOptions {
   pauseLabel: string;
   soundOnLabel: string;
   soundOffLabel: string;
+  /**
+   * Called by the close button, Escape and a click on the expanded view's
+   * backdrop. Call close() from it.
+   */
   onClose: () => void;
 }
 
-function createButton(className: string, label: string, icon: IconName) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = `player-button ${className}`;
-  button.setAttribute("aria-label", label);
-  button.append(createIcon(icon));
-  return button;
-}
-
-function supportsPopover(player: HTMLDialogElement) {
-  return typeof player.showPopover === "function";
-}
-
-/** Shows the player as the mini player. It must already be in the page. */
-export function showPlayer(player: HTMLDialogElement) {
-  if (supportsPopover(player)) player.showPopover();
-  else player.show();
-}
-
-/** Plays the player's video, if it has one. */
-export function playPlayer(player: HTMLDialogElement) {
-  const video = player.querySelector("video");
-  if (video) playVideo(video);
+function supportsPopover(dialog: HTMLDialogElement) {
+  return typeof dialog.showPopover === "function";
 }
 
 /**
- * Play/pause in the middle of the video and sound on/off at its top right.
- * Clicking the video also plays or pauses it. The buttons follow the video's
- * own events, so a blocked autoplay shows as paused.
+ * The Story player, rendered by its host with render(). open() shows it as
+ * the mini player; expand switches to the expanded view, a modal dialog, and
+ * back. The video starts muted and plays when the player opens. It closes on
+ * its own when the host leaves the page.
  */
-function addVideoControls(
-  player: HTMLDialogElement,
-  card: HTMLElement,
-  video: HTMLVideoElement,
-  options: PlayerOptions,
-) {
-  // Not a .player-button: it keeps the card's larger glass look.
-  const toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.className = "play player-toggle";
-  const sound = createButton("player-sound", "", "soundOff");
+export class PlayerController implements ReactiveController {
+  readonly video: VideoController;
 
-  function syncPlayback() {
-    player.toggleAttribute("data-paused", video.paused);
-    toggle.setAttribute(
-      "aria-label",
-      video.paused ? options.playLabel : options.pauseLabel,
-    );
-    toggle.replaceChildren(createIcon(video.paused ? "play" : "pause"));
+  /** Rendered and, once the host has updated, shown. */
+  isOpen = false;
+  private expanded = false;
+  /** Switched modes at least once: only the first opening fades in. */
+  private switched = false;
+  /** The dialog is showing, in the mode `expanded` says. */
+  private shown = false;
+
+  private readonly dialog = createRef<HTMLDialogElement>();
+  private readonly expandButton = createRef<HTMLButtonElement>();
+  private readonly closeButton = createRef<HTMLButtonElement>();
+
+  constructor(
+    private readonly host: ReactiveControllerHost,
+    private readonly options: PlayerOptions,
+  ) {
+    host.addController(this);
+    this.video = new VideoController(host);
   }
 
-  function syncSound() {
-    sound.setAttribute(
-      "aria-label",
-      video.muted ? options.soundOnLabel : options.soundOffLabel,
-    );
-    sound.replaceChildren(createIcon(video.muted ? "soundOff" : "soundOn"));
+  hostDisconnected() {
+    this.close();
   }
 
-  function togglePlayback() {
-    if (video.paused) playVideo(video);
-    else video.pause();
+  /** Opens the mini player, plays the video and focuses the close button. */
+  async open() {
+    if (this.isOpen) return;
+
+    document.addEventListener("keydown", this.onKeyDown);
+    this.isOpen = true;
+    this.expanded = false;
+    this.switched = false;
+    this.video.reset();
+    this.host.requestUpdate();
+    await this.host.updateComplete;
+
+    const dialog = this.dialog.value;
+    // Closed again before the host rendered it.
+    if (!this.isOpen || !dialog) return;
+
+    this.show(dialog);
+    this.video.play();
+    this.closeButton.value?.focus();
   }
 
-  video.addEventListener("play", syncPlayback);
-  video.addEventListener("pause", syncPlayback);
-  video.addEventListener("volumechange", syncSound);
-  // Without the video, the cover stays and there is nothing to control.
-  video.addEventListener("error", () => {
-    toggle.remove();
-    sound.remove();
-    delete player.dataset.paused;
-  });
+  /** Hides the player now; the host removes it on its next update. */
+  close() {
+    if (!this.isOpen) return;
 
-  toggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    togglePlayback();
-  });
-  sound.addEventListener("click", (event) => {
-    event.stopPropagation();
-    video.muted = !video.muted;
-  });
-  card.addEventListener("click", () => {
-    if (video.isConnected) togglePlayback();
-  });
+    document.removeEventListener("keydown", this.onKeyDown);
+    const dialog = this.dialog.value;
+    if (dialog) this.hide(dialog);
+    this.isOpen = false;
+    this.host.requestUpdate();
+  }
 
-  syncPlayback();
-  syncSound();
-  card.append(toggle, sound);
-}
-
-/**
- * The Story player. It opens as the mini player (see showPlayer); expand
- * switches to the expanded view, a modal dialog, and back. Clicking the
- * backdrop of the expanded view or pressing Escape in it closes the player.
- * The video starts muted (see playPlayer).
- */
-export function createPlayer(story: StoryMedia, options: PlayerOptions) {
-  const player = document.createElement("dialog");
-  player.className = "player";
-  player.setAttribute("popover", "manual");
-  player.setAttribute("aria-label", options.label);
-
-  const frame = document.createElement("div");
-  frame.className = "player-frame";
-
-  const controls = document.createElement("div");
-  controls.className = "player-controls";
-
-  const expand = createButton("player-expand", options.expandLabel, "expand");
-  const close = createButton("player-close", options.closeLabel, "close");
-  controls.append(expand, close);
-
-  let expanded = false;
+  // Mini: a manual popover, or a non-modal dialog without popover support.
+  // Expanded: a modal dialog.
+  private show(dialog: HTMLDialogElement) {
+    if (this.expanded) dialog.showModal();
+    else if (supportsPopover(dialog)) dialog.showPopover();
+    else dialog.show();
+    this.shown = true;
+  }
 
   // A dialog can't be shown as a popover and as a modal at the same time, so
   // switching modes hides it first, the same way it was shown.
-  function hide() {
-    if (!expanded && supportsPopover(player)) player.hidePopover();
-    else player.close();
+  private hide(dialog: HTMLDialogElement) {
+    if (!this.shown) return;
+    if (!this.expanded && supportsPopover(dialog)) dialog.hidePopover();
+    else dialog.close();
+    this.shown = false;
   }
 
-  expand.addEventListener("click", () => {
-    hide();
-    expanded = !expanded;
-    player.toggleAttribute("data-expanded", expanded);
-    player.dataset.switched = "";
-    expand.setAttribute(
-      "aria-label",
-      expanded ? options.collapseLabel : options.expandLabel,
-    );
-    expand.replaceChildren(createIcon(expanded ? "collapse" : "expand"));
+  private readonly toggleExpanded = async () => {
+    const dialog = this.dialog.value;
+    if (!dialog) return;
 
-    if (expanded) player.showModal();
-    else showPlayer(player);
-    expand.focus();
-  });
+    this.hide(dialog);
+    this.expanded = !this.expanded;
+    this.switched = true;
+    this.host.requestUpdate();
+    await this.host.updateComplete;
 
-  close.addEventListener("click", options.onClose);
+    if (!this.isOpen) return;
+    this.show(dialog);
+    this.expandButton.value?.focus();
+  };
+
+  // Escape anywhere on the page, also in the mini player, which is not modal.
+  private readonly onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") this.options.onClose();
+  };
 
   // Clicks on the backdrop of the expanded view reach the dialog itself.
-  player.addEventListener("click", (event) => {
-    if (expanded && event.target === player) options.onClose();
-  });
+  private readonly onDialogClick = (event: Event) => {
+    if (this.expanded && event.target === event.currentTarget) {
+      this.options.onClose();
+    }
+  };
 
   // Escape on a modal dialog would only hide it: close the player instead.
-  player.addEventListener("cancel", (event) => {
+  private readonly onCancel = (event: Event) => {
     event.preventDefault();
-    options.onClose();
-  });
+    this.options.onClose();
+  };
 
-  const card = createCard(story);
-  const video = card.querySelector("video");
-  if (video) addVideoControls(player, card, video, options);
+  /**
+   * Play/pause in the middle of the video and sound on/off at its top right.
+   * They follow the video's own events, so a blocked autoplay shows as
+   * paused.
+   */
+  private renderVideoControls() {
+    const { video, options } = this;
 
-  frame.append(controls, card);
-  player.append(frame);
-  return player;
+    // Not a .player-button: it keeps the card's larger glass look.
+    const onToggle = (event: Event) => {
+      event.stopPropagation();
+      video.togglePlayback();
+    };
+    const onSound = (event: Event) => {
+      event.stopPropagation();
+      video.toggleMuted();
+    };
+
+    return html`
+      <button
+        type="button"
+        class="play player-toggle"
+        aria-label=${video.paused ? options.playLabel : options.pauseLabel}
+        @click=${onToggle}
+      >
+        ${icon(video.paused ? "play" : "pause")}
+      </button>
+      <button
+        type="button"
+        class="player-button player-sound"
+        aria-label=${video.muted ? options.soundOnLabel : options.soundOffLabel}
+        @click=${onSound}
+      >
+        ${icon(video.muted ? "soundOff" : "soundOn")}
+      </button>
+    `;
+  }
+
+  /**
+   * The player <dialog> while it is open. Clicking the video also plays or
+   * pauses it.
+   */
+  render(story: StoryMedia) {
+    if (!this.isOpen) return nothing;
+
+    const { video, options, expanded } = this;
+    const withVideo = hasVideo(story, video);
+
+    return html`
+      <dialog
+        class="player"
+        popover="manual"
+        aria-label=${options.label}
+        ?data-expanded=${expanded}
+        ?data-switched=${this.switched}
+        ?data-paused=${withVideo && video.paused}
+        ${ref(this.dialog)}
+        @click=${this.onDialogClick}
+        @cancel=${this.onCancel}
+      >
+        <div class="player-frame">
+          <div class="player-controls">
+            <button
+              type="button"
+              class="player-button player-expand"
+              aria-label=${expanded
+                ? options.collapseLabel
+                : options.expandLabel}
+              ${ref(this.expandButton)}
+              @click=${this.toggleExpanded}
+            >
+              ${icon(expanded ? "collapse" : "expand")}
+            </button>
+            <button
+              type="button"
+              class="player-button player-close"
+              aria-label=${options.closeLabel}
+              ${ref(this.closeButton)}
+              @click=${options.onClose}
+            >
+              ${icon("close")}
+            </button>
+          </div>
+          <div class="card" @click=${() => video.togglePlayback()}>
+            ${renderMedia(story, video)}
+            ${withVideo ? this.renderVideoControls() : nothing}
+          </div>
+        </div>
+      </dialog>
+    `;
+  }
 }

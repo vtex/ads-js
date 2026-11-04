@@ -1,26 +1,10 @@
-import { cardStyles, createCard, playVideo } from "../components/card";
-import {
-  createPlayer,
-  playerStyles,
-  playPlayer,
-  showPlayer,
-} from "../components/player";
+import { css, html, LitElement } from "lit";
+import { cardStyles, renderCard } from "../components/card";
+import { VideoController } from "../components/media";
+import { PlayerController, playerStyles } from "../components/player";
 import type { StoryMedia } from "../types";
 
 export const TAG_NAME = "vtex-ads-story";
-
-// Keeps the module importable where HTMLElement doesn't exist (SSR, Node).
-const BaseElement: typeof HTMLElement = globalThis.HTMLElement ?? Object;
-
-const styles = `
-  :host {
-    display: block;
-    font-family: var(--vtex-ads-story-font-family, inherit);
-    color: var(--vtex-ads-story-color-text, inherit);
-  }
-  ${cardStyles}
-  ${playerStyles}
-`;
 
 // Temporary: rendered until the element reads Stories from the ad API.
 const PLACEHOLDER_STORY: StoryMedia = {
@@ -41,84 +25,66 @@ const LABELS = {
   soundOff: "Desativar som",
 };
 
-export class VtexAdsStoryElement extends BaseElement {
-  private player: HTMLDialogElement | null = null;
+// LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
+// falls back to a minimal shim there.
+export class VtexAdsStoryElement extends LitElement {
+  static styles = [
+    css`
+      :host {
+        display: block;
+        font-family: var(--vtex-ads-story-font-family, inherit);
+        color: var(--vtex-ads-story-color-text, inherit);
+      }
+    `,
+    cardStyles,
+    playerStyles,
+  ];
 
-  private readonly onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") this.closePlayer();
-  };
+  private readonly cardVideo = new VideoController(this);
 
-  private render() {
-    const container = this.shadowRoot?.querySelector(".root");
-    if (!container) return;
-
-    container.replaceChildren(
-      createCard(PLACEHOLDER_STORY, {
-        label: LABELS.watch,
-        soundOnLabel: LABELS.soundOn,
-        soundOffLabel: LABELS.soundOff,
-        onSelect: () => this.openPlayer(),
-      }),
-    );
-  }
-
-  private cardVideo() {
-    return this.shadowRoot?.querySelector<HTMLVideoElement>(
-      ".root .card video",
-    );
-  }
+  private readonly player = new PlayerController(this, {
+    label: LABELS.player,
+    expandLabel: LABELS.expand,
+    collapseLabel: LABELS.collapse,
+    closeLabel: LABELS.close,
+    playLabel: LABELS.play,
+    pauseLabel: LABELS.pause,
+    soundOnLabel: LABELS.soundOn,
+    soundOffLabel: LABELS.soundOff,
+    onClose: () => this.closePlayer(),
+  });
 
   private openPlayer() {
-    if (this.player || !this.shadowRoot) return;
+    if (this.player.isOpen) return;
 
-    this.player = createPlayer(PLACEHOLDER_STORY, {
-      label: LABELS.player,
-      expandLabel: LABELS.expand,
-      collapseLabel: LABELS.collapse,
-      closeLabel: LABELS.close,
-      playLabel: LABELS.play,
-      pauseLabel: LABELS.pause,
-      soundOnLabel: LABELS.soundOn,
-      soundOffLabel: LABELS.soundOff,
-      onClose: () => this.closePlayer(),
-    });
-    this.shadowRoot.append(this.player);
-    showPlayer(this.player);
     // While the player is open, the card behind it stops on its cover.
-    this.cardVideo()?.pause();
-    playPlayer(this.player);
-    document.addEventListener("keydown", this.onKeyDown);
-
-    this.player.querySelector<HTMLElement>(".player-close")?.focus();
+    this.cardVideo.pause();
+    void this.player.open();
   }
 
-  // `removed`: the element is leaving the page, so there is no card to give
-  // focus back to or to resume playing (it would play out of sight).
-  private closePlayer({ removed = false } = {}) {
-    if (!this.player) return;
+  // The player also closes on its own when the element leaves the page,
+  // without this: there is no card to give focus back to or to resume playing
+  // (it would play out of sight).
+  private closePlayer() {
+    if (!this.player.isOpen) return;
 
-    document.removeEventListener("keydown", this.onKeyDown);
-    this.player.remove();
-    this.player = null;
-    if (removed) return;
-
-    const video = this.cardVideo();
-    if (video?.autoplay) playVideo(video);
-
-    this.shadowRoot?.querySelector<HTMLElement>(".root .card-open")?.focus();
+    this.player.close();
+    this.cardVideo.resume();
+    this.renderRoot.querySelector<HTMLElement>(".root .card-open")?.focus();
   }
 
-  connectedCallback() {
-    if (!this.shadowRoot) {
-      const root = this.attachShadow({ mode: "open" });
-      root.innerHTML = `<style>${styles}</style><div class="root"></div>`;
-    }
-
-    this.render();
-  }
-
-  disconnectedCallback() {
-    this.closePlayer({ removed: true });
+  protected render() {
+    return html`
+      <div class="root">
+        ${renderCard(PLACEHOLDER_STORY, this.cardVideo, {
+          label: LABELS.watch,
+          soundOnLabel: LABELS.soundOn,
+          soundOffLabel: LABELS.soundOff,
+          onSelect: () => this.openPlayer(),
+        })}
+      </div>
+      ${this.player.render(PLACEHOLDER_STORY)}
+    `;
   }
 }
 
