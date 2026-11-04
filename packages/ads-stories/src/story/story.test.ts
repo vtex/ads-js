@@ -76,6 +76,21 @@ describe("vtex-ads-story", () => {
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
+  it("plays the card video again when the element is moved", async () => {
+    const el = await mount();
+    const video =
+      el.shadowRoot?.querySelector<HTMLVideoElement>(".root .card video");
+    video?.play();
+
+    el.remove();
+    // Browsers pause a video removed from the page; jsdom doesn't.
+    video?.pause();
+    document.body.appendChild(el);
+    await el.updateComplete;
+
+    expect(video?.paused).toBe(false);
+  });
+
   describe("player", () => {
     // The card's button, which opens the player.
     function getCard(el: Element) {

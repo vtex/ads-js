@@ -54,6 +54,17 @@ export class VtexAdsStoryElement extends LitElement {
     onClose: () => this.closePlayer(),
   });
 
+  // Lit keeps the card's DOM when the element is moved (removed and appended
+  // again), but the browser pauses a removed video and doesn't autoplay it
+  // again. resume() only plays a video that autoplays (not with reduced
+  // motion), and does nothing on the first connection, before the render.
+  // Not in VideoController.hostConnected: there, the player's video is still
+  // in the DOM until the next update and would play for a moment.
+  connectedCallback() {
+    super.connectedCallback();
+    this.cardVideo.resume();
+  }
+
   private openPlayer() {
     if (this.player.isOpen) return;
 
