@@ -1,56 +1,40 @@
 import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
-import { installMediaMocks } from "./media.mock";
-import { createCard } from "./card";
+import { mountHost } from "../host.mock";
+import { installMediaMocks } from "../media/media.mock";
+import { VideoController } from "../media";
+import { renderCard } from "./card";
+import type { StoryMedia } from "../../types";
 
-describe("createCard", () => {
-  it("renders the poster", () => {
-    const card = createCard({
-      poster_url: "https://example.com/cover.jpg",
-    });
+const options = {
+  label: "Assistir vídeo",
+  soundOnLabel: "Ativar som",
+  soundOffLabel: "Desativar som",
+};
 
-    const poster = card.querySelector<HTMLImageElement>(".poster");
-    expect(poster?.src).toBe("https://example.com/cover.jpg");
-    expect(poster?.alt).toBe("");
-  });
-
-  it("renders no poster without a poster_url", () => {
-    const card = createCard({});
-    expect(card.querySelector(".poster")).toBeNull();
-  });
-
-  it.each([
-    "javascript:alert(1)",
-    "data:image/png;base64,AAAA",
-    "/stories/cover.jpg",
-    "//attacker.example/cover.jpg",
-  ])(
-    "ignores a poster_url that is not an absolute http(s) URL: %s",
-    (posterUrl) => {
-      const card = createCard({ poster_url: posterUrl });
-      expect(card.querySelector(".poster")).toBeNull();
-    },
+function mount(story: StoryMedia) {
+  const onSelect = vi.fn();
+  const { container, controller: video } = mountHost(
+    (host) => new VideoController(host),
+    (video) => renderCard(story, video, { ...options, onSelect }),
   );
+
+  const card = container.querySelector<HTMLElement>(".card");
+  const sound = () => card?.querySelector<HTMLButtonElement>(".card-sound");
+  return { card, video, sound, onSelect };
+}
+
+afterEach(() => {
+  document.body.replaceChildren();
 });
 
-describe("createCard with options", () => {
-  function interactiveCard() {
-    const onSelect = vi.fn();
-    const card = createCard(
-      {},
-      {
-        label: "Assistir vídeo",
-        soundOnLabel: "Ativar som",
-        soundOffLabel: "Desativar som",
-        onSelect,
-      },
+describe("renderCard", () => {
+  it("has the cover and a button with a play icon", () => {
+    const { card } = mount({ poster_url: "https://example.com/cover.jpg" });
+    const open = card?.querySelector(".card-open");
+
+    expect(card?.querySelector(".poster")?.getAttribute("src")).toBe(
+      "https://example.com/cover.jpg",
     );
-    return { card, onSelect };
-  }
-
-  it("has a button with a play icon", () => {
-    const { card } = interactiveCard();
-    const open = card.querySelector(".card-open");
-
     // A native button: Enter and Space click it.
     expect(open).toBeInstanceOf(HTMLButtonElement);
     expect(open?.getAttribute("type")).toBe("button");
@@ -62,138 +46,99 @@ describe("createCard with options", () => {
   });
 
   it("calls onSelect when its button is clicked", () => {
-    const { card, onSelect } = interactiveCard();
+    const { card, onSelect } = mount({});
 
-    card.querySelector<HTMLButtonElement>(".card-open")?.click();
+    card?.querySelector<HTMLButtonElement>(".card-open")?.click();
 
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
-
-  it("has no button without options", () => {
-    const card = createCard({});
-
-    expect(card.querySelector("button")).toBeNull();
-    expect(card.querySelector(".play")).toBeNull();
-  });
 });
 
-describe("createCard with a video", () => {
-  const story = {
-    poster_url: "https://example.com/cover.jpg",
-    media_url: "https://example.com/story.mp4",
-  };
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("loops the video muted and inline over the cover", () => {
-    const card = createCard(story);
-
-    const video = card.querySelector("video");
-    expect(video?.getAttribute("src")).toBe("https://example.com/story.mp4");
-    expect(video?.getAttribute("poster")).toBe("https://example.com/cover.jpg");
-    expect(video?.muted).toBe(true);
-    expect(video?.hasAttribute("muted")).toBe(true);
-    expect(video?.hasAttribute("playsinline")).toBe(true);
-    expect(video?.loop).toBe(true);
-    expect(video?.autoplay).toBe(true);
-    // The cover stays underneath for when the video can't play.
-    expect(card.querySelector(".poster")).not.toBeNull();
-  });
-
-  it("does not autoplay for people who prefer reduced motion", () => {
-    vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query === "(prefers-reduced-motion: reduce)",
-    }));
-
-    const video = createCard(story).querySelector("video");
-    expect(video?.autoplay).toBe(false);
-  });
-
-  it("removes the video when it fails to load, leaving the cover", () => {
-    const card = createCard(story);
-    card.querySelector("video")?.dispatchEvent(new Event("error"));
-
-    expect(card.querySelector("video")).toBeNull();
-    expect(card.querySelector(".poster")).not.toBeNull();
-  });
-
-  it.each([
-    "javascript:alert(1)",
-    "data:video/mp4;base64,AAAA",
-    "/stories/story.mp4",
-    "//attacker.example/story.mp4",
-  ])(
-    "ignores a media_url that is not an absolute http(s) URL: %s",
-    (mediaUrl) => {
-      const card = createCard({ ...story, media_url: mediaUrl });
-      expect(card.querySelector("video")).toBeNull();
-    },
-  );
-});
-
-describe("createCard sound button", () => {
-  const options = {
-    label: "Assistir vídeo",
-    soundOnLabel: "Ativar som",
-    soundOffLabel: "Desativar som",
-  };
+describe("renderCard sound button", () => {
   const story = { media_url: "https://example.com/story.mp4" };
 
   beforeAll(() => {
     installMediaMocks();
   });
 
-  function setup() {
-    const onSelect = vi.fn();
-    const card = createCard(story, { ...options, onSelect });
-    const video = card.querySelector("video");
-    const sound = card.querySelector<HTMLButtonElement>(".card-sound");
-    return { card, video, sound, onSelect };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // The card's video playing, as its autoplay does in browsers.
+  function mountPlaying() {
+    const result = mount(story);
+    result.video.play();
+    return result;
   }
 
   it("turns the video's sound on and off", () => {
-    const { video, sound } = setup();
-    expect(sound?.getAttribute("aria-label")).toBe("Ativar som");
-    expect(sound?.querySelectorAll("svg.icon")).toHaveLength(1);
+    const { card, sound } = mountPlaying();
+    const video = card?.querySelector("video");
+    expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
+    expect(sound()?.querySelectorAll("svg.icon")).toHaveLength(1);
 
-    sound?.click();
+    sound()?.click();
+    video?.dispatchEvent(new Event("volumechange"));
     expect(video?.muted).toBe(false);
-    expect(sound?.getAttribute("aria-label")).toBe("Desativar som");
+    expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
+    expect(sound()?.querySelectorAll("svg.icon")).toHaveLength(1);
 
-    sound?.click();
+    sound()?.click();
+    video?.dispatchEvent(new Event("volumechange"));
     expect(video?.muted).toBe(true);
-    expect(sound?.getAttribute("aria-label")).toBe("Ativar som");
+    expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
   });
 
   it("does not open the player", () => {
-    const { sound, onSelect } = setup();
+    const { sound, onSelect } = mountPlaying();
 
-    sound?.click();
+    sound()?.click();
 
     expect(onSelect).not.toHaveBeenCalled();
   });
 
   it("is beside the card's button, not inside it", () => {
-    const { card, sound } = setup();
+    const { card, sound } = mountPlaying();
 
-    expect(sound?.parentElement).toBe(card);
-    expect(sound?.closest(".card-open")).toBeNull();
+    expect(sound()?.parentElement).toBe(card);
+    expect(sound()?.closest(".card-open")).toBeNull();
+  });
+
+  it("is only there while the video plays", () => {
+    const { video, sound } = mount(story);
+    // Not yet playing, or autoplay blocked (iOS Low Power Mode).
+    expect(sound()).toBeNull();
+
+    video.play();
+    expect(sound()).not.toBeNull();
+
+    // Paused behind the open player.
+    video.pause();
+    expect(sound()).toBeNull();
+  });
+
+  it("is not there for people who prefer reduced motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+    const { card, sound } = mount(story);
+
+    // The video doesn't autoplay, so it has no sound to turn on.
+    expect(card?.querySelector("video")?.autoplay).toBe(false);
+    expect(sound()).toBeNull();
   });
 
   it("is only there for a card with a video", () => {
-    const withoutVideo = createCard({}, { ...options, onSelect: vi.fn() });
-    expect(withoutVideo.querySelector(".card-sound")).toBeNull();
-
-    const inPlayer = createCard(story);
-    expect(inPlayer.querySelector(".card-sound")).toBeNull();
+    expect(mount({}).sound()).toBeNull();
   });
 
   it("is removed when the video fails to load", () => {
-    const { card, video } = setup();
-    video?.dispatchEvent(new Event("error"));
+    const { card, sound } = mountPlaying();
+    expect(sound()).not.toBeNull();
+    card?.querySelector("video")?.dispatchEvent(new Event("error"));
 
-    expect(card.querySelector(".card-sound")).toBeNull();
+    expect(card?.querySelector("video")).toBeNull();
+    expect(sound()).toBeNull();
   });
 });

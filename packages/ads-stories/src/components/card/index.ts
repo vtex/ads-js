@@ -1,2 +1,2 @@
-export { createCard, cardStyles, playVideo } from "./card";
+export { cardStyles, renderCard } from "./card";
 export type { CardOptions } from "./card";

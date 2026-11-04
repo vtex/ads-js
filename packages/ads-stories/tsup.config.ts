@@ -20,10 +20,15 @@ const raw: EsbuildPlugin = {
   },
 };
 
+// Lit ships only ES modules, so it is bundled wherever the output can't import
+// it: the CJS build (require()) and the standalone CDN script.
+const bundleLit = [/^lit(\/|$)/, /^@lit\//];
+
 // Custom elements must stay native ES classes (`class extends HTMLElement`),
 // so no build goes below ES2018.
 export default defineConfig([
-  // npm: ESM (modern bundlers)
+  // npm: ESM (modern bundlers). Lit stays an import, shared with any other
+  // Lit components on the page.
   {
     entry: ["src/index.ts", "src/react.ts"],
     format: ["esm"],
@@ -48,6 +53,7 @@ export default defineConfig([
     outDir: "dist/cjs",
     clean: false,
     bundle: true,
+    noExternal: bundleLit,
     splitting: false,
     esbuildPlugins: [raw],
   },
@@ -56,6 +62,8 @@ export default defineConfig([
     entry: { "vtex-ads-stories": "src/cdn.ts" },
     format: ["iife"],
     globalName: "VtexAdsStories",
+    // Browser builds of Lit: no Node shims for HTMLElement in the script.
+    platform: "browser",
     target: "es2018",
     dts: false,
     sourcemap: true,
@@ -63,6 +71,7 @@ export default defineConfig([
     outDir: "dist/cdn",
     clean: false,
     bundle: true,
+    noExternal: bundleLit,
     splitting: false,
     outExtension: () => ({ js: ".js" }),
     esbuildPlugins: [raw],

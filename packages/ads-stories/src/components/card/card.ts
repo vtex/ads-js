@@ -1,7 +1,9 @@
-import { createIcon } from "../icons";
+import { css, html, nothing } from "lit";
+import { icon } from "../icons";
+import { hasVideo, renderMedia, type VideoController } from "../media";
 import type { StoryMedia } from "../../types";
 
-export const cardStyles = `
+export const cardStyles = css`
   .card {
     position: relative;
     box-sizing: border-box;
@@ -119,115 +121,51 @@ export interface CardOptions {
   soundOffLabel: string;
 }
 
-// Only absolute http(s) URLs reach the DOM. Relative and protocol-relative
-// ones ("/a.jpg", "//host/a.jpg") don't parse without a base, so they're out.
-function httpUrl(value: string | undefined) {
-  if (!value) return null;
-  try {
-    const { protocol } = new URL(value);
-    return protocol === "https:" || protocol === "http:" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function prefersReducedMotion() {
-  return (
-    globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
-  );
-}
-
 /**
- * Plays a video. A blocked play is ignored: the cover or the paused state
- * stays.
+ * Sound on/off for the card's video, which starts muted. Only shown while the
+ * video plays: a video that never plays (reduced motion, or autoplay blocked
+ * as in iOS Low Power Mode) has no sound to turn on, and the card paused
+ * behind the open player needs none.
  */
-export function playVideo(video: HTMLVideoElement) {
-  video.play()?.catch(() => undefined);
-}
-
-function createVideo(src: string, poster: string | null) {
-  const video = document.createElement("video");
-  video.className = "video";
-  // Muted and inline is what browsers, iOS included, allow to autoplay.
-  video.muted = true;
-  video.setAttribute("muted", "");
-  video.setAttribute("playsinline", "");
-  video.loop = true;
-  video.preload = "metadata";
-  // No autoplay for people who asked for reduced motion.
-  video.autoplay = !prefersReducedMotion();
-  if (poster) video.poster = poster;
-  video.src = src;
-
-  // If the video can't load, the cover underneath stays.
-  video.addEventListener("error", () => video.remove());
-  return video;
-}
-
-/** Sound on/off for the card's video, which starts muted. */
-function createSoundButton(video: HTMLVideoElement, options: CardOptions) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "card-sound";
-
-  function sync() {
-    button.setAttribute(
-      "aria-label",
-      video.muted ? options.soundOnLabel : options.soundOffLabel,
-    );
-    button.replaceChildren(createIcon(video.muted ? "soundOff" : "soundOn"));
-  }
-
-  video.addEventListener("volumechange", sync);
-  // Without the video, the cover stays and there is no sound to control.
-  video.addEventListener("error", () => button.remove());
-  button.addEventListener("click", () => {
-    video.muted = !video.muted;
-  });
-
-  sync();
-  return button;
+function renderSoundButton(video: VideoController, options: CardOptions) {
+  return html`
+    <button
+      type="button"
+      class="card-sound"
+      aria-label=${video.muted ? options.soundOnLabel : options.soundOffLabel}
+      @click=${() => video.toggleMuted()}
+    >
+      ${icon(video.muted ? "soundOff" : "soundOn")}
+    </button>
+  `;
 }
 
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
- * muted over it. With options, a button with a play icon in the middle covers
- * the card, and a card with a video gets a sound button. The sound button is
- * beside the card's button, not inside it: a button can't contain another.
+ * muted over it (see renderMedia). A button with a play icon in the middle
+ * covers the card, and a sound button shows while the video plays. The sound
+ * button is beside the card's button, not inside it: a button can't contain
+ * another.
  */
-export function createCard(story: StoryMedia, options?: CardOptions) {
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const posterUrl = httpUrl(story.poster_url);
-  if (posterUrl) {
-    const poster = document.createElement("img");
-    poster.className = "poster";
-    poster.alt = "";
-    poster.src = posterUrl;
-    card.append(poster);
-  }
-
-  const mediaUrl = httpUrl(story.media_url);
-  const video = mediaUrl ? createVideo(mediaUrl, posterUrl) : null;
-  if (video) card.append(video);
-
-  if (options) {
-    const open = document.createElement("button");
-    open.type = "button";
-    open.className = "card-open";
-    open.setAttribute("aria-label", options.label);
-
-    const play = document.createElement("span");
-    play.className = "play";
-    play.setAttribute("aria-hidden", "true");
-    play.append(createIcon("play"));
-    open.append(play);
-    open.addEventListener("click", options.onSelect);
-
-    card.append(open);
-    if (video) card.append(createSoundButton(video, options));
-  }
-
-  return card;
+export function renderCard(
+  story: StoryMedia,
+  video: VideoController,
+  options: CardOptions,
+) {
+  return html`
+    <div class="card">
+      ${renderMedia(story, video)}
+      <button
+        type="button"
+        class="card-open"
+        aria-label=${options.label}
+        @click=${options.onSelect}
+      >
+        <span class="play" aria-hidden="true">${icon("play")}</span>
+      </button>
+      ${hasVideo(story, video) && !video.paused
+        ? renderSoundButton(video, options)
+        : nothing}
+    </div>
+  `;
 }
