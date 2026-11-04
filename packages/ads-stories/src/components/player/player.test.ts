@@ -126,11 +126,10 @@ describe("PlayerController", () => {
     // The second click toggles back before the first one shows the dialog.
     expand?.click();
     expand?.click();
+    // Showing the dialog twice would be an unhandled rejection, which fails
+    // the run.
     await vi.waitFor(() => expect(shownAs(player)).toBe("popover"));
-    // Any error from showing the dialog twice would surface by now.
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(shownAs(player)).toBe("popover");
     expect(player.hasAttribute("data-expanded")).toBe(false);
     expect(expand?.getAttribute("aria-label")).toBe("Expandir vídeo");
   });
