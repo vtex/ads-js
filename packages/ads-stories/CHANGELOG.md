@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- 47bdafb: `<vtex-ads-story>` is now built with Lit. It looks and behaves the same; `lit` is a new dependency of the npm package (bundled in the CJS build and in the CDN script).
+- 47bdafb: `<vtex-ads-story>` is now built with Lit. It looks and behaves the same in the browser; `lit` is a new dependency of the npm package (bundled in the CJS build and in the CDN script). In Node (SSR), importing the package now installs Lit's DOM shim, so `globalThis.customElements` is defined there.
 
 ## 0.4.0
 

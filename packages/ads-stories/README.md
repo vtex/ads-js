@@ -24,10 +24,18 @@ defineVtexAdsStories();
 <vtex-ads-story></vtex-ads-story>
 ```
 
-Importing the package has no side effects: nothing is registered until
-`defineVtexAdsStories()` is called. It can be imported during server-side
-rendering, where `defineVtexAdsStories()` does nothing. Both ESM (`import`) and
-CommonJS (`require`) builds are published, with type declarations.
+Importing the package registers nothing: the element is only registered when
+`defineVtexAdsStories()` is called. Both ESM (`import`) and CommonJS
+(`require`) builds are published, with type declarations.
+
+The package can be imported during server-side rendering (for example in
+FastStore, which is Next.js). The element is built with
+[Lit](https://lit.dev), and in Node Lit installs a minimal DOM shim, so after
+the import `globalThis.customElements` is defined on the server too. Don't use
+`typeof customElements` to tell the server from the browser; use
+`typeof window` instead. Calling `defineVtexAdsStories()` on the server is
+safe: it registers the element in Lit's server-side registry and renders
+nothing.
 
 ### TypeScript and React
 
