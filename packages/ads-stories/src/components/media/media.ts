@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
 import type { StoryMedia } from "../../types";
 import type { VideoController } from "./video-controller";
@@ -31,7 +31,7 @@ export function hasVideo(story: StoryMedia, video: VideoController) {
  * the video can't load, it is removed and the cover underneath stays.
  */
 export function renderMedia(story: StoryMedia, video: VideoController) {
-  const posterUrl = undefined; //httpUrl(story.poster_url);
+  const posterUrl = httpUrl(story.poster_url);
   const mediaUrl = httpUrl(story.media_url);
 
   // Muted and inline is what browsers, iOS included, allow to autoplay. The
@@ -39,7 +39,9 @@ export function renderMedia(story: StoryMedia, video: VideoController) {
   // which one they read for autoplay. No autoplay for people who asked for
   // reduced motion.
   return html`
-    ${posterUrl ? html` <img class="poster" alt="" src=${posterUrl} /> ` : null}
+    ${posterUrl
+      ? html`<img class="poster" alt="" src=${posterUrl} />`
+      : nothing}
     ${mediaUrl && !video.failed
       ? html`
           <video
@@ -50,15 +52,15 @@ export function renderMedia(story: StoryMedia, video: VideoController) {
             preload="metadata"
             .muted=${true}
             ?autoplay=${!prefersReducedMotion()}
-            poster=${posterUrl ?? null}
+            poster=${posterUrl ?? nothing}
             src=${mediaUrl}
             ${ref(video.ref)}
             @play=${video.sync}
             @pause=${video.sync}
             @volumechange=${video.sync}
             @error=${video.fail}
-          />
+          ></video>
         `
-      : null}
+      : nothing}
   `;
 }
