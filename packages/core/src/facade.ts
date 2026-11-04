@@ -1,5 +1,9 @@
 import { getAds } from "./clients/adServer";
-import { getSponsoredProductArray } from "./clients/adServer/mappers";
+import {
+  getSponsoredProductArray,
+  getStoryArray,
+  StoriesByPlacement,
+} from "./clients/adServer/mappers";
 import { Product } from "./clients/search";
 import { mergeAdsWithProducts } from "./hydration/mergeAdsWithProducts";
 import {
@@ -11,25 +15,33 @@ import {
   ProductFetcher,
   ProductMatchesOffer,
 } from "./hydration/types";
-import { GetAdsArgs, RawAdsByPlacements, RawAdsResponse } from "./types";
+import {
+  GetAdsArgs,
+  RawAdsByPlacements,
+  RawAdsResponse,
+  StoriesByPlacements,
+} from "./types";
 import { toAdServerArgs } from "./utils/toAdServerArgs";
 import { buildOffers } from "./hydration/mappers";
+
+const toStoriesByPlacements = (
+  stories: StoriesByPlacement[],
+): StoriesByPlacements => Object.fromEntries(stories);
 
 /**
  * Fetches raw advertisement data without enriching it with product details.
  *
  * @param args - Targeting arguments to fetch ads.
- * @returns RawAdsResponse - An object where each key is a placement and the
- * value is an array of sponsored products
+ * @returns RawAdsResponse - Sponsored products and Story ads, each grouped by
+ * placement
  * @public
  */
 export const getRawAds: (args: GetAdsArgs) => Promise<RawAdsResponse> = async (
   args,
 ) => {
   const adServerArgs = toAdServerArgs(args);
-  const adsArray = getSponsoredProductArray(
-    await getAds(args.identity.publisherId, adServerArgs),
-  );
+  const adResponse = await getAds(args.identity.publisherId, adServerArgs);
+  const adsArray = getSponsoredProductArray(adResponse);
 
   const adsByPlacements = {} as RawAdsByPlacements;
 
@@ -42,6 +54,7 @@ export const getRawAds: (args: GetAdsArgs) => Promise<RawAdsResponse> = async (
 
   const response: RawAdsResponse = {
     sponsoredProducts: adsByPlacements,
+    stories: toStoriesByPlacements(getStoryArray(adResponse)),
     banners: undefined,
     sponsoredBrands: undefined,
   };
@@ -68,9 +81,8 @@ export const getHydratedAds = async <T extends object>(
   matcher: ProductMatchesOffer<T>,
 ): Promise<HydratedAdsResponse<T>> => {
   const adServerArgs = toAdServerArgs(args);
-  const ads = getSponsoredProductArray(
-    await getAds(args.identity.publisherId, adServerArgs),
-  );
+  const adResponse = await getAds(args.identity.publisherId, adServerArgs);
+  const ads = getSponsoredProductArray(adResponse);
 
   const products = await fetcher(buildOffers(ads), args.identity);
 
@@ -78,6 +90,7 @@ export const getHydratedAds = async <T extends object>(
 
   const response: HydratedAdsResponse<T> = {
     sponsoredProducts: mergedResult,
+    stories: toStoriesByPlacements(getStoryArray(adResponse)),
     banners: undefined,
     sponsoredBrands: undefined,
   };

@@ -3,12 +3,16 @@ import { getRawAds, getHydratedAds } from "./facade";
 import { getAds } from "./clients/adServer";
 import {
   getSponsoredProductArray,
+  getStoryArray,
   AdsByPlacement,
   getOffer,
 } from "./clients/adServer/mappers";
 
 import { Product } from "./clients/search/types";
-import { SponsoredProductDetail } from "./clients/adServer/types";
+import {
+  SponsoredProductDetail,
+  StoryAdDetail,
+} from "./clients/adServer/types";
 import { GetAdsArgs, RawAdsResponse } from "./types";
 import {
   intelligentSearchFetcher,
@@ -23,6 +27,7 @@ vi.mock("./clients/adServer", () => ({
 
 vi.mock("./clients/adServer/mappers", () => ({
   getSponsoredProductArray: vi.fn(),
+  getStoryArray: vi.fn(() => []),
   getOffer: vi.fn(),
 }));
 
@@ -44,6 +49,7 @@ describe("facade", () => {
   // Mock instances
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
+  const mockedGetStoryArray = vi.mocked(getStoryArray);
   const mockedGetOffer = vi.mocked(getOffer);
   const mockedIntelligentSearchFetcher = vi.mocked(intelligentSearchFetcher);
   const mockedIntelligentSearchMatcher = vi.mocked(intelligentSearchMatcher);
@@ -52,6 +58,7 @@ describe("facade", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetStoryArray.mockReturnValue([]);
   });
 
   // Test data
@@ -161,6 +168,31 @@ describe("facade", () => {
     deliveryPromisesBadges: [],
   };
 
+  const mockStory: StoryAdDetail = {
+    type: "story",
+    ad_id: "story-ad-1",
+    campaign_id: "campaign-1",
+    seller_id: "1",
+    position: 0,
+    campaign_name: "Story campaign",
+    asset_type: "video",
+    media_url: "https://cdn.example.com/story.mp4",
+    poster_url: "https://cdn.example.com/story.jpg",
+    duration_seconds: 14,
+    destination_url: "https://www.publisher.com/produto/p",
+    product: {
+      product_sku: "sku-123",
+      seller_id: "1",
+      product_name: "Test Product",
+      image_url: "https://cdn.example.com/product.jpg",
+      url: "https://www.publisher.com/produto/p",
+      product_metadata: {},
+    },
+    impression_url: "https://events.example.com/impression",
+    view_url: "https://events.example.com/view",
+    click_url: "https://events.example.com/click",
+  };
+
   describe("getRawAds", () => {
     it("should fetch and return raw ads grouped by placement", async () => {
       // Arrange
@@ -183,6 +215,7 @@ describe("facade", () => {
             },
           ],
         },
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       };
@@ -208,6 +241,7 @@ describe("facade", () => {
 
       const expectedResponse: RawAdsResponse = {
         sponsoredProducts: {},
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       };
@@ -259,6 +293,22 @@ describe("facade", () => {
           productId: "product-789",
         },
       });
+    });
+    it("should return Story ads grouped by placement", async () => {
+      // Arrange
+      const mockAdServerResponse = { home_stories: [mockStory] };
+      mockedGetAds.mockResolvedValue(mockAdServerResponse);
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedGetStoryArray.mockReturnValue([["home_stories", [mockStory]]]);
+
+      // Act
+      const result = await getRawAds(mockGetAdsArgs);
+
+      // Assert
+      expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
+      expect(mockedGetAds).toHaveBeenCalledTimes(1);
+      expect(result.stories).toEqual({ home_stories: [mockStory] });
+      expect(result.sponsoredProducts).toEqual({});
     });
   });
 
@@ -401,6 +451,7 @@ describe("facade", () => {
           byPlacement: {},
           failed: [],
         },
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       });
@@ -472,6 +523,31 @@ describe("facade", () => {
           sponsoredBySellerId: mockSponsoredProduct.seller_id,
         },
       });
+    });
+    it("should return Story ads without hydrating their products", async () => {
+      // Arrange
+      const mockAdServerResponse = { home_stories: [mockStory] };
+      mockedGetAds.mockResolvedValue(mockAdServerResponse);
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedGetStoryArray.mockReturnValue([["home_stories", [mockStory]]]);
+      mockedBuildOffers.mockReturnValue([]);
+      mockedIntelligentSearchFetcher.mockResolvedValue([]);
+
+      // Act
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
+      );
+
+      // Assert
+      expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
+      expect(mockedGetAds).toHaveBeenCalledTimes(1);
+      expect(mockedIntelligentSearchFetcher).toHaveBeenCalledWith(
+        [],
+        mockGetAdsArgs.identity,
+      );
+      expect(result.stories).toEqual({ home_stories: [mockStory] });
     });
   });
 

@@ -1,5 +1,5 @@
 import { Placement, SponsoredProductDetail } from "../clients/adServer";
-import { Identity } from "../types";
+import { Identity, StoriesByPlacements } from "../types";
 
 /**
  * Type alias for SKU identifier
@@ -91,6 +91,10 @@ export interface HydratedSponsoredProduct<T> {
  */
 export interface HydratedAdsResponse<T> {
   sponsoredProducts: HydratedProductsResult<T>;
+  /**
+   * Story ads as returned by the ad server. Their products are not hydrated.
+   */
+  stories: StoriesByPlacements;
   // TODO: implement other ad responses.
   banners: void;
   sponsoredBrands: void;
