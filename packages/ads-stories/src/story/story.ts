@@ -1,6 +1,11 @@
-import { cardStyles, createCard } from "../components/card";
-import { createPlayer, playerStyles, showPlayer } from "../components/player";
-import type { StoryAd } from "../types";
+import { cardStyles, createCard, playVideo } from "../components/card";
+import {
+  createPlayer,
+  playerStyles,
+  playPlayer,
+  showPlayer,
+} from "../components/player";
+import type { StoryMedia } from "../types";
 
 export const TAG_NAME = "vtex-ads-story";
 
@@ -18,9 +23,9 @@ const styles = `
 `;
 
 // Temporary: rendered until the element reads Stories from the ad API.
-const PLACEHOLDER_STORY: StoryAd = {
-  ad_id: "placeholder",
+const PLACEHOLDER_STORY: StoryMedia = {
   poster_url: "https://dummyimage.com/1080x1920/e31c57/fff",
+  media_url: "https://samplelib.com/mp4/sample-10s-vp9.mp4",
 };
 
 // Temporary: fixed texts until the store can set them by attribute.
@@ -30,6 +35,10 @@ const LABELS = {
   expand: "Expandir vídeo",
   collapse: "Reduzir vídeo",
   close: "Fechar vídeo",
+  play: "Reproduzir vídeo",
+  pause: "Pausar vídeo",
+  soundOn: "Ativar som",
+  soundOff: "Desativar som",
 };
 
 export class VtexAdsStoryElement extends BaseElement {
@@ -46,8 +55,16 @@ export class VtexAdsStoryElement extends BaseElement {
     container.replaceChildren(
       createCard(PLACEHOLDER_STORY, {
         label: LABELS.watch,
+        soundOnLabel: LABELS.soundOn,
+        soundOffLabel: LABELS.soundOff,
         onSelect: () => this.openPlayer(),
       }),
+    );
+  }
+
+  private cardVideo() {
+    return this.shadowRoot?.querySelector<HTMLVideoElement>(
+      ".root .card video",
     );
   }
 
@@ -59,25 +76,36 @@ export class VtexAdsStoryElement extends BaseElement {
       expandLabel: LABELS.expand,
       collapseLabel: LABELS.collapse,
       closeLabel: LABELS.close,
+      playLabel: LABELS.play,
+      pauseLabel: LABELS.pause,
+      soundOnLabel: LABELS.soundOn,
+      soundOffLabel: LABELS.soundOff,
       onClose: () => this.closePlayer(),
     });
     this.shadowRoot.append(this.player);
     showPlayer(this.player);
+    // While the player is open, the card behind it stops on its cover.
+    this.cardVideo()?.pause();
+    playPlayer(this.player);
     document.addEventListener("keydown", this.onKeyDown);
 
     this.player.querySelector<HTMLElement>(".player-close")?.focus();
   }
 
-  private closePlayer({ restoreFocus = true } = {}) {
+  // `removed`: the element is leaving the page, so there is no card to give
+  // focus back to or to resume playing (it would play out of sight).
+  private closePlayer({ removed = false } = {}) {
     if (!this.player) return;
 
     document.removeEventListener("keydown", this.onKeyDown);
     this.player.remove();
     this.player = null;
+    if (removed) return;
 
-    if (restoreFocus) {
-      this.shadowRoot?.querySelector<HTMLElement>(".root .card")?.focus();
-    }
+    const video = this.cardVideo();
+    if (video?.autoplay) playVideo(video);
+
+    this.shadowRoot?.querySelector<HTMLElement>(".root .card-open")?.focus();
   }
 
   connectedCallback() {
@@ -90,7 +118,7 @@ export class VtexAdsStoryElement extends BaseElement {
   }
 
   disconnectedCallback() {
-    this.closePlayer({ restoreFocus: false });
+    this.closePlayer({ removed: true });
   }
 }
 

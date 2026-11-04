@@ -6,4 +6,9 @@ export interface StoryAd {
   ad_id: string;
   /** Cover image shown before the video plays. */
   poster_url?: string;
+  /** The 9:16 MP4 the card and the player play. */
+  media_url?: string;
 }
+
+/** What the card and the player show: the cover and the video. */
+export type StoryMedia = Pick<StoryAd, "poster_url" | "media_url">;

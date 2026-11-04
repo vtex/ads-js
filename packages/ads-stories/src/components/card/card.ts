@@ -1,5 +1,5 @@
 import { createIcon } from "../icons";
-import type { StoryAd } from "../../types";
+import type { StoryMedia } from "../../types";
 
 export const cardStyles = `
   .card {
@@ -12,11 +12,29 @@ export const cardStyles = `
     background: #000;
   }
 
-  .card[role="button"] {
+  /* The card's button covers it. The focus ring goes on the card, since the
+     card's overflow would clip the button's own. */
+  .card-open {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
   }
 
-  .poster {
+  .card-open:focus-visible {
+    outline: none;
+  }
+
+  .card:has(> .card-open:focus-visible) {
+    outline: auto;
+  }
+
+  .poster,
+  .video {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -52,6 +70,29 @@ export const cardStyles = `
     color: #fff;
   }
 
+  /* Sound on/off, at the top right of the card (as in the prototype). */
+  .card-sound {
+    position: absolute;
+    top: 22px;
+    right: 12px;
+    z-index: 1;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  }
+
+  .card-sound .icon {
+    width: 20px;
+    height: 20px;
+  }
+
   /* With a mouse, the play button shows only on hover or keyboard focus.
      Touch screens have no hover, so it stays visible there. */
   @media (hover: hover) and (pointer: fine) {
@@ -61,7 +102,7 @@ export const cardStyles = `
     }
 
     .card:hover .play,
-    .card:focus-visible .play {
+    .card-open:focus-visible .play {
       opacity: 1;
       transform: translate(-50%, -50%);
     }
@@ -73,51 +114,119 @@ export interface CardOptions {
   label: string;
   /** Called on click, Enter or Space. */
   onSelect: () => void;
+  /** Accessible names of the sound button, shown when the card has a video. */
+  soundOnLabel: string;
+  soundOffLabel: string;
 }
 
-// Only absolute http(s) URLs reach the DOM.
-function isHttpUrl(value: string) {
+// Only absolute http(s) URLs reach the DOM. Relative and protocol-relative
+// ones ("/a.jpg", "//host/a.jpg") don't parse without a base, so they're out.
+function httpUrl(value: string | undefined) {
+  if (!value) return null;
   try {
     const { protocol } = new URL(value);
-    return protocol === "https:" || protocol === "http:";
+    return protocol === "https:" || protocol === "http:" ? value : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function prefersReducedMotion() {
+  return (
+    globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+  );
 }
 
 /**
- * A 9:16 card with the Story cover. With options, the card is a button with
- * a play icon in the middle.
+ * Plays a video. A blocked play is ignored: the cover or the paused state
+ * stays.
  */
-export function createCard(story: StoryAd, options?: CardOptions) {
+export function playVideo(video: HTMLVideoElement) {
+  video.play()?.catch(() => undefined);
+}
+
+function createVideo(src: string, poster: string | null) {
+  const video = document.createElement("video");
+  video.className = "video";
+  // Muted and inline is what browsers, iOS included, allow to autoplay.
+  video.muted = true;
+  video.setAttribute("muted", "");
+  video.setAttribute("playsinline", "");
+  video.loop = true;
+  video.preload = "metadata";
+  // No autoplay for people who asked for reduced motion.
+  video.autoplay = !prefersReducedMotion();
+  if (poster) video.poster = poster;
+  video.src = src;
+
+  // If the video can't load, the cover underneath stays.
+  video.addEventListener("error", () => video.remove());
+  return video;
+}
+
+/** Sound on/off for the card's video, which starts muted. */
+function createSoundButton(video: HTMLVideoElement, options: CardOptions) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "card-sound";
+
+  function sync() {
+    button.setAttribute(
+      "aria-label",
+      video.muted ? options.soundOnLabel : options.soundOffLabel,
+    );
+    button.replaceChildren(createIcon(video.muted ? "soundOff" : "soundOn"));
+  }
+
+  video.addEventListener("volumechange", sync);
+  // Without the video, the cover stays and there is no sound to control.
+  video.addEventListener("error", () => button.remove());
+  button.addEventListener("click", () => {
+    video.muted = !video.muted;
+  });
+
+  sync();
+  return button;
+}
+
+/**
+ * A 9:16 card with the Story cover and, with a media_url, the video looping
+ * muted over it. With options, a button with a play icon in the middle covers
+ * the card, and a card with a video gets a sound button. The sound button is
+ * beside the card's button, not inside it: a button can't contain another.
+ */
+export function createCard(story: StoryMedia, options?: CardOptions) {
   const card = document.createElement("div");
   card.className = "card";
 
-  if (story.poster_url && isHttpUrl(story.poster_url)) {
+  const posterUrl = httpUrl(story.poster_url);
+  if (posterUrl) {
     const poster = document.createElement("img");
     poster.className = "poster";
     poster.alt = "";
-    poster.src = story.poster_url;
+    poster.src = posterUrl;
     card.append(poster);
   }
 
+  const mediaUrl = httpUrl(story.media_url);
+  const video = mediaUrl ? createVideo(mediaUrl, posterUrl) : null;
+  if (video) card.append(video);
+
   if (options) {
-    card.setAttribute("role", "button");
-    card.setAttribute("aria-label", options.label);
-    card.tabIndex = 0;
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "card-open";
+    open.setAttribute("aria-label", options.label);
 
     const play = document.createElement("span");
     play.className = "play";
     play.setAttribute("aria-hidden", "true");
     play.append(createIcon("play"));
-    card.append(play);
+    open.append(play);
+    open.addEventListener("click", options.onSelect);
 
-    card.addEventListener("click", options.onSelect);
-    card.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      options.onSelect();
-    });
+    card.append(open);
+    if (video) card.append(createSoundButton(video, options));
   }
 
   return card;
