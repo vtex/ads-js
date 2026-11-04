@@ -121,7 +121,12 @@ export interface CardOptions {
   soundOffLabel: string;
 }
 
-/** Sound on/off for the card's video, which starts muted. */
+/**
+ * Sound on/off for the card's video, which starts muted. Only shown while the
+ * video plays: a video that never plays (reduced motion, or autoplay blocked
+ * as in iOS Low Power Mode) has no sound to turn on, and the card paused
+ * behind the open player needs none.
+ */
 function renderSoundButton(video: VideoController, options: CardOptions) {
   return html`
     <button
@@ -138,7 +143,7 @@ function renderSoundButton(video: VideoController, options: CardOptions) {
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
  * muted over it (see renderMedia). A button with a play icon in the middle
- * covers the card, and a card with a video gets a sound button. The sound
+ * covers the card, and a sound button shows while the video plays. The sound
  * button is beside the card's button, not inside it: a button can't contain
  * another.
  */
@@ -158,7 +163,9 @@ export function renderCard(
       >
         <span class="play" aria-hidden="true">${icon("play")}</span>
       </button>
-      ${hasVideo(story, video) ? renderSoundButton(video, options) : nothing}
+      ${hasVideo(story, video) && !video.paused
+        ? renderSoundButton(video, options)
+        : nothing}
     </div>
   `;
 }

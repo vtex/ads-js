@@ -61,8 +61,19 @@ describe("renderCard sound button", () => {
     installMediaMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // The card's video playing, as its autoplay does in browsers.
+  function mountPlaying() {
+    const result = mount(story);
+    result.video.play();
+    return result;
+  }
+
   it("turns the video's sound on and off", () => {
-    const { card, sound } = mount(story);
+    const { card, sound } = mountPlaying();
     const video = card?.querySelector("video");
     expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
     expect(sound()?.querySelectorAll("svg.icon")).toHaveLength(1);
@@ -80,7 +91,7 @@ describe("renderCard sound button", () => {
   });
 
   it("does not open the player", () => {
-    const { sound, onSelect } = mount(story);
+    const { sound, onSelect } = mountPlaying();
 
     sound()?.click();
 
@@ -88,10 +99,34 @@ describe("renderCard sound button", () => {
   });
 
   it("is beside the card's button, not inside it", () => {
-    const { card, sound } = mount(story);
+    const { card, sound } = mountPlaying();
 
     expect(sound()?.parentElement).toBe(card);
     expect(sound()?.closest(".card-open")).toBeNull();
+  });
+
+  it("is only there while the video plays", () => {
+    const { video, sound } = mount(story);
+    // Not yet playing, or autoplay blocked (iOS Low Power Mode).
+    expect(sound()).toBeNull();
+
+    video.play();
+    expect(sound()).not.toBeNull();
+
+    // Paused behind the open player.
+    video.pause();
+    expect(sound()).toBeNull();
+  });
+
+  it("is not there for people who prefer reduced motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+    const { card, sound } = mount(story);
+
+    // The video doesn't autoplay, so it has no sound to turn on.
+    expect(card?.querySelector("video")?.autoplay).toBe(false);
+    expect(sound()).toBeNull();
   });
 
   it("is only there for a card with a video", () => {
@@ -99,7 +134,8 @@ describe("renderCard sound button", () => {
   });
 
   it("is removed when the video fails to load", () => {
-    const { card, sound } = mount(story);
+    const { card, sound } = mountPlaying();
+    expect(sound()).not.toBeNull();
     card?.querySelector("video")?.dispatchEvent(new Event("error"));
 
     expect(card?.querySelector("video")).toBeNull();
