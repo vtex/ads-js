@@ -13,10 +13,7 @@ import type { VtexAdsStoryElement } from "./story";
 export type VtexAdsStoryProps = DetailedHTMLProps<
   HTMLAttributes<VtexAdsStoryElement>,
   VtexAdsStoryElement
-> & {
-  /** Name shown in the greeting; falls back to "world" when empty. */
-  name?: string;
-};
+>;
 
 declare module "react" {
   // eslint-disable-next-line @typescript-eslint/no-namespace

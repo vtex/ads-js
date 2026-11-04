@@ -1,4 +1,24 @@
-import { defineConfig } from "tsup";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { defineConfig, type Options } from "tsup";
+
+type EsbuildPlugin = NonNullable<Options["esbuildPlugins"]>[number];
+
+// Loads `import text from "./file.svg?raw"` as a string, the same way Vite
+// does in dev and in tests.
+const raw: EsbuildPlugin = {
+  name: "raw",
+  setup(build) {
+    build.onResolve({ filter: /\?raw$/ }, (args) => ({
+      path: path.resolve(args.resolveDir, args.path.replace(/\?raw$/, "")),
+      namespace: "raw",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "raw" }, async (args) => ({
+      contents: await readFile(args.path, "utf8"),
+      loader: "text",
+    }));
+  },
+};
 
 // Custom elements must stay native ES classes (`class extends HTMLElement`),
 // so no build goes below ES2018.
@@ -14,6 +34,7 @@ export default defineConfig([
     clean: false,
     bundle: true,
     splitting: false,
+    esbuildPlugins: [raw],
   },
   // npm: CJS (require(), Jest, VTEX IO)
   {
@@ -28,6 +49,7 @@ export default defineConfig([
     clean: false,
     bundle: true,
     splitting: false,
+    esbuildPlugins: [raw],
   },
   // CDN: standalone script, registers the element on load
   {
@@ -43,5 +65,6 @@ export default defineConfig([
     bundle: true,
     splitting: false,
     outExtension: () => ({ js: ".js" }),
+    esbuildPlugins: [raw],
   },
 ]);
