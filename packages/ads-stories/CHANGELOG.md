@@ -1,5 +1,11 @@
 # @vtex/ads-stories
 
+## 0.4.1
+
+### Patch Changes
+
+- 47bdafb: `<vtex-ads-story>` is now built with Lit. It looks and behaves the same; `lit` is a new dependency of the npm package (bundled in the CJS build and in the CDN script).
+
 ## 0.4.0
 
 ### Minor Changes
