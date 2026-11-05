@@ -1,8 +1,19 @@
-import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from "vitest";
 import { mountHost } from "../host.mock";
 import { installMediaMocks } from "../media/media.mock";
 import { installDialogMocks, shownAs } from "./dialog.mock";
 import {
+  FAR_GAP,
+  NEAR_GAP,
   neighborOffsets,
   PlayerController,
   type PlayerRenderOptions,
@@ -432,6 +443,175 @@ describe("PlayerController", () => {
 
       video?.dispatchEvent(new Event("ended"));
       expect(onStep).toHaveBeenCalledWith(1);
+    });
+
+    describe("step animation", () => {
+      // jsdom has no layout nor Web Animations: widths and animate() are
+      // stubbed.
+      const FRAME = 405;
+      const SIDE = 180;
+      type Animate = (
+        keyframes: Keyframe[],
+        options: KeyframeAnimationOptions,
+      ) => { cancel: () => void };
+      let animate: Mock<Animate>;
+
+      beforeEach(() => {
+        animate = vi.fn<Animate>(() => ({ cancel: vi.fn() }));
+        Object.assign(HTMLElement.prototype, { animate });
+        vi.spyOn(
+          HTMLElement.prototype,
+          "offsetWidth",
+          "get",
+        ).mockImplementation(function (this: HTMLElement) {
+          if (this.classList.contains("player-frame")) return FRAME;
+          if (this.classList.contains("player-neighbor")) return SIDE;
+          return 0;
+        });
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+        // @ts-expect-error removing the stubs jsdom doesn't have
+        delete HTMLElement.prototype.animate;
+      });
+
+      // [element class, first keyframe, last keyframe, pseudo-element]
+      const animations = () =>
+        animate.mock.contexts.map((element, call) => {
+          const [keyframes, options] = animate.mock.calls[call];
+          return [
+            (element as HTMLElement).className,
+            keyframes[0],
+            keyframes.at(-1),
+            options.pseudoElement,
+          ];
+        });
+
+      const near = FRAME / 2 + NEAR_GAP + SIDE / 2;
+      const ratio = SIDE / FRAME;
+      const cover = (x: number, scale = 1) =>
+        `translate(-50%, -50%) translateX(${x}px) scale(${scale})`;
+
+      it("grows the video from the cover and slides the covers", async () => {
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1)],
+        });
+        await expand(player);
+
+        await controller.showNext(1);
+
+        expect(animations()).toEqual([
+          ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
+          [
+            "player-frame",
+            { transform: `translateX(${near}px) scale(${ratio})` },
+            { transform: "none" },
+            undefined,
+          ],
+          // The previous video, shrinking to the cover before it.
+          [
+            "player-neighbor",
+            { transform: cover(0, 1 / ratio) },
+            { transform: cover(-near) },
+            undefined,
+          ],
+          ["player-neighbor", { opacity: 0 }, { opacity: 1 }, "::after"],
+          // The one two places after, sliding in to the next place.
+          [
+            "player-neighbor",
+            { transform: cover(near + SIDE + FAR_GAP) },
+            { transform: cover(near) },
+            undefined,
+          ],
+        ]);
+      });
+
+      it("swaps the video and the cover with two Stories", async () => {
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(1)],
+        });
+        await expand(player);
+
+        await controller.showNext(1);
+
+        // --pair-dir is -1: the video ends left of center.
+        expect(animations()).toEqual([
+          ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
+          [
+            "player-frame",
+            {
+              transform: `translateX(${-(FRAME + NEAR_GAP) / 2}px) scale(${ratio})`,
+            },
+            { transform: `translateX(${-(NEAR_GAP + SIDE) / 2}px)` },
+            undefined,
+          ],
+          [
+            "player-neighbor",
+            { transform: cover((NEAR_GAP + SIDE) / 2, 1 / ratio) },
+            { transform: cover((FRAME + NEAR_GAP) / 2) },
+            undefined,
+          ],
+          ["player-neighbor", { opacity: 0 }, { opacity: 1 }, "::after"],
+        ]);
+      });
+
+      it("cancels a step still animating when the next one starts", async () => {
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1)],
+        });
+        await expand(player);
+
+        await controller.showNext(1);
+        const first = animate.mock.results.map((result) => result.value);
+        await controller.showNext(1);
+
+        for (const animation of first) {
+          expect(animation.cancel).toHaveBeenCalledTimes(1);
+        }
+      });
+
+      it("does not animate the mini player", async () => {
+        const { controller } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1)],
+        });
+
+        await controller.showNext(1);
+
+        expect(animate).not.toHaveBeenCalled();
+      });
+
+      it("does not animate without covers on screen (narrow screens)", async () => {
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(
+          0,
+        );
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1)],
+        });
+        await expand(player);
+
+        await controller.showNext(1);
+
+        expect(animate).not.toHaveBeenCalled();
+      });
+
+      it("does not animate with reduced motion", async () => {
+        vi.stubGlobal("matchMedia", (query: string) => ({
+          matches: query === "(prefers-reduced-motion: reduce)",
+        }));
+        try {
+          const { controller, player } = await setupWithNavigation(true, {
+            neighbors: [neighbor(-1), neighbor(1)],
+          });
+          await expand(player);
+
+          await controller.showNext(1);
+
+          expect(animate).not.toHaveBeenCalled();
+        } finally {
+          vi.unstubAllGlobals();
+        }
+      });
     });
 
     it("loops expanded with a single Story", async () => {

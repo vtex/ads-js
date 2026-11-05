@@ -4,8 +4,21 @@ import { createRef, ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
-import { hasVideo, httpUrl, renderMedia, VideoController } from "../media";
+import {
+  hasVideo,
+  httpUrl,
+  prefersReducedMotion,
+  renderMedia,
+  VideoController,
+} from "../media";
 import type { StoryMedia } from "../../types";
+
+/**
+ * Expanded view gaps, in pixels: between the video and the nearest covers,
+ * and between covers. Shared by the CSS and the step animation.
+ */
+export const NEAR_GAP = 72;
+export const FAR_GAP = 48;
 
 // The player is a <dialog> shown in the top layer, so no store z-index,
 // overflow or transform can hide or move it.
@@ -178,8 +191,8 @@ export const playerStyles = css`
     --side-height: min(38vh, 320px);
     --side-width: calc(var(--side-height) * 9 / 16);
     --center-half: calc(var(--center-height) * 9 / 32);
-    --near-gap: 72px;
-    --far-gap: 48px;
+    --near-gap: ${NEAR_GAP}px;
+    --far-gap: ${FAR_GAP}px;
     --near: calc(var(--center-half) + var(--near-gap) + var(--side-width) / 2);
     --pitch: calc(var(--side-width) + var(--far-gap));
   }
@@ -207,6 +220,17 @@ export const playerStyles = css`
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* Fades out as the video arrives from a dimmed cover (see animateStep). */
+  .player-dim {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: var(--vtex-ads-story-radius, 20px);
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .player-neighbor::after {
@@ -404,6 +428,116 @@ export function neighborOffsets(count: number, active: number): number[] {
   return offsets;
 }
 
+/** The prototype's expanded step: slow at the end, without bounce. */
+export const STEP_ANIMATION: KeyframeAnimationOptions = {
+  duration: 560,
+  easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+};
+
+/** Widths of the expanded view, in pixels, as rendered. */
+interface StepSizes {
+  frameWidth: number;
+  sideWidth: number;
+}
+
+/** A cover beside the expanded video and its place (see PlayerNeighbor). */
+interface RenderedNeighbor {
+  element: HTMLElement;
+  offset: number;
+}
+
+// Each cover is centered on the screen by translate(-50%, -50%), then moved.
+const coverTransform = (x: number, scale = 1) =>
+  `translate(-50%, -50%) translateX(${x}px) scale(${scale})`;
+
+const fadeIn = (element: HTMLElement) =>
+  element.animate([{ opacity: 0 }, { opacity: 1 }], {
+    ...STEP_ANIMATION,
+    pseudoElement: "::after",
+  });
+
+/**
+ * Three or more Stories: the video comes from the place, `delta` away, of
+ * the cover of the Story it now shows. Each cover comes from its place
+ * before the step; the one that was the video, from the middle, at the
+ * video's size, its dimming fading in. The places match the CSS
+ * (--near, --pitch).
+ */
+function animateRailStep(
+  frame: HTMLElement,
+  neighbors: readonly RenderedNeighbor[],
+  delta: number,
+  { frameWidth, sideWidth }: StepSizes,
+): Animation[] {
+  const placeX = (place: number) => {
+    if (place === 0) return 0;
+    const side = Math.sign(place);
+    const near = frameWidth / 2 + NEAR_GAP + sideWidth / 2;
+    return side * near + (place - side) * (sideWidth + FAR_GAP);
+  };
+  const ratio = sideWidth / frameWidth;
+
+  const animations = [
+    frame.animate(
+      [
+        { transform: `translateX(${placeX(delta)}px) scale(${ratio})` },
+        { transform: "none" },
+      ],
+      STEP_ANIMATION,
+    ),
+  ];
+
+  for (const { element, offset } of neighbors) {
+    const from = offset + delta;
+    const wasVideo = from === 0;
+
+    animations.push(
+      element.animate(
+        [
+          { transform: coverTransform(placeX(from), wasVideo ? 1 / ratio : 1) },
+          { transform: coverTransform(placeX(offset)) },
+        ],
+        STEP_ANIMATION,
+      ),
+    );
+    if (wasVideo) animations.push(fadeIn(element));
+  }
+  return animations;
+}
+
+/**
+ * Two Stories: the video and the other cover swap sides. `direction` is the
+ * side the video ends on (--pair-dir). The places match the CSS.
+ */
+function animatePairStep(
+  frame: HTMLElement,
+  neighbor: HTMLElement,
+  direction: number,
+  { frameWidth, sideWidth }: StepSizes,
+): Animation[] {
+  const videoX = (side: number) => (side * (NEAR_GAP + sideWidth)) / 2;
+  const coverX = (side: number) => (-side * (frameWidth + NEAR_GAP)) / 2;
+  const ratio = sideWidth / frameWidth;
+
+  return [
+    frame.animate(
+      [
+        { transform: `translateX(${coverX(-direction)}px) scale(${ratio})` },
+        { transform: `translateX(${videoX(direction)}px)` },
+      ],
+      STEP_ANIMATION,
+    ),
+    neighbor.animate(
+      [
+        { transform: coverTransform(videoX(-direction), 1 / ratio) },
+        { transform: coverTransform(coverX(direction)) },
+      ],
+      STEP_ANIMATION,
+    ),
+    fadeIn(neighbor),
+  ];
+}
+
 function supportsPopover(dialog: HTMLDialogElement) {
   return typeof dialog.showPopover === "function";
 }
@@ -428,6 +562,20 @@ export class PlayerController implements ReactiveController {
   private readonly dialog = createRef<HTMLDialogElement>();
   private readonly expandButton = createRef<HTMLButtonElement>();
   private readonly closeButton = createRef<HTMLButtonElement>();
+  private readonly frame = createRef<HTMLElement>();
+  private readonly dim = createRef<HTMLElement>();
+
+  /** The covers beside the expanded video, by offset, as rendered. */
+  private readonly neighborElements = new Map<number, HTMLElement>();
+  /** One ref callback per offset: a new one each render would detach it. */
+  private readonly neighborRefs = new Map<
+    number,
+    (element?: Element) => void
+  >();
+  /** Side the expanded video moved to with two Stories; 0 otherwise. */
+  private pairDirection = 0;
+  /** The step animation running, cancelled by the next step. */
+  private animations: Animation[] = [];
 
   constructor(
     private readonly host: ReactiveControllerHost,
@@ -474,17 +622,72 @@ export class PlayerController implements ReactiveController {
   }
 
   /**
-   * After the host renders a different Story in the open player: its video
-   * starts from the top and plays, with the sound as the shopper left it. A
-   * failed load of the previous video doesn't hide the new one.
+   * After the host renders a different Story in the open player, `delta`
+   * places from the previous one: its video starts from the top and plays,
+   * with the sound as the shopper left it. A failed load of the previous
+   * video doesn't hide the new one. The expanded view animates the step.
    */
-  async showNext() {
+  async showNext(delta = 0) {
     if (!this.isOpen) return;
 
     this.video.failed = false;
     this.host.requestUpdate();
     await this.host.updateComplete;
-    if (this.isOpen) this.video.play();
+    if (!this.isOpen) return;
+
+    this.video.play();
+    this.animateStep(delta);
+  }
+
+  /**
+   * The expanded step, as in the prototype: the video grows from the cover
+   * of the Story it now shows, and the covers slide to their new places, the
+   * previous Story's shrinking from the video's size. With two Stories, the
+   * video and the other cover swap sides. Not with reduced motion, nor
+   * without covers (narrow screens).
+   */
+  private animateStep(delta: number) {
+    if (!this.expanded || delta === 0 || prefersReducedMotion()) return;
+
+    const frame = this.frame.value;
+    const dim = this.dim.value;
+    const neighbors = [...this.neighborElements].map(([offset, element]) => ({
+      offset,
+      element,
+    }));
+    if (!frame || !dim || typeof frame.animate !== "function") return;
+
+    const sizes = {
+      frameWidth: frame.offsetWidth,
+      sideWidth: neighbors[0]?.element.offsetWidth ?? 0,
+    };
+    if (!sizes.frameWidth || !sizes.sideWidth) return;
+
+    for (const animation of this.animations) animation.cancel();
+    this.animations = [
+      dim.animate([{ opacity: 1 }, { opacity: 0 }], STEP_ANIMATION),
+      ...(this.pairDirection
+        ? animatePairStep(
+            frame,
+            neighbors[0].element,
+            this.pairDirection,
+            sizes,
+          )
+        : animateRailStep(frame, neighbors, delta, sizes)),
+    ];
+  }
+
+  // Keeps neighborElements in step with the covers Lit renders.
+  private neighborRef(offset: number) {
+    let callback = this.neighborRefs.get(offset);
+    if (!callback) {
+      callback = (element?: Element) => {
+        if (element) this.neighborElements.set(offset, element as HTMLElement);
+        else this.neighborElements.delete(offset);
+      };
+      this.neighborRefs.set(offset, callback);
+    }
+    return callback;
   }
 
   // Mini: a manual popover, or a non-modal dialog without popover support.
@@ -628,6 +831,7 @@ export class PlayerController implements ReactiveController {
               "--side": String(side),
               "--beyond": String(offset - side),
             })}
+            ${ref(this.neighborRef(offset))}
             @click=${() => options.onStep?.(offset)}
           >
             ${poster ? html`<img alt="" src=${poster} />` : nothing}
@@ -652,7 +856,9 @@ export class PlayerController implements ReactiveController {
     const { video, options, expanded } = this;
     const withVideo = hasVideo(story, video);
     const shownNeighbors = expanded ? neighbors : [];
-    const pair = shownNeighbors.length === 1;
+    this.pairDirection =
+      shownNeighbors.length === 1 ? -Math.sign(shownNeighbors[0].offset) : 0;
+    const pair = this.pairDirection !== 0;
     const advances = navigation && expanded;
 
     return html`
@@ -663,9 +869,7 @@ export class PlayerController implements ReactiveController {
         ?data-expanded=${expanded}
         ?data-pair=${pair}
         style=${styleMap({
-          "--pair-dir": pair
-            ? String(-Math.sign(shownNeighbors[0].offset))
-            : undefined,
+          "--pair-dir": pair ? String(this.pairDirection) : undefined,
         })}
         ?data-switched=${this.switched}
         ?data-paused=${withVideo && video.paused}
@@ -674,7 +878,7 @@ export class PlayerController implements ReactiveController {
         @cancel=${this.onCancel}
       >
         ${this.renderNeighbors(shownNeighbors)}
-        <div class="player-frame">
+        <div class="player-frame" ${ref(this.frame)}>
           ${navigation ? this.renderNavigation() : nothing}
           <div class="player-controls">
             <button
@@ -705,6 +909,7 @@ export class PlayerController implements ReactiveController {
             })}
             ${withVideo ? this.renderVideoControls() : nothing}
           </div>
+          <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
         </div>
       </dialog>
     `;

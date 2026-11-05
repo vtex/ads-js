@@ -15,7 +15,7 @@ export function httpUrl(value: string | undefined) {
   }
 }
 
-function prefersReducedMotion() {
+export function prefersReducedMotion() {
   return (
     globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
   );

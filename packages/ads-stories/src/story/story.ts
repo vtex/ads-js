@@ -282,7 +282,7 @@ export class VtexAdsStoryElement extends LitElement {
   // Story the player shows.
   private stepInPlayer(delta: number) {
     this.carousel.step(delta, { evenIfLocked: true });
-    void this.player.showNext();
+    void this.player.showNext(delta);
   }
 
   private openPlayer() {
