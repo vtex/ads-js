@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { mountHost } from "../host.mock";
 import { installMediaMocks } from "../media/media.mock";
 import { installDialogMocks, shownAs } from "./dialog.mock";
-import { PlayerController } from "./player";
+import {
+  neighborOffsets,
+  PlayerController,
+  type PlayerRenderOptions,
+} from "./player";
 import type { StoryMedia } from "../../types";
 
 describe("PlayerController", () => {
@@ -18,6 +22,7 @@ describe("PlayerController", () => {
     soundOffLabel: "Desativar som",
     previousLabel: "Vídeo anterior",
     nextLabel: "Próximo vídeo",
+    neighborLabel: "Mostrar vídeo",
   };
 
   beforeAll(() => {
@@ -310,12 +315,15 @@ describe("PlayerController", () => {
 
     // Opened with previous and next, as the element does with more than one
     // Story.
-    async function setupWithNavigation(navigation = true) {
+    async function setupWithNavigation(
+      navigation = true,
+      renderOptions: PlayerRenderOptions = {},
+    ) {
       const onStep = vi.fn();
       const { container, controller } = mountHost(
         (host) =>
           new PlayerController(host, { ...labels, onClose: vi.fn(), onStep }),
-        (player) => player.render(videoStory, { navigation }),
+        (player) => player.render(videoStory, { navigation, ...renderOptions }),
       );
       await controller.open();
       const player = container.querySelector("dialog");
@@ -346,13 +354,92 @@ describe("PlayerController", () => {
       expect(onStep.mock.calls).toEqual([[-1], [1]]);
     });
 
-    it("has no previous and next while expanded", async () => {
-      const { player } = await setupWithNavigation();
-
+    async function expand(player: HTMLDialogElement) {
       player.querySelector<HTMLButtonElement>(".player-expand")?.click();
       await vi.waitFor(() => expect(shownAs(player)).toBe("modal"));
+    }
 
-      expect(player.querySelector(".player-nav")).toBeNull();
+    const neighbor = (offset: number) => ({
+      offset,
+      story: { poster_url: `https://example.com/cover${offset}.jpg` },
+    });
+
+    it("keeps previous and next while expanded", async () => {
+      const { player } = await setupWithNavigation();
+
+      await expand(player);
+
+      expect(player.querySelectorAll(".player-nav button")).toHaveLength(2);
+    });
+
+    it("shows the other Stories beside the expanded video only", async () => {
+      const { player } = await setupWithNavigation(true, {
+        neighbors: [neighbor(-1), neighbor(1), neighbor(-2)],
+      });
+      expect(player.querySelector(".player-neighbor")).toBeNull();
+
+      await expand(player);
+
+      const neighbors = [
+        ...player.querySelectorAll<HTMLElement>(".player-neighbor"),
+      ];
+      expect(
+        neighbors.map((button) => [
+          button.style.getPropertyValue("--side"),
+          button.style.getPropertyValue("--beyond"),
+          button.querySelector("img")?.getAttribute("src"),
+        ]),
+      ).toEqual([
+        ["-1", "0", "https://example.com/cover-1.jpg"],
+        ["1", "0", "https://example.com/cover1.jpg"],
+        ["-1", "-1", "https://example.com/cover-2.jpg"],
+      ]);
+      expect(neighbors[0].getAttribute("aria-label")).toBe("Mostrar vídeo");
+      expect(player.hasAttribute("data-pair")).toBe(false);
+    });
+
+    it("steps to another Story when its cover is clicked", async () => {
+      const { player, onStep } = await setupWithNavigation(true, {
+        neighbors: [neighbor(-1), neighbor(2)],
+      });
+      await expand(player);
+
+      player.querySelectorAll<HTMLElement>(".player-neighbor")[1].click();
+
+      expect(onStep).toHaveBeenCalledWith(2);
+      // Not a click on the backdrop: the player stays open.
+      expect(shownAs(player)).toBe("modal");
+    });
+
+    it("moves the video off center, away from the other Story, with two", async () => {
+      const { player } = await setupWithNavigation(true, {
+        neighbors: [neighbor(1)],
+      });
+
+      await expand(player);
+
+      expect(player.hasAttribute("data-pair")).toBe(true);
+      expect(player.style.getPropertyValue("--pair-dir")).toBe("-1");
+    });
+
+    it("loops in the mini player, moves on when it ends expanded", async () => {
+      const { player, onStep } = await setupWithNavigation();
+      expect(player.querySelector("video")?.loop).toBe(true);
+
+      await expand(player);
+      const video = player.querySelector("video");
+      expect(video?.loop).toBe(false);
+
+      video?.dispatchEvent(new Event("ended"));
+      expect(onStep).toHaveBeenCalledWith(1);
+    });
+
+    it("loops expanded with a single Story", async () => {
+      const { player } = await setupWithNavigation(false);
+
+      await expand(player);
+
+      expect(player.querySelector("video")?.loop).toBe(true);
     });
 
     it("plays the next video, even after the previous one failed", async () => {
@@ -366,5 +453,19 @@ describe("PlayerController", () => {
       expect(video).not.toBeNull();
       expect(video?.paused).toBe(false);
     });
+  });
+});
+
+describe("neighborOffsets", () => {
+  it.each([
+    [1, 0, []],
+    [2, 0, [1]],
+    [2, 1, [-1]],
+    [3, 0, [-1, 1]],
+    [4, 2, [-1, 1, -2]],
+    [5, 0, [-1, 1, -2, 2]],
+    [8, 3, [-1, 1, -2, 2]],
+  ])("with %i Stories, the highlighted at %i: %j", (count, active, offsets) => {
+    expect(neighborOffsets(count, active)).toEqual(offsets);
   });
 });

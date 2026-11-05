@@ -1,8 +1,10 @@
 import { css, html, nothing } from "lit";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { createRef, ref } from "lit/directives/ref.js";
+import { repeat } from "lit/directives/repeat.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
-import { hasVideo, renderMedia, VideoController } from "../media";
+import { hasVideo, httpUrl, renderMedia, VideoController } from "../media";
 import type { StoryMedia } from "../../types";
 
 // The player is a <dialog> shown in the top layer, so no store z-index,
@@ -168,6 +170,105 @@ export const playerStyles = css`
     height: 40px;
   }
 
+  /* Expanded with more than one Story: the other Stories' covers beside the
+     video, smaller and dimmed, as in the prototype. --side is -1 (before)
+     or 1 (after), --beyond how many places past the nearest one. */
+  .player[data-expanded] {
+    --center-height: min(78vh, 720px);
+    --side-height: min(38vh, 320px);
+    --side-width: calc(var(--side-height) * 9 / 16);
+    --center-half: calc(var(--center-height) * 9 / 32);
+    --near-gap: 72px;
+    --far-gap: 48px;
+    --near: calc(var(--center-half) + var(--near-gap) + var(--side-width) / 2);
+    --pitch: calc(var(--side-width) + var(--far-gap));
+  }
+
+  .player-neighbor {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--side-width);
+    height: var(--side-height);
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 16px;
+    background: #111;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transform: translate(
+      calc(-50% + var(--side) * var(--near) + var(--beyond) * var(--pitch)),
+      -50%
+    );
+  }
+
+  .player-neighbor img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .player-neighbor::after {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    content: "";
+  }
+
+  .player-neighbor:hover::after,
+  .player-neighbor:focus-visible::after {
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  .player-neighbor:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  /* Two Stories: the video moves off center toward --pair-dir, and the other
+     Story sits on the other side. */
+  .player[data-pair] .player-frame {
+    transform: translateX(
+      calc(var(--pair-dir) * (var(--near-gap) + var(--side-width)) / 2)
+    );
+  }
+
+  .player[data-pair] .player-neighbor {
+    transform: translate(
+      calc(
+        -50% + var(--pair-dir) * -1 * (var(--center-half) + var(--near-gap) / 2)
+      ),
+      -50%
+    );
+  }
+
+  /* Expanded previous and next: beside the video, centered on its height. */
+  .player[data-expanded] .player-nav {
+    position: static;
+    display: contents;
+  }
+
+  .player[data-expanded] .player-nav .player-button {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+  }
+
+  .player[data-expanded] .player-previous {
+    left: -56px;
+  }
+
+  .player[data-expanded] .player-next {
+    right: -56px;
+  }
+
+  /* With two, the other Story's cover beside the video does that. */
+  .player[data-expanded][data-pair] .player-nav {
+    display: none;
+  }
+
   @media (max-width: 576px) {
     .player {
       right: 12px;
@@ -195,6 +296,28 @@ export const playerStyles = css`
     .player[data-expanded] .player-controls {
       position: absolute;
       top: 60px;
+      right: 12px;
+    }
+
+    /* No room for the other Stories' covers: previous and next go inside
+       the video's edges instead, also with two. */
+    .player-neighbor {
+      display: none;
+    }
+
+    .player[data-pair] .player-frame {
+      transform: none;
+    }
+
+    .player[data-expanded][data-pair] .player-nav {
+      display: contents;
+    }
+
+    .player[data-expanded] .player-previous {
+      left: 12px;
+    }
+
+    .player[data-expanded] .player-next {
       right: 12px;
     }
   }
@@ -226,8 +349,12 @@ export interface PlayerOptions {
   soundOffLabel: string;
   previousLabel: string;
   nextLabel: string;
+  /** Accessible name of another Story's cover in the expanded view. */
+  neighborLabel: string;
   /**
-   * Called by the previous (-1) and next (1) buttons. Show the Story it
+   * Called by the previous (-1) and next (1) buttons, by another Story's
+   * cover in the expanded view (its offset) and, in the expanded view, when
+   * the video ends (1). Show the Story it
    * leads to with the next render(), then call showNext().
    */
   onStep?: (delta: number) => void;
@@ -236,6 +363,45 @@ export interface PlayerOptions {
    * backdrop. Call close() from it.
    */
   onClose: () => void;
+}
+
+/** Another Story shown beside the expanded video. */
+export interface PlayerNeighbor {
+  /** Places from the Story in the player: negative before, positive after. */
+  offset: number;
+  story: StoryMedia;
+}
+
+export interface PlayerRenderOptions {
+  /**
+   * More than one Story: previous and next buttons and, in the expanded
+   * view, the video moves on to the next Story when it ends.
+   */
+  navigation?: boolean;
+  /** The other Stories beside the expanded video (see neighborOffsets). */
+  neighbors?: readonly PlayerNeighbor[];
+}
+
+/**
+ * Offsets of the Stories shown beside the expanded video, as in the
+ * prototype: one with two Stories, on the side away from the edge the
+ * highlighted one is on; otherwise the nearest ones, up to two per side, each
+ * Story once.
+ */
+export function neighborOffsets(count: number, active: number): number[] {
+  if (count < 2) return [];
+  if (count === 2) return [active === 0 ? 1 : -1];
+
+  const offsets: number[] = [];
+  const shown = new Set([0]);
+  for (const offset of [-1, 1, -2, 2]) {
+    const index = ((offset % count) + count) % count;
+    if (!shown.has(index)) {
+      shown.add(index);
+      offsets.push(offset);
+    }
+  }
+  return offsets;
 }
 
 function supportsPopover(dialog: HTMLDialogElement) {
@@ -413,7 +579,10 @@ export class PlayerController implements ReactiveController {
     `;
   }
 
-  /** Previous and next Story, above the mini player's top left. */
+  /**
+   * Previous and next Story: above the mini player's top left, beside the
+   * expanded video.
+   */
   private renderNavigation() {
     const { options } = this;
     const step = (delta: number) => () => options.onStep?.(delta);
@@ -440,16 +609,51 @@ export class PlayerController implements ReactiveController {
     `;
   }
 
+  /** The other Stories' covers beside the expanded video. */
+  private renderNeighbors(neighbors: readonly PlayerNeighbor[]) {
+    const { options } = this;
+
+    return repeat(
+      neighbors,
+      ({ offset }) => offset,
+      ({ offset, story }) => {
+        const poster = httpUrl(story.poster_url);
+        const side = Math.sign(offset);
+        return html`
+          <button
+            type="button"
+            class="player-neighbor"
+            aria-label=${options.neighborLabel}
+            style=${styleMap({
+              "--side": String(side),
+              "--beyond": String(offset - side),
+            })}
+            @click=${() => options.onStep?.(offset)}
+          >
+            ${poster ? html`<img alt="" src=${poster} />` : nothing}
+          </button>
+        `;
+      },
+    );
+  }
+
   /**
    * The player <dialog> while it is open. Clicking the video also plays or
-   * pauses it. With `navigation` (more than one Story), the mini player has
-   * previous and next buttons.
+   * pauses it. With `navigation` (more than one Story), it has previous and
+   * next buttons, and the expanded view moves on when the video ends instead
+   * of looping. The expanded view also shows the `neighbors` beside it.
    */
-  render(story: StoryMedia, { navigation = false } = {}) {
+  render(
+    story: StoryMedia,
+    { navigation = false, neighbors = [] }: PlayerRenderOptions = {},
+  ) {
     if (!this.isOpen) return nothing;
 
     const { video, options, expanded } = this;
     const withVideo = hasVideo(story, video);
+    const shownNeighbors = expanded ? neighbors : [];
+    const pair = shownNeighbors.length === 1;
+    const advances = navigation && expanded;
 
     return html`
       <dialog
@@ -457,14 +661,21 @@ export class PlayerController implements ReactiveController {
         popover="manual"
         aria-label=${options.label}
         ?data-expanded=${expanded}
+        ?data-pair=${pair}
+        style=${styleMap({
+          "--pair-dir": pair
+            ? String(-Math.sign(shownNeighbors[0].offset))
+            : undefined,
+        })}
         ?data-switched=${this.switched}
         ?data-paused=${withVideo && video.paused}
         ${ref(this.dialog)}
         @click=${this.onDialogClick}
         @cancel=${this.onCancel}
       >
+        ${this.renderNeighbors(shownNeighbors)}
         <div class="player-frame">
-          ${navigation && !expanded ? this.renderNavigation() : nothing}
+          ${navigation ? this.renderNavigation() : nothing}
           <div class="player-controls">
             <button
               type="button"
@@ -488,7 +699,10 @@ export class PlayerController implements ReactiveController {
             </button>
           </div>
           <div class="card" @click=${() => video.togglePlayback()}>
-            ${renderMedia(story, video)}
+            ${renderMedia(story, video, {
+              loop: !advances,
+              onEnded: advances ? () => options.onStep?.(1) : undefined,
+            })}
             ${withVideo ? this.renderVideoControls() : nothing}
           </div>
         </div>

@@ -180,7 +180,13 @@ too, or muted if the browser blocks it.
 
 With more than one Story, the mini player has previous and next buttons above
 its top left. They change the video in the player, and the carousel highlight
-follows, while the carousel's own advance stays stopped.
+follows, while the carousel's own advance stays stopped. The expanded player
+shows the other Stories' covers beside the video, up to two per side (click
+one to watch it), with previous and next beside it, and moves on to the next
+Story when the video ends. With two Stories, the video moves off center with
+the other cover beside it, without previous and next. On screens 576px wide
+or less, the expanded player fills the screen, without the covers, and
+previous and next sit inside the video's edges.
 
 ## Development
 

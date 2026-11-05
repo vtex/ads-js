@@ -8,7 +8,11 @@ import {
   type Slide,
 } from "../components/carousel";
 import { VideoController } from "../components/media";
-import { PlayerController, playerStyles } from "../components/player";
+import {
+  neighborOffsets,
+  PlayerController,
+  playerStyles,
+} from "../components/player";
 import type { StoryAd } from "../types";
 import { fetchStories } from "../utils/fetch-story";
 
@@ -151,6 +155,7 @@ export class VtexAdsStoryElement extends LitElement {
     soundOffLabel: LABELS.soundOff,
     previousLabel: LABELS.previous,
     nextLabel: LABELS.next,
+    neighborLabel: LABELS.show,
     onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
   });
@@ -323,12 +328,21 @@ export class VtexAdsStoryElement extends LitElement {
 
   protected render() {
     const { stories } = this;
-    const active = stories[this.carousel.active];
+    const index = this.carousel.active;
+    const active = stories[index];
     if (!active) return nothing;
+
+    const neighbors = neighborOffsets(stories.length, index).map((offset) => ({
+      offset,
+      story: stories[(index + offset + stories.length) % stories.length],
+    }));
 
     return html`
       <div class="root">${this.carousel.render(stories, this.renderSlide)}</div>
-      ${this.player.render(active, { navigation: stories.length > 1 })}
+      ${this.player.render(active, {
+        navigation: stories.length > 1,
+        neighbors,
+      })}
     `;
   }
 }

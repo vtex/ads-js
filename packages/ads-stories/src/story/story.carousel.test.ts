@@ -371,6 +371,67 @@ describe("vtex-ads-story carousel", () => {
       pause.mockRestore();
     });
 
+    async function expandPlayer(el: VtexAdsStoryElement) {
+      query(el, ".player-expand")?.click();
+      await vi.waitFor(() =>
+        expect(query(el, ".player")?.hasAttribute("data-expanded")).toBe(true),
+      );
+    }
+
+    const neighborCovers = (el: VtexAdsStoryElement) =>
+      [...(el.shadowRoot?.querySelectorAll(".player-neighbor img") ?? [])].map(
+        (img) => img.getAttribute("src"),
+      );
+
+    it("shows the other Stories beside the expanded video", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
+      const el = await mount();
+      await openPlayer(el);
+
+      await expandPlayer(el);
+
+      expect(neighborCovers(el)).toEqual([
+        mockStories[2].poster_url,
+        mockStories[1].poster_url,
+      ]);
+    });
+
+    it("steps to the Story whose cover is clicked in the expanded view", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 4)));
+      const el = await mount();
+      await openPlayer(el);
+      await expandPlayer(el);
+
+      // The one two places before: the last.
+      const farBefore = [
+        ...(el.shadowRoot?.querySelectorAll<HTMLElement>(".player-neighbor") ??
+          []),
+      ].find((button) => button.style.getPropertyValue("--beyond") === "-1");
+      farBefore?.click();
+      await el.updateComplete;
+      await el.updateComplete;
+
+      expect(query(el, ".player .poster")?.getAttribute("src")).toBe(
+        mockStories[2].poster_url,
+      );
+      expect(highlightedCard(el)?.dataset.index).toBe("2");
+    });
+
+    it("moves on to the next Story when the expanded video ends", async () => {
+      const el = await mount();
+      await openPlayer(el);
+      await expandPlayer(el);
+
+      query(el, ".player video")?.dispatchEvent(new Event("ended"));
+      await el.updateComplete;
+      await el.updateComplete;
+
+      expect(query(el, ".player .poster")?.getAttribute("src")).toBe(
+        secondStory.poster_url,
+      );
+      expect(highlightedCard(el)?.dataset.index).toBe("1");
+    });
+
     it("plays the highlighted card again when the player closes", async () => {
       const el = await mount();
       await openPlayer(el);

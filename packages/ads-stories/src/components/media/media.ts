@@ -26,6 +26,15 @@ export function hasVideo(story: StoryMedia, video: VideoController) {
   return !video.failed && httpUrl(story.media_url) !== null;
 }
 
+export interface MediaOptions {
+  /** Whether the video shows over the cover (default true). */
+  withVideo?: boolean;
+  /** Whether the video loops (default true). */
+  loop?: boolean;
+  /** Called when a video that doesn't loop reaches its end. */
+  onEnded?: () => void;
+}
+
 /**
  * The Story cover and, with a media_url, the video looping muted over it. If
  * the video can't load, it is removed and the cover underneath stays. With
@@ -34,7 +43,7 @@ export function hasVideo(story: StoryMedia, video: VideoController) {
 export function renderMedia(
   story: StoryMedia,
   video: VideoController,
-  withVideo = true,
+  { withVideo = true, loop = true, onEnded }: MediaOptions = {},
 ) {
   const posterUrl = httpUrl(story.poster_url);
   const mediaUrl = withVideo ? httpUrl(story.media_url) : null;
@@ -53,7 +62,7 @@ export function renderMedia(
             class="video"
             muted
             playsinline
-            loop
+            ?loop=${loop}
             preload="metadata"
             .muted=${true}
             ?autoplay=${!prefersReducedMotion()}
@@ -64,6 +73,7 @@ export function renderMedia(
             @pause=${video.sync}
             @volumechange=${video.sync}
             @error=${video.fail}
+            @ended=${onEnded}
           ></video>
         `
       : nothing}

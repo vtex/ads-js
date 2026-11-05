@@ -163,7 +163,7 @@ export function renderCard(
 
   return html`
     <div class="card">
-      ${renderMedia(story, video, withVideo)}
+      ${renderMedia(story, video, { withVideo })}
       <button
         type="button"
         class="card-open"
