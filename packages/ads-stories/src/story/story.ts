@@ -135,6 +135,12 @@ export class VtexAdsStoryElement extends LitElement {
   /** The sound was on when the highlight moved: the new card turns it on. */
   private soundPending = false;
 
+  /**
+   * What to do once the last step renders, when the new highlighted card's
+   * video exists (see leaveHighlight). A step taken before then replaces it.
+   */
+  private afterStep?: () => void;
+
   private readonly carousel = new CarouselController(this, {
     labels: LABELS,
     onStep: (from, to) => this.leaveHighlight(from, to),
@@ -192,6 +198,12 @@ export class VtexAdsStoryElement extends LitElement {
     }
   }
 
+  protected updated() {
+    const afterStep = this.afterStep;
+    this.afterStep = undefined;
+    afterStep?.();
+  }
+
   /**
    * Requests the Story and shows it. Until it arrives, and when there is none
    * (see fetchStories), the element renders nothing.
@@ -230,6 +242,7 @@ export class VtexAdsStoryElement extends LitElement {
   private showStories(stories: StoryAd[]) {
     this.cardVideos.clear();
     this.soundPending = false;
+    this.afterStep = undefined;
     this.carousel.reset(stories.length);
     this.stories = stories;
   }
@@ -260,17 +273,17 @@ export class VtexAdsStoryElement extends LitElement {
     if (this.inactiveAutoplay) video?.mute();
     else video?.reset();
 
+    // The step requested its render before calling this: updated() runs the
+    // action once the new card is on screen.
     if (this.player.isOpen) {
       this.soundPending = false;
       // Paused before it starts, its autoplay doesn't start either.
-      void this.updateComplete.then(() => this.videoFor(to).pause());
+      this.afterStep = () => this.videoFor(to).pause();
     } else if (this.soundPending) {
-      void this.updateComplete.then(() => {
-        // Moved again meanwhile: that step's own callback takes the sound.
-        if (!this.soundPending || this.carousel.activeKey !== to) return;
+      this.afterStep = () => {
         this.soundPending = false;
         this.videoFor(to).playWithSound();
-      });
+      };
     }
 
     for (const key of this.cardVideos.keys()) {
