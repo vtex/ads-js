@@ -146,9 +146,18 @@ export class VtexAdsStoryElement extends LitElement {
     const request = new AbortController();
     this.request = request;
 
-    // The Story shown no longer matches the request either.
+    // The Story shown no longer matches the request either. The card's next
+    // video starts fresh: a failed load of the old one doesn't hide it.
     this.player.close();
+    this.cardVideo.reset();
     this.story = undefined;
+
+    // Off the page (an attribute changed just before the element was
+    // removed): keep the cancelled request, so connecting again requests.
+    if (!this.isConnected) {
+      request.abort();
+      return;
+    }
 
     const story = await fetchStory(this, {
       signal: request.signal,

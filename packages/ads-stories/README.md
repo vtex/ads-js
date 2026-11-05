@@ -55,8 +55,18 @@ project (requires `@types/react` 18.2.6 or newer, including 19):
 // e.g. in your app's entry file or a .d.ts file
 import type {} from "@vtex/ads-stories/react";
 
-export const Ad = () => <vtex-ads-story />;
+export const Ad = () => (
+  <vtex-ads-story
+    publisher-id="your-publisher-id"
+    session-id="the-store-session-id"
+    placement="home_stories"
+  />
+);
 ```
+
+The JSX types include the element's attributes: `publisher-id`, `session-id`
+and `placement` are required, as in HTML, and `channel` only accepts `site` or
+`app`.
 
 Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in `tsconfig.json`.
 Without it, TypeScript reports

@@ -310,6 +310,40 @@ describe("vtex-ads-story", () => {
       expect(el.shadowRoot?.querySelector(".card")).not.toBeNull();
     });
 
+    it("does not request while removed right after an attribute change", async () => {
+      const el = await mount();
+
+      // The change is applied by Lit's next update, after the removal.
+      el.setAttribute("placement", "other_stories");
+      el.remove();
+      await el.updateComplete;
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+
+      document.body.appendChild(el);
+      await flushRequest(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(2);
+      expect(getRawAdsMock.mock.calls[1][0].placements).toHaveProperty(
+        "other_stories",
+      );
+    });
+
+    it("shows the next Story's video after the previous one failed to load", async () => {
+      const el = await mount();
+      el.shadowRoot
+        ?.querySelector(".card video")
+        ?.dispatchEvent(new Event("error"));
+      await el.updateComplete;
+      expect(el.shadowRoot?.querySelector(".card video")).toBeNull();
+
+      getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory], "other_stories"));
+      el.setAttribute("placement", "other_stories");
+      await flushRequest(el);
+
+      expect(el.shadowRoot?.querySelector(".card video")).not.toBeNull();
+    });
+
     it("does not request again when moved after the Story loaded", async () => {
       const el = await mount();
 
