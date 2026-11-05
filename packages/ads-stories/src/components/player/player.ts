@@ -74,6 +74,16 @@ export const playerStyles = css`
     height: 100%;
   }
 
+  /* What moves in the expanded view, off center with two Stories and in the
+     step animation: the video, its dimming and previous and next. Expand and
+     close stay out of it: a transformed box becomes the one their fixed
+     position, at the top right of the screen, is measured from. */
+  .player-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
   .player .card {
     width: 100%;
     height: 100%;
@@ -258,7 +268,7 @@ export const playerStyles = css`
 
   /* Two Stories: the video moves off center toward --pair-dir, and the other
      Story sits on the other side. */
-  .player[data-pair] .player-frame {
+  .player[data-pair] .player-stage {
     transform: translateX(
       calc(var(--pair-dir) * (var(--near-gap) + var(--side-width)) / 2)
     );
@@ -335,7 +345,7 @@ export const playerStyles = css`
       display: none;
     }
 
-    .player[data-pair] .player-frame {
+    .player[data-pair] .player-stage {
       transform: none;
     }
 
@@ -585,7 +595,7 @@ export class PlayerController implements ReactiveController {
   private readonly dialog = createRef<HTMLDialogElement>();
   private readonly expandButton = createRef<HTMLButtonElement>();
   private readonly closeButton = createRef<HTMLButtonElement>();
-  private readonly frame = createRef<HTMLElement>();
+  private readonly stage = createRef<HTMLElement>();
   private readonly dim = createRef<HTMLElement>();
 
   /** The covers beside the expanded video, by offset, as rendered. */
@@ -674,7 +684,7 @@ export class PlayerController implements ReactiveController {
   private animateStep(delta: number) {
     if (!this.expanded || delta === 0 || prefersReducedMotion()) return;
 
-    const frame = this.frame.value;
+    const frame = this.stage.value;
     const dim = this.dim.value;
     const neighbors = [...this.neighborElements].map(([offset, element]) => ({
       offset,
@@ -921,8 +931,7 @@ export class PlayerController implements ReactiveController {
         @keydown=${this.onPlayerKeyDown}
       >
         ${this.renderNeighbors(shownNeighbors)}
-        <div class="player-frame" ${ref(this.frame)}>
-          ${navigation ? this.renderNavigation() : nothing}
+        <div class="player-frame">
           <div class="player-controls">
             <button
               type="button"
@@ -945,14 +954,17 @@ export class PlayerController implements ReactiveController {
               ${icon("close")}
             </button>
           </div>
-          <div class="card" @click=${() => video.togglePlayback()}>
-            ${renderMedia(story, video, {
-              loop: !advances,
-              onEnded: advances ? () => options.onStep?.(1) : undefined,
-            })}
-            ${withVideo ? this.renderVideoControls() : nothing}
+          <div class="player-stage" ${ref(this.stage)}>
+            ${navigation ? this.renderNavigation() : nothing}
+            <div class="card" @click=${() => video.togglePlayback()}>
+              ${renderMedia(story, video, {
+                loop: !advances,
+                onEnded: advances ? () => options.onStep?.(1) : undefined,
+              })}
+              ${withVideo ? this.renderVideoControls() : nothing}
+            </div>
+            <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>
-          <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
         </div>
       </dialog>
     `;

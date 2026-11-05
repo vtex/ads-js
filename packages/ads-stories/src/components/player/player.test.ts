@@ -578,7 +578,7 @@ describe("PlayerController", () => {
           "offsetWidth",
           "get",
         ).mockImplementation(function (this: HTMLElement) {
-          if (this.classList.contains("player-frame")) return FRAME;
+          if (this.classList.contains("player-stage")) return FRAME;
           if (this.classList.contains("player-neighbor")) return SIDE;
           return 0;
         });
@@ -618,7 +618,7 @@ describe("PlayerController", () => {
         expect(animations()).toEqual([
           ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
           [
-            "player-frame",
+            "player-stage",
             { transform: `translateX(${near}px) scale(${ratio})` },
             { transform: "none" },
             undefined,
@@ -653,7 +653,7 @@ describe("PlayerController", () => {
         expect(animations()).toEqual([
           ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
           [
-            "player-frame",
+            "player-stage",
             {
               transform: `translateX(${-(FRAME + NEAR_GAP) / 2}px) scale(${ratio})`,
             },
@@ -668,6 +668,25 @@ describe("PlayerController", () => {
           ],
           ["player-neighbor", { opacity: 0 }, { opacity: 1 }, "::after"],
         ]);
+      });
+
+      // A transform makes an element the box its fixed descendants are
+      // placed in: expand and close, fixed at the top right of the screen
+      // when expanded, would jump into the video while it moves.
+      it("keeps expand and close out of what moves", async () => {
+        const { player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(1)],
+        });
+        await expand(player);
+        const stage = player.querySelector(".player-stage");
+
+        expect(stage?.contains(player.querySelector(".card"))).toBe(true);
+        expect(stage?.contains(player.querySelector(".player-expand"))).toBe(
+          false,
+        );
+        expect(stage?.contains(player.querySelector(".player-close"))).toBe(
+          false,
+        );
       });
 
       it("cancels a step still animating when the next one starts", async () => {
