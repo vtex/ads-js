@@ -54,6 +54,7 @@ export class VtexAdsStoryElement extends LitElement {
     userId: { attribute: "user-id" },
     accountName: { attribute: "account-name" },
     channel: { converter: channelConverter },
+    timeout: { type: Number },
     story: { state: true },
   };
 
@@ -67,13 +68,21 @@ export class VtexAdsStoryElement extends LitElement {
   declare accountName?: string;
   /** `site` or `app`. Any other attribute value is ignored. */
   declare channel?: Channel;
+  /**
+   * Time limit for the ad request, in milliseconds (default 2000). Without a
+   * Story by then, the element renders nothing. A change applies to the next
+   * request; it doesn't request again.
+   */
+  declare timeout?: number;
 
   /** The Story shown, or undefined while loading, on error or with none. */
   declare private story?: StoryAd;
 
-  /** Increments on every request, so a late response from an earlier one is
-   * ignored. */
-  private requestId = 0;
+  /**
+   * Cancels the request in progress. Kept, already aborted, when leaving the
+   * page cancelled it, so connecting again requests once more.
+   */
+  private request?: AbortController;
 
   static readonly styles = [
     css`
@@ -110,6 +119,15 @@ export class VtexAdsStoryElement extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.cardVideo.resume();
+
+    // Moved while its request was pending: that request was cancelled.
+    if (this.request?.signal.aborted) void this.loadStory();
+  }
+
+  // A request still pending when the element leaves the page is cancelled.
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.request?.abort();
   }
 
   protected willUpdate(changed: PropertyValues<this>) {
@@ -123,16 +141,24 @@ export class VtexAdsStoryElement extends LitElement {
    * (see fetchStory), the element renders nothing.
    */
   private async loadStory() {
-    const requestId = ++this.requestId;
+    // A request still pending no longer matches the attributes.
+    this.request?.abort();
+    const request = new AbortController();
+    this.request = request;
 
-    // The Story shown no longer matches the request.
+    // The Story shown no longer matches the request either.
     this.player.close();
     this.story = undefined;
 
-    const story = await fetchStory(this);
+    const story = await fetchStory(this, {
+      signal: request.signal,
+      timeout: this.timeout,
+    });
 
-    // A later request started meanwhile: its response wins.
-    if (requestId !== this.requestId) return;
+    // Cancelled meanwhile, by a newer request or by leaving the page: this
+    // response is not shown.
+    if (request.signal.aborted) return;
+    this.request = undefined;
     this.story = story;
   }
 

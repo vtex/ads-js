@@ -117,10 +117,13 @@ The element requests a Story from the VTEX Ads ad API with
 | `user-id`      | No       | The shopper's id, when known                                                   |
 | `account-name` | No       | The VTEX account name                                                          |
 | `channel`      | No       | `site` or `app`. Other values are not sent                                     |
+| `timeout`      | No       | Time limit for the ad request, in milliseconds. Default `2000`                 |
 
 The element renders nothing while the request is pending, when a required
-attribute is missing, when the request fails, or when the placement has no
-Story. Changing any of these attributes requests the Story again.
+attribute is missing, when the request fails or takes longer than `timeout`,
+or when the placement has no Story. Changing any of these attributes, except
+`timeout`, requests the Story again; a new `timeout` applies to the next
+request.
 
 ## Customization
 

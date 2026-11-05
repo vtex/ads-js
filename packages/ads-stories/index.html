@@ -49,11 +49,28 @@
 
     <section>
       <h2>Slow ad server</h2>
-      <p class="note">The response takes 3 s.</p>
+      <p class="note">
+        The response takes 3 s, longer than the default 2 s timeout, so nothing
+        renders below.
+      </p>
       <vtex-ads-story
         publisher-id="playground-publisher"
         session-id="playground-session"
         placement="slow_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Slow ad server, longer timeout</h2>
+      <p class="note">
+        Same 3 s response, with <code>timeout="5000"</code>: the card shows up
+        after 3 s.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="slow_stories"
+        timeout="5000"
       ></vtex-ads-story>
     </section>
 
@@ -96,7 +113,17 @@
       const scenarioFor = (placement) =>
         SCENARIOS[placement] ?? SCENARIOS.default;
 
-      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      // Waits like the network, and rejects when the request is cancelled, as
+      // fetch does.
+      const wait = (ms, signal) =>
+        new Promise((resolve, reject) => {
+          signal?.throwIfAborted();
+          const timer = setTimeout(resolve, ms);
+          signal?.addEventListener("abort", () => {
+            clearTimeout(timer);
+            reject(signal.reason);
+          });
+        });
 
       const nativeFetch = window.fetch.bind(window);
       window.fetch = async (input, init) => {
@@ -111,6 +138,7 @@
           Math.max(
             ...requested.map(([placement]) => scenarioFor(placement).delayMs),
           ),
+          init.signal,
         );
 
         const body = { request_id: "playground" };

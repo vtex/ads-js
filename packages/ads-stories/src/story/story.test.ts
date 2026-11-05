@@ -102,17 +102,20 @@ describe("vtex-ads-story", () => {
       await mount();
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
-      expect(getRawAdsMock).toHaveBeenCalledWith({
-        identity: {
-          accountName: "",
-          publisherId: "publisher-1",
-          sessionId: "session-1",
-          userId: undefined,
-          channel: undefined,
+      expect(getRawAdsMock).toHaveBeenCalledWith(
+        {
+          identity: {
+            accountName: "",
+            publisherId: "publisher-1",
+            sessionId: "session-1",
+            userId: undefined,
+            channel: undefined,
+          },
+          search: {},
+          placements: { home_stories: { quantity: 1, types: ["story"] } },
         },
-        search: {},
-        placements: { home_stories: { quantity: 1, types: ["story"] } },
-      });
+        { signal: expect.any(AbortSignal) },
+      );
     });
 
     it("sends the optional attributes", async () => {
@@ -130,6 +133,25 @@ describe("vtex-ads-story", () => {
         userId: "user-1",
         channel: "app",
       });
+    });
+
+    it("passes the timeout attribute as a number", async () => {
+      await mount({ ...REQUIRED_ATTRIBUTES, timeout: "5000" });
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+      // fetchStory reads it; the element only forwards the property.
+      expect(
+        document.querySelector<VtexAdsStoryElement>(TAG_NAME)?.timeout,
+      ).toBe(5000);
+    });
+
+    it("does not request again when only the timeout changes", async () => {
+      const el = await mount();
+
+      el.setAttribute("timeout", "5000");
+      await flush(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
     });
 
     it("does not send an unknown channel", async () => {
@@ -215,6 +237,53 @@ describe("vtex-ads-story", () => {
       expect(el.shadowRoot?.querySelector(".poster")?.getAttribute("src")).toBe(
         latest.poster_url,
       );
+    });
+
+    // The AbortSignal the element passed to its nth getRawAds call.
+    const signalOf = (call: number) =>
+      getRawAdsMock.mock.calls[call][1]?.signal;
+
+    it("cancels a pending request when an attribute changes", async () => {
+      getRawAdsMock.mockReturnValue(deferred().promise);
+      const el = await mount();
+
+      el.setAttribute("session-id", "session-2");
+      await flush(el);
+
+      expect(signalOf(0)?.aborted).toBe(true);
+      expect(signalOf(1)?.aborted).toBe(false);
+    });
+
+    it("cancels a pending request when the element is removed", async () => {
+      getRawAdsMock.mockReturnValue(deferred().promise);
+      const el = await mount();
+
+      el.remove();
+
+      expect(signalOf(0)?.aborted).toBe(true);
+    });
+
+    it("requests again when moved while its request was pending", async () => {
+      getRawAdsMock.mockReturnValueOnce(deferred().promise);
+      const el = await mount();
+
+      el.remove();
+      document.body.appendChild(el);
+      await flush(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(2);
+      expect(el.shadowRoot?.querySelector(".card")).not.toBeNull();
+    });
+
+    it("does not request again when moved after the Story loaded", async () => {
+      const el = await mount();
+
+      el.remove();
+      document.body.appendChild(el);
+      await flush(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+      expect(signalOf(0)?.aborted).toBe(false);
     });
   });
 
