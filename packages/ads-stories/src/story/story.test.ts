@@ -4,21 +4,45 @@ import {
   expect,
   expectTypeOf,
   beforeAll,
+  beforeEach,
   afterEach,
+  vi,
 } from "vitest";
+import { getRawAds, type RawAdsResponse } from "@vtex/ads-core";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
+import { mockStory, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
 
-// The fixed test Story in story.ts.
-const COVER = "https://dummyimage.com/1080x1920/e31c57/fff";
-const VIDEO = "https://samplelib.com/mp4/sample-10s-vp9.mp4";
+vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
 
-async function mount() {
-  const el = document.createElement(TAG_NAME);
-  document.body.appendChild(el);
+const getRawAdsMock = vi.mocked(getRawAds);
+
+const COVER = mockStory.poster_url;
+const VIDEO = mockStory.media_url;
+
+// Lets the ad request resolve and the element render its result.
+async function flush(el: VtexAdsStoryElement) {
   await el.updateComplete;
+  await new Promise((resolve) => setTimeout(resolve));
+  await el.updateComplete;
+}
+
+async function mount(attributes: Record<string, string> = REQUIRED_ATTRIBUTES) {
+  const el = document.createElement(TAG_NAME);
+  for (const [name, value] of Object.entries(attributes)) {
+    el.setAttribute(name, value);
+  }
+  document.body.appendChild(el);
+  await flush(el);
   return el;
+}
+
+// A response that resolves only when the test says so.
+function deferred() {
+  let resolve!: (value: RawAdsResponse) => void;
+  const promise = new Promise<RawAdsResponse>((r) => (resolve = r));
+  return { promise, resolve };
 }
 
 // Lets the element render, and the player show after it renders.
@@ -32,6 +56,11 @@ describe("vtex-ads-story", () => {
     installDialogMocks();
     installMediaMocks();
     defineVtexAdsStories();
+  });
+
+  beforeEach(() => {
+    getRawAdsMock.mockReset();
+    getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
   });
 
   afterEach(() => {
@@ -60,12 +89,133 @@ describe("vtex-ads-story", () => {
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
-  it("renders the test Story's cover and video", async () => {
+  it("renders the Story's cover and video", async () => {
     const el = await mount();
     const card = el.shadowRoot?.querySelector(".card");
 
     expect(card?.querySelector(".poster")?.getAttribute("src")).toBe(COVER);
     expect(card?.querySelector("video")?.getAttribute("src")).toBe(VIDEO);
+  });
+
+  describe("ad request", () => {
+    it("requests one Story for the placement", async () => {
+      await mount();
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+      expect(getRawAdsMock).toHaveBeenCalledWith({
+        identity: {
+          accountName: "",
+          publisherId: "publisher-1",
+          sessionId: "session-1",
+          userId: undefined,
+          channel: undefined,
+        },
+        search: {},
+        placements: { home_stories: { quantity: 1, types: ["story"] } },
+      });
+    });
+
+    it("sends the optional attributes", async () => {
+      await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "user-id": "user-1",
+        "account-name": "store",
+        channel: "app",
+      });
+
+      expect(getRawAdsMock.mock.calls[0][0].identity).toEqual({
+        accountName: "store",
+        publisherId: "publisher-1",
+        sessionId: "session-1",
+        userId: "user-1",
+        channel: "app",
+      });
+    });
+
+    it("does not send an unknown channel", async () => {
+      await mount({ ...REQUIRED_ATTRIBUTES, channel: "tv" });
+
+      expect(getRawAdsMock.mock.calls[0][0].identity.channel).toBeUndefined();
+    });
+
+    it.each(Object.keys(REQUIRED_ATTRIBUTES))(
+      "renders nothing and does not request without %s",
+      async (missing) => {
+        const attributes = { ...REQUIRED_ATTRIBUTES };
+        delete attributes[missing as keyof typeof attributes];
+        const el = await mount(attributes);
+
+        expect(getRawAdsMock).not.toHaveBeenCalled();
+        expect(el.shadowRoot?.querySelector(".root")).toBeNull();
+      },
+    );
+
+    it("renders nothing when the request fails", async () => {
+      getRawAdsMock.mockRejectedValue(new Error("Ad server error"));
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+    });
+
+    it("renders nothing when the placement has no Story", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith([]));
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+    });
+
+    it("renders nothing when the response misses the placement", async () => {
+      getRawAdsMock.mockResolvedValue({
+        ...rawAdsWith([]),
+        stories: { other_placement: [mockStory] },
+      });
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+    });
+
+    it("renders nothing while the request is pending", async () => {
+      getRawAdsMock.mockReturnValue(deferred().promise);
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+    });
+
+    it("requests again when an attribute changes", async () => {
+      const el = await mount();
+      const other = { ...mockStory, poster_url: "https://cdn.example/2.jpg" };
+      getRawAdsMock.mockResolvedValue(rawAdsWith([other], "other_stories"));
+
+      el.setAttribute("placement", "other_stories");
+      await flush(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(2);
+      expect(el.shadowRoot?.querySelector(".poster")?.getAttribute("src")).toBe(
+        other.poster_url,
+      );
+    });
+
+    it("ignores a response to an earlier request", async () => {
+      const first = deferred();
+      const second = deferred();
+      getRawAdsMock
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise);
+
+      const el = await mount();
+      el.setAttribute("session-id", "session-2");
+      await flush(el);
+
+      const latest = { ...mockStory, poster_url: "https://cdn.example/2.jpg" };
+      second.resolve(rawAdsWith([latest]));
+      await flush(el);
+      first.resolve(rawAdsWith([mockStory]));
+      await flush(el);
+
+      expect(el.shadowRoot?.querySelector(".poster")?.getAttribute("src")).toBe(
+        latest.poster_url,
+      );
+    });
   });
 
   it("renders the card only once when connected again", async () => {
@@ -219,6 +369,18 @@ describe("vtex-ads-story", () => {
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(getVideos(el).card?.paused).toBe(true);
+    });
+
+    it("closes when an attribute changes", async () => {
+      const el = await mount();
+      getCard(el)?.click();
+      await settle(el);
+      getRawAdsMock.mockReturnValue(deferred().promise);
+
+      el.setAttribute("session-id", "session-2");
+      await flush(el);
+
+      expect(getPlayers(el)).toHaveLength(0);
     });
 
     it("closes when the element is removed", async () => {

@@ -24,6 +24,28 @@ const raw: EsbuildPlugin = {
 // it: the CJS build (require()) and the standalone CDN script.
 const bundleLit = [/^lit(\/|$)/, /^@lit\//];
 
+// The CDN script also bundles @vtex/ads-core.
+const bundleAll = [...bundleLit, /^@vtex\/ads-core(\/|$)/];
+
+// @vtex/ads-core imports fetch from cross-fetch, whose browser build carries
+// an XHR fetch polyfill (~10 KB). Every browser that runs custom elements has
+// fetch, so the CDN script uses the native one. It is read on each call, as
+// with a global fetch.
+const nativeFetch: EsbuildPlugin = {
+  name: "native-fetch",
+  setup(build) {
+    build.onResolve({ filter: /^cross-fetch$/ }, () => ({
+      path: "cross-fetch",
+      namespace: "native-fetch",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "native-fetch" }, () => ({
+      contents:
+        "export default (input, init) => globalThis.fetch(input, init);",
+      loader: "js",
+    }));
+  },
+};
+
 // Custom elements must stay native ES classes (`class extends HTMLElement`),
 // so no build goes below ES2018.
 export default defineConfig([
@@ -71,9 +93,9 @@ export default defineConfig([
     outDir: "dist/cdn",
     clean: false,
     bundle: true,
-    noExternal: bundleLit,
+    noExternal: bundleAll,
     splitting: false,
     outExtension: () => ({ js: ".js" }),
-    esbuildPlugins: [raw],
+    esbuildPlugins: [raw, nativeFetch],
   },
 ]);

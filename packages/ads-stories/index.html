@@ -27,20 +27,51 @@
 
     <section>
       <h2>Default</h2>
-      <vtex-ads-story></vtex-ads-story>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="home_stories"
+      ></vtex-ads-story>
     </section>
 
     <section class="themed">
       <h2>Themed with CSS variables</h2>
-      <vtex-ads-story></vtex-ads-story>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="home_stories"
+      ></vtex-ads-story>
     </section>
 
     <!--
+      The ad server is mocked: requests to it get one test Story per Story
+      placement. Installed before the element loads, since the source build
+      reads fetch when @vtex/ads-core loads.
+
       Default: loads the source through Vite (reloads on save).
       ?cdn: loads the built standalone script from dist/cdn, the same file
       the CDN serves. Run `pnpm build` first.
     -->
     <script type="module">
+      import { mockStory } from "./src/story/story.mock.ts";
+
+      const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/";
+
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : input.url;
+        if (!url.startsWith(AD_SERVER)) return nativeFetch(input, init);
+
+        const { placements } = JSON.parse(init.body);
+        const body = { request_id: "playground" };
+        for (const [placement, { types }] of Object.entries(placements)) {
+          body[placement] = types.includes("story") ? [mockStory] : [];
+        }
+        return new Response(JSON.stringify(body), {
+          headers: { "content-type": "application/json" },
+        });
+      };
+
       const useCdn = new URLSearchParams(location.search).has("cdn");
       document.getElementById("source").textContent = useCdn
         ? "dist/cdn/vtex-ads-stories.js"

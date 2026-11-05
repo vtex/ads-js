@@ -1,15 +1,34 @@
-import { css, html, LitElement } from "lit";
+import { css, html, LitElement, nothing, type PropertyValues } from "lit";
+import type { Channel } from "@vtex/ads-core";
 import { cardStyles, renderCard } from "../components/card";
 import { VideoController } from "../components/media";
 import { PlayerController, playerStyles } from "../components/player";
-import type { StoryMedia } from "../types";
+import type { StoryAd } from "../types";
+import { fetchStory } from "../utils/fetch-story";
 
 export const TAG_NAME = "vtex-ads-story";
 
-// Temporary: rendered until the element reads Stories from the ad API.
-const PLACEHOLDER_STORY: StoryMedia = {
-  poster_url: "https://dummyimage.com/1080x1920/e31c57/fff",
-  media_url: "https://samplelib.com/mp4/sample-10s-vp9.mp4",
+// The properties that make up the ad request: a change to any of them fetches
+// the Story again.
+const REQUEST_PROPERTIES = [
+  "publisherId",
+  "sessionId",
+  "placement",
+  "userId",
+  "accountName",
+  "channel",
+] as const;
+
+const CHANNELS: readonly Channel[] = ["site", "app"];
+
+const isChannel = (value: string | null): value is Channel =>
+  CHANNELS.some((channel) => channel === value);
+
+// Reads the `channel` attribute. An unknown value leaves the property
+// undefined, so it is not sent.
+const channelConverter = {
+  fromAttribute: (value: string | null) =>
+    isChannel(value) ? value : undefined,
 };
 
 // Temporary: fixed texts until the store can set them by attribute.
@@ -28,6 +47,34 @@ const LABELS = {
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
 export class VtexAdsStoryElement extends LitElement {
+  static readonly properties = {
+    publisherId: { attribute: "publisher-id" },
+    sessionId: { attribute: "session-id" },
+    placement: {},
+    userId: { attribute: "user-id" },
+    accountName: { attribute: "account-name" },
+    channel: { converter: channelConverter },
+    story: { state: true },
+  };
+
+  /** Required. The publisher the ads are requested for. */
+  declare publisherId?: string;
+  /** Required. The store's session, also used to deduplicate events. */
+  declare sessionId?: string;
+  /** Required. The Story placement configured for the publisher. */
+  declare placement?: string;
+  declare userId?: string;
+  declare accountName?: string;
+  /** `site` or `app`. Any other attribute value is ignored. */
+  declare channel?: Channel;
+
+  /** The Story shown, or undefined while loading, on error or with none. */
+  declare private story?: StoryAd;
+
+  /** Increments on every request, so a late response from an earlier one is
+   * ignored. */
+  private requestId = 0;
+
   static readonly styles = [
     css`
       :host {
@@ -65,6 +112,30 @@ export class VtexAdsStoryElement extends LitElement {
     this.cardVideo.resume();
   }
 
+  protected willUpdate(changed: PropertyValues<this>) {
+    if (REQUEST_PROPERTIES.some((name) => changed.has(name))) {
+      void this.loadStory();
+    }
+  }
+
+  /**
+   * Requests the Story and shows it. Until it arrives, and when there is none
+   * (see fetchStory), the element renders nothing.
+   */
+  private async loadStory() {
+    const requestId = ++this.requestId;
+
+    // The Story shown no longer matches the request.
+    this.player.close();
+    this.story = undefined;
+
+    const story = await fetchStory(this);
+
+    // A later request started meanwhile: its response wins.
+    if (requestId !== this.requestId) return;
+    this.story = story;
+  }
+
   private openPlayer() {
     if (this.player.isOpen) return;
 
@@ -85,16 +156,19 @@ export class VtexAdsStoryElement extends LitElement {
   }
 
   protected render() {
+    const { story } = this;
+    if (!story) return nothing;
+
     return html`
       <div class="root">
-        ${renderCard(PLACEHOLDER_STORY, this.cardVideo, {
+        ${renderCard(story, this.cardVideo, {
           label: LABELS.watch,
           soundOnLabel: LABELS.soundOn,
           soundOffLabel: LABELS.soundOff,
           onSelect: () => this.openPlayer(),
         })}
       </div>
-      ${this.player.render(PLACEHOLDER_STORY)}
+      ${this.player.render(story)}
     `;
   }
 }

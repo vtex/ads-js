@@ -44,11 +44,13 @@
   ],
   "scripts": {
     "prepack": "node ../../scripts/ensure-publish-auth.mjs",
+    "prebuild": "pnpm --filter @vtex/ads-core run build",
     "build": "tsup",
     "build:watch": "tsup --watch",
     "clean": "rimraf dist",
+    "predev": "pnpm run prebuild",
     "dev": "vite",
-    "preview:cdn": "tsup && vite --open /?cdn",
+    "preview:cdn": "pnpm build && vite --open /?cdn",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest --coverage.enabled=false"
@@ -77,6 +79,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@vtex/ads-core": "workspace:^",
     "lit": "^3.3.3"
   }
 }

@@ -120,6 +120,9 @@ importers:
 
   packages/ads-stories:
     dependencies:
+      '@vtex/ads-core':
+        specifier: workspace:^
+        version: link:../core
       lit:
         specifier: ^3.3.3
         version: 3.3.3
