@@ -62,6 +62,12 @@ export const playerStyles = css`
     background: transparent;
   }
 
+  /* Focusable only to keep the focus in the player when its video is clicked
+     (see render): no ring around the whole player. */
+  .player:focus {
+    outline: none;
+  }
+
   .player-frame {
     position: relative;
     width: 100%;
@@ -538,6 +544,23 @@ function animatePairStep(
   ];
 }
 
+/** The keys that step to the previous (-1) and next (1) Story. */
+const ARROW_STEPS: Readonly<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+};
+
+/**
+ * Whether an arrow key press is free for the player: not already handled,
+ * and without a modifier (Alt+Left goes back in the browser).
+ */
+const isFreeArrowKey = (event: KeyboardEvent) =>
+  !event.defaultPrevented &&
+  !event.altKey &&
+  !event.ctrlKey &&
+  !event.metaKey &&
+  !event.shiftKey;
+
 function supportsPopover(dialog: HTMLDialogElement) {
   return typeof dialog.showPopover === "function";
 }
@@ -572,6 +595,8 @@ export class PlayerController implements ReactiveController {
     number,
     (element?: Element) => void
   >();
+  /** Rendered with previous and next (see PlayerRenderOptions). */
+  private navigation = false;
   /** Side the expanded video moved to with two Stories; 0 otherwise. */
   private pairDirection = 0;
   /** The step animation running, cancelled by the next step. */
@@ -731,6 +756,19 @@ export class PlayerController implements ReactiveController {
     if (event.key === "Escape") this.options.onClose();
   };
 
+  // With the focus in the player and more than one Story, the arrows step, as
+  // the previous and next buttons do. Only there: the mini player leaves the
+  // page usable, and the page's own arrow keys (a gallery, a slider) keep
+  // working.
+  private readonly onPlayerKeyDown = (event: KeyboardEvent) => {
+    const delta = ARROW_STEPS[event.key];
+    if (!delta || !this.navigation || !isFreeArrowKey(event)) return;
+
+    // The arrow would also scroll the page.
+    event.preventDefault();
+    this.options.onStep?.(delta);
+  };
+
   // Clicks on the backdrop of the expanded view reach the dialog itself.
   private readonly onDialogClick = (event: Event) => {
     if (this.expanded && event.target === event.currentTarget) {
@@ -843,9 +881,11 @@ export class PlayerController implements ReactiveController {
 
   /**
    * The player <dialog> while it is open. Clicking the video also plays or
-   * pauses it. With `navigation` (more than one Story), it has previous and
-   * next buttons, and the expanded view moves on when the video ends instead
-   * of looping. The expanded view also shows the `neighbors` beside it.
+   * pauses it, and keeps the focus in the player (the dialog is focusable,
+   * though not by Tab), so the arrow keys still step. With `navigation`
+   * (more than one Story), it has previous and next buttons and arrow keys,
+   * and the expanded view moves on when the video ends instead of looping.
+   * The expanded view also shows the `neighbors` beside it.
    */
   render(
     story: StoryMedia,
@@ -859,6 +899,7 @@ export class PlayerController implements ReactiveController {
     this.pairDirection =
       shownNeighbors.length === 1 ? -Math.sign(shownNeighbors[0].offset) : 0;
     const pair = this.pairDirection !== 0;
+    this.navigation = navigation;
     const advances = navigation && expanded;
 
     return html`
@@ -873,9 +914,11 @@ export class PlayerController implements ReactiveController {
         })}
         ?data-switched=${this.switched}
         ?data-paused=${withVideo && video.paused}
+        tabindex="-1"
         ${ref(this.dialog)}
         @click=${this.onDialogClick}
         @cancel=${this.onCancel}
+        @keydown=${this.onPlayerKeyDown}
       >
         ${this.renderNeighbors(shownNeighbors)}
         <div class="player-frame" ${ref(this.frame)}>

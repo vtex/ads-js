@@ -432,6 +432,28 @@ describe("vtex-ads-story carousel", () => {
       expect(highlightedCard(el)?.dataset.index).toBe("1");
     });
 
+    it("steps with the arrow keys while the player is open", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
+      const el = await mount();
+      await openPlayer(el);
+
+      // The close button has the focus when the player opens.
+      query(el, ".player-close")?.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "ArrowLeft",
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      await el.updateComplete;
+      await el.updateComplete;
+
+      expect(query(el, ".player .poster")?.getAttribute("src")).toBe(
+        mockStories[2].poster_url,
+      );
+      expect(highlightedCard(el)?.dataset.index).toBe("2");
+    });
+
     it("plays the highlighted card again when the player closes", async () => {
       const el = await mount();
       await openPlayer(el);

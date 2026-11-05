@@ -41,7 +41,12 @@ describe("PlayerController", () => {
     installMediaMocks();
   });
 
+  // Players a test opened: an open player listens for keys on the page, and
+  // would still react to the next test's.
+  const opened: PlayerController[] = [];
+
   afterEach(() => {
+    for (const controller of opened.splice(0)) controller.close();
     document.body.replaceChildren();
   });
 
@@ -52,6 +57,7 @@ describe("PlayerController", () => {
       (host) => new PlayerController(host, { ...labels, onClose }),
       (player) => player.render(storyToPlay),
     );
+    opened.push(controller);
     await controller.open();
 
     const player = container.querySelector("dialog");
@@ -184,6 +190,7 @@ describe("PlayerController", () => {
     await toggleExpanded();
     controller.close();
 
+    opened.push(controller);
     await controller.open();
     const player = container.querySelector("dialog");
     expect(player).not.toBeNull();
@@ -336,6 +343,7 @@ describe("PlayerController", () => {
           new PlayerController(host, { ...labels, onClose: vi.fn(), onStep }),
         (player) => player.render(videoStory, { navigation, ...renderOptions }),
       );
+      opened.push(controller);
       await controller.open();
       const player = container.querySelector("dialog");
       if (!player) throw new Error("The player did not render");
@@ -443,6 +451,112 @@ describe("PlayerController", () => {
 
       video?.dispatchEvent(new Event("ended"));
       expect(onStep).toHaveBeenCalledWith(1);
+    });
+
+    describe("arrow keys", () => {
+      // A key pressed with the focus on `target`, by default the player's
+      // close button (focused when it opens).
+      const press = (
+        target: EventTarget | null | undefined,
+        key: string,
+        init: KeyboardEventInit = {},
+      ) => {
+        const event = new KeyboardEvent("keydown", {
+          key,
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+          ...init,
+        });
+        target?.dispatchEvent(event);
+        return event;
+      };
+
+      const closeButton = (player: HTMLDialogElement) =>
+        player.querySelector(".player-close");
+
+      it("steps with the left and right arrows inside the player", async () => {
+        const { player, onStep } = await setupWithNavigation();
+
+        const left = press(closeButton(player), "ArrowLeft");
+        press(player.querySelector(".player-sound"), "ArrowRight");
+
+        expect(onStep.mock.calls).toEqual([[-1], [1]]);
+        // The arrow doesn't also scroll the page.
+        expect(left.defaultPrevented).toBe(true);
+      });
+
+      it("steps while expanded too", async () => {
+        const { player, onStep } = await setupWithNavigation();
+        await expand(player);
+
+        press(player.querySelector(".player-expand"), "ArrowRight");
+
+        expect(onStep).toHaveBeenCalledWith(1);
+      });
+
+      it("leaves the arrows pressed elsewhere on the page alone", async () => {
+        const { onStep } = await setupWithNavigation();
+        const gallery = document.createElement("button");
+        document.body.append(gallery);
+
+        const event = press(gallery, "ArrowRight");
+
+        expect(onStep).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      it("ignores the arrows with a single Story", async () => {
+        const { player, onStep } = await setupWithNavigation(false);
+
+        const event = press(closeButton(player), "ArrowRight");
+
+        expect(onStep).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      it.each(["altKey", "ctrlKey", "metaKey", "shiftKey"])(
+        "ignores the arrows with %s",
+        async (modifier) => {
+          const { player, onStep } = await setupWithNavigation();
+
+          press(closeButton(player), "ArrowLeft", { [modifier]: true });
+
+          expect(onStep).not.toHaveBeenCalled();
+        },
+      );
+
+      it("ignores an arrow already handled", async () => {
+        const { player, onStep } = await setupWithNavigation();
+        const button = closeButton(player);
+        button?.addEventListener("keydown", (event) => event.preventDefault());
+
+        press(button, "ArrowRight");
+
+        expect(onStep).not.toHaveBeenCalled();
+      });
+
+      it("keeps the focus in the player when the video is clicked", async () => {
+        const { player } = await setupWithNavigation();
+
+        // Focusable, though not by Tab: clicks on the video land on it.
+        expect(player.tabIndex).toBe(-1);
+      });
+
+      it("still closes on Escape pressed anywhere on the page", async () => {
+        const onClose = vi.fn();
+        const { container, controller } = mountHost(
+          (host) => new PlayerController(host, { ...labels, onClose }),
+          (player) => player.render(videoStory, { navigation: true }),
+        );
+        opened.push(controller);
+        await controller.open();
+        expect(container.querySelector("dialog")).not.toBeNull();
+
+        press(document.body, "Escape");
+
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
     });
 
     describe("step animation", () => {

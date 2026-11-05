@@ -68,8 +68,8 @@ The JSX types include the element's attributes: `publisher-id`, `session-id`
 and `placement` are required, as in HTML, and `channel` only accepts `site` or
 `app`.
 
-Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in `tsconfig.json`.
-Without it, TypeScript reports
+Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in
+`tsconfig.json`. Without it, TypeScript reports
 `Property 'vtex-ads-story' does not exist on type 'JSX.IntrinsicElements'`.
 The types are opt-in so projects without React don't need `@types/react`.
 
@@ -161,32 +161,39 @@ vtex-ads-story {
 The element requests up to `quantity` Stories and lays them out in a 500px tall
 band as wide as its parent:
 
-- **One Story**: the card is centered over a background. On screens 576px
-  wide or less, the card shows alone, without the background.
+- **One Story**: the card is centered over a background. On screens 576px wide
+  or less, the card shows alone, without the background.
 - **Two Stories**: both cards side by side. One has the highlight (full size);
   the other is smaller and dimmed.
 - **Three or more**: the highlighted card in the middle, the others on each
   side, smaller and dimmed, up to two per side. Every card moves one place per
   step. With four, the Story opposite the highlighted one shows at both ends.
-  Two Stories also show this way on screens 576px wide or less, with the
-  other one on both sides.
+  Two Stories also show this way on screens 576px wide or less, with the other
+  one on both sides.
 
-With more than one Story, the highlight moves to the next card every 5
-seconds, except while the pointer is over the carousel, the keyboard focus
-is in it, or the player is open. It also moves with the arrows, a swipe, or a
-click on a dimmed card. Clicking the highlighted card opens the player. If
-the highlighted card's sound is on, the next highlighted card plays with sound
-too, or muted if the browser blocks it.
+With more than one Story, the highlight moves to the next card every 5 seconds,
+except while the pointer is over the carousel, the keyboard focus is in it, or
+the player is open. It also moves with the arrows, a swipe, or a click on a
+dimmed card. If the highlighted card's sound is on, the next highlighted card
+plays with sound too, or muted if the browser blocks it.
 
-With more than one Story, the mini player has previous and next buttons above
-its top left. They change the video in the player, and the carousel highlight
-follows, while the carousel's own advance stays stopped. The expanded player
-shows the other Stories' covers beside the video, up to two per side (click
-one to watch it), with previous and next beside it, and moves on to the next
-Story when the video ends. With two Stories, the video moves off center with
-the other cover beside it, without previous and next. On screens 576px wide
-or less, the expanded player fills the screen, without the covers, and
-previous and next sit inside the video's edges.
+### Player
+
+Clicking the highlighted card opens it in the mini player, at the bottom right
+of the screen, which can be expanded. With more than one Story:
+
+- **Mini player**: previous and next buttons above its top left change the video
+  in the player, and the carousel highlight follows. The carousel's own advance
+  stays stopped while the player is open.
+- **Expanded player**: the other Stories' covers sit beside the video, up to two
+  per side (click one to watch it), with previous and next beside it. When the
+  video ends, the next Story plays. With two Stories, the video moves off center
+  with the other cover beside it, without previous and next. On screens 576px
+  wide or less, it fills the screen, without the covers, and previous and next
+  sit inside the video's edges.
+- **Keyboard**: with the focus in the player, the left and right arrow keys step
+  too (not with a modifier key held). Elsewhere on the page they keep working as
+  usual.
 
 ## Development
 
