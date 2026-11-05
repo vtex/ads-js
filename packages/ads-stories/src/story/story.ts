@@ -21,8 +21,9 @@ const REQUEST_PROPERTIES = [
 
 const CHANNELS: readonly Channel[] = ["site", "app"];
 
+// The cast only lets includes() take any string: it still compares values.
 const isChannel = (value: string | null): value is Channel =>
-  CHANNELS.some((channel) => channel === value);
+  CHANNELS.includes(value as Channel);
 
 // Reads the `channel` attribute. An unknown value leaves the property
 // undefined, so it is not sent.

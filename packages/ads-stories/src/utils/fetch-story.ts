@@ -56,7 +56,7 @@ export async function fetchStory(
 ): Promise<StoryAd | undefined> {
   // No request during server-side rendering, where nothing renders. Not
   // Lit's isServer: it is also true in Node with a DOM, as in the tests.
-  const onServer = typeof window === "undefined";
+  const onServer = typeof globalThis.window === "undefined";
   if (onServer || !publisherId || !sessionId || !placement) return undefined;
 
   const limit = withTimeout(toTimeout(timeout), signal);
