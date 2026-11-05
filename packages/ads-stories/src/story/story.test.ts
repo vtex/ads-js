@@ -91,6 +91,14 @@ describe("vtex-ads-story", () => {
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
+  it("renders the card centered over the one-Story background", async () => {
+    const el = await mount();
+    const carousel = el.shadowRoot?.querySelector(".carousel");
+
+    expect(carousel?.hasAttribute("data-solo")).toBe(true);
+    expect(carousel?.querySelector(".card")).not.toBeNull();
+  });
+
   it("renders the Story's cover and video", async () => {
     const el = await mount();
     const card = el.shadowRoot?.querySelector(".card");

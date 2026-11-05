@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues } from "lit";
 import type { Channel } from "@vtex/ads-core";
 import { cardStyles, renderCard } from "../components/card";
+import { carouselStyles, renderCarousel } from "../components/carousel";
 import { VideoController } from "../components/media";
 import { PlayerController, playerStyles } from "../components/player";
 import type { StoryAd } from "../types";
@@ -93,6 +94,7 @@ export class VtexAdsStoryElement extends LitElement {
       }
     `,
     cardStyles,
+    carouselStyles,
     playerStyles,
   ];
 
@@ -196,12 +198,14 @@ export class VtexAdsStoryElement extends LitElement {
 
     return html`
       <div class="root">
-        ${renderCard(story, this.cardVideo, {
-          label: LABELS.watch,
-          soundOnLabel: LABELS.soundOn,
-          soundOffLabel: LABELS.soundOff,
-          onSelect: () => this.openPlayer(),
-        })}
+        ${renderCarousel(
+          renderCard(story, this.cardVideo, {
+            label: LABELS.watch,
+            soundOnLabel: LABELS.soundOn,
+            soundOffLabel: LABELS.soundOff,
+            onSelect: () => this.openPlayer(),
+          }),
+        )}
       </div>
       ${this.player.render(story)}
     `;

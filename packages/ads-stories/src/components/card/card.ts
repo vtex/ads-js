@@ -4,11 +4,13 @@ import { hasVideo, renderMedia, type VideoController } from "../media";
 import type { StoryMedia } from "../../types";
 
 export const cardStyles = css`
+  /* 9:16 at the height its container gives it (--card-height, default
+     500px). */
   .card {
     position: relative;
     box-sizing: border-box;
-    width: calc(500px * 9 / 16);
-    height: 500px;
+    width: calc(var(--card-height, 500px) * 9 / 16);
+    height: var(--card-height, 500px);
     overflow: hidden;
     border-radius: var(--vtex-ads-story-radius, 20px);
     background: #000;

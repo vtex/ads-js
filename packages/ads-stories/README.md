@@ -142,14 +142,20 @@ vtex-ads-story {
   --vtex-ads-story-font-family: "Inter", sans-serif;
   --vtex-ads-story-color-text: #1f1f1f;
   --vtex-ads-story-radius: 20px;
+  --vtex-ads-story-solo-background: #fafafa;
 }
 ```
 
-| Variable                       | Default   | Used for     |
-| ------------------------------ | --------- | ------------ |
-| `--vtex-ads-story-font-family` | inherited | All text     |
-| `--vtex-ads-story-color-text`  | inherited | All text     |
-| `--vtex-ads-story-radius`      | `20px`    | Card corners |
+| Variable                           | Default   | Used for                                   |
+| ---------------------------------- | --------- | ------------------------------------------ |
+| `--vtex-ads-story-font-family`     | inherited | All text                                   |
+| `--vtex-ads-story-color-text`      | inherited | All text                                   |
+| `--vtex-ads-story-radius`          | `20px`    | Card and background corners                |
+| `--vtex-ads-story-solo-background` | `#fafafa` | Background behind the card, with one Story |
+
+With one Story, the card is centered over a 500px tall background as wide as
+the element's parent. On screens 576px wide or less, the card shows alone, without
+the background.
 
 ## Development
 
