@@ -5,6 +5,8 @@ import {
   type ReactiveControllerHost,
   type TemplateResult,
 } from "lit";
+import { repeat } from "lit/directives/repeat.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
 
 const STAGE_HEIGHT = css`500px`;
@@ -16,20 +18,40 @@ export const AUTO_ADVANCE_MS = 5000;
 /** How far a pointer must move, in pixels, to count as a swipe. */
 export const SWIPE_DISTANCE = 40;
 
+/** Screens this narrow have no room for two cards side by side. */
+export const NARROW_SCREEN = css`(max-width: 576px)`;
+
+/**
+ * Rolling layout: cards on each side of the highlighted one. Up to
+ * VISIBLE_SIDE show on each side; RENDERED_SIDE are kept in the DOM, the
+ * farther ones hidden, so a card slides in from its place instead of
+ * appearing.
+ */
+export const VISIBLE_SIDE = 2;
+export const RENDERED_SIDE = VISIBLE_SIDE + 3;
+
+/**
+ * How the cards are laid out:
+ * - solo: one Story, the card centered over the background.
+ * - pair: two Stories side by side; moving only changes the highlight.
+ * - rolling: the highlighted card in the middle, the others on each side,
+ *   all moving one place per step. Three or more Stories, or two on narrow
+ *   screens.
+ */
+export type CarouselLayout = "solo" | "pair" | "rolling";
+
 /**
  * The carousel stage: a band as tall as the card, as wide as the element's
  * parent. The store sets the width on its own container.
  *
- * One Story: the card sits centered over a solid background
+ * Solo: the card sits centered over a solid background
  * (--vtex-ads-story-solo-background, default #fafafa), with room around it:
- * the card shrinks to fit the padding and gets a soft shadow.
+ * the card shrinks to fit the padding and gets a soft shadow. On narrow
+ * screens (576px or less) there is no room for it: the card shows alone at
+ * full height.
  *
- * Two Stories: both cards side by side, centered. Moving only changes the
- * highlight: the highlighted card is full size, the other smaller and dimmed.
- *
- * On narrow screens (576px or less) there is no room
- * for either: one Story shows alone at full height, and with two, the
- * highlighted card is centered with the other peeking at its side.
+ * Pair and rolling: the highlighted card is full size, the others smaller
+ * (0.9) and dimmed.
  */
 export const carouselStyles = css`
   .carousel {
@@ -42,14 +64,14 @@ export const carouselStyles = css`
     user-select: none;
   }
 
-  .carousel[data-solo] {
+  .carousel[data-layout="solo"] {
     padding: ${SOLO_PADDING};
     border-radius: var(--vtex-ads-story-radius, 20px);
     background: var(--vtex-ads-story-solo-background, #fafafa);
     --card-height: calc(${STAGE_HEIGHT} - 2 * ${SOLO_PADDING});
   }
 
-  .carousel[data-solo] .card {
+  .carousel[data-layout="solo"] .card {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 
@@ -60,15 +82,10 @@ export const carouselStyles = css`
     touch-action: pan-y;
   }
 
-  /* Each slide starts centered, then moves to its side: --side is -1 for the
-     first card, 1 for the second. The highlighted card sits 47.5% of its
-     width off center, the other (scaled to 0.9) 52.5%, so the gap between
-     them stays 8px. */
+  /* Each slide starts centered, then moves by its own transform. */
   .slide {
-    --side: 1;
-    --offset: 52.5%;
-    --scale: 0.9;
     --ease: cubic-bezier(0.25, 1, 0.5, 1);
+    --duration: var(--slide-duration, 0.4s);
     position: absolute;
     top: 0;
     left: 50%;
@@ -76,21 +93,53 @@ export const carouselStyles = css`
     height: 100%;
     margin-left: calc(${STAGE_HEIGHT} * 9 / -32);
     opacity: 0.5;
-    transform: translateX(calc(var(--side) * (var(--offset) + 4px)))
-      scale(var(--scale));
     transition:
-      transform 0.4s var(--ease),
-      opacity 0.4s var(--ease);
-  }
-
-  .slide[data-index="0"] {
-    --side: -1;
+      transform var(--duration) var(--ease),
+      opacity var(--duration) var(--ease),
+      visibility 0s;
   }
 
   .slide[data-active] {
+    opacity: 1;
+  }
+
+  /* Pair: --side is -1 for the first card, 1 for the second. The highlighted
+     card sits 47.5% of its width off center, the other (scaled to 0.9)
+     52.5%, so the gap between them stays 8px. */
+  .carousel[data-layout="pair"] .slide {
+    --side: 1;
+    --offset: 52.5%;
+    --scale: 0.9;
+    transform: translateX(calc(var(--side) * (var(--offset) + 4px)))
+      scale(var(--scale));
+  }
+
+  .carousel[data-layout="pair"] .slide[data-index="0"] {
+    --side: -1;
+  }
+
+  .carousel[data-layout="pair"] .slide[data-active] {
     --offset: 47.5%;
     --scale: 1;
-    opacity: 1;
+  }
+
+  /* Rolling: --place is the slide's distance from the highlighted one, in
+     cards, 8px apart. A hidden slide fades out, then stops being visible. */
+  .carousel[data-layout="rolling"] .slide {
+    transform: translateX(calc(var(--place) * (100% + 8px))) scale(0.9);
+  }
+
+  .carousel[data-layout="rolling"] .slide[data-active] {
+    transform: translateX(0) scale(1);
+  }
+
+  .slide[data-hidden] {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      transform var(--duration) var(--ease),
+      opacity var(--duration) var(--ease),
+      visibility 0s var(--duration);
   }
 
   /* Only the highlighted card opens the player, so only it shows play. Its
@@ -141,28 +190,21 @@ export const carouselStyles = css`
     right: 3px;
   }
 
-  @media (max-width: 576px) {
-    .carousel[data-solo] {
+  @media ${NARROW_SCREEN} {
+    .carousel[data-layout="solo"] {
       padding: 0;
       background: none;
       --card-height: ${STAGE_HEIGHT};
     }
 
-    .carousel[data-solo] .card {
+    .carousel[data-layout="solo"] .card {
       box-shadow: none;
-    }
-
-    .slide {
-      --offset: 100% + 4px;
-    }
-
-    .slide[data-active] {
-      --offset: -4px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .slide {
+    .slide,
+    .slide[data-hidden] {
       transition: none;
     }
   }
@@ -180,10 +222,15 @@ export interface CarouselLabels {
 export interface CarouselOptions {
   labels: CarouselLabels;
   /**
-   * Called when the highlight moves, before the host renders it: `from` is
-   * the card that loses it.
+   * Called when the highlight moves, before the host renders it, with the
+   * keys (see Slide) of the slide that loses it and the one that gets it.
    */
   onStep?: (from: number, to: number) => void;
+  /**
+   * Called when the layout changes (the screen got narrow or wide): every
+   * slide is new, with new keys.
+   */
+  onLayoutChange?: () => void;
   /**
    * While true, the highlight doesn't move, by hand or on its own (for
    * example, while the player shows the highlighted Story).
@@ -191,27 +238,48 @@ export interface CarouselOptions {
   locked?: () => boolean;
 }
 
-/** Renders the card of one Story. `active`: it has the highlight. */
-export type RenderSlide<T> = (
-  item: T,
-  index: number,
-  active: boolean,
-) => TemplateResult;
+/** One rendered card. */
+export interface Slide {
+  /**
+   * Stays with the card while it moves, so state kept per card (such as its
+   * video) follows it. Unique among the rendered slides of a layout; the
+   * same Story can show in more than one slide.
+   */
+  key: number;
+  /** Places from the highlighted card: negative before it, positive after. */
+  offset: number;
+  /** Has the highlight. */
+  active: boolean;
+  /** Kept in the DOM out of sight, so it can slide in. */
+  hidden: boolean;
+}
+
+/** Renders the card of one Story. */
+export type RenderSlide<T> = (item: T, slide: Slide) => TemplateResult;
+
+const wrap = (value: number, count: number) =>
+  ((value % count) + count) % count;
 
 /**
  * The carousel around the Story cards: which Story has the highlight, the
- * arrows, swipes and the automatic advance. Call reset() when the Stories
- * change, and render() from the host's render.
+ * layout, the arrows, swipes and the automatic advance. Call reset() when
+ * the Stories change, and render() from the host's render.
  *
  * The highlight moves on its own every AUTO_ADVANCE_MS, except while the
  * pointer is over the carousel, the keyboard focus is in it, it is locked,
  * or the host is off the page.
  */
 export class CarouselController implements ReactiveController {
-  /** Index of the highlighted Story. */
-  active = 0;
-
+  /**
+   * Steps taken since the Stories loaded, back and forth, not wrapped: the
+   * rolling layout keys its slides by it.
+   */
+  private position = 0;
+  /** Stories moved by the last step: longer jumps animate a bit slower. */
+  private distance = 1;
   private count = 0;
+  private narrow = false;
+  private media?: MediaQueryList;
   private connected = false;
   private hovered = false;
   private focused = false;
@@ -225,13 +293,34 @@ export class CarouselController implements ReactiveController {
     host.addController(this);
   }
 
+  /** Index of the highlighted Story. */
+  get active() {
+    return this.count ? wrap(this.position, this.count) : 0;
+  }
+
+  get layout(): CarouselLayout {
+    if (this.count < 2) return "solo";
+    return this.count === 2 && !this.narrow ? "pair" : "rolling";
+  }
+
+  /** Key (see Slide) of the highlighted slide. */
+  get activeKey() {
+    if (this.layout === "rolling") return this.position;
+    return this.active;
+  }
+
   hostConnected() {
     this.connected = true;
+    this.media = globalThis.matchMedia?.(NARROW_SCREEN.toString());
+    this.media?.addEventListener("change", this.onMediaChange);
+    this.narrow = this.media?.matches ?? false;
     this.syncTimer();
   }
 
   hostDisconnected() {
     this.connected = false;
+    this.media?.removeEventListener("change", this.onMediaChange);
+    this.media = undefined;
     this.syncTimer();
   }
 
@@ -244,28 +333,23 @@ export class CarouselController implements ReactiveController {
   /** For a new list of Stories: the first one gets the highlight. */
   reset(count: number) {
     this.count = count;
-    this.active = 0;
+    this.position = 0;
+    this.distance = 1;
     this.restartTimer();
   }
 
   /** Moves the highlight by `delta` Stories, wrapping around the ends. */
   step(delta: number) {
-    if (this.count < 2 || this.options.locked?.()) return;
+    if (this.count < 2 || delta === 0 || this.options.locked?.()) return;
 
-    const from = this.active;
-    const to = (((from + delta) % this.count) + this.count) % this.count;
-    if (to === from) return;
+    const from = this.activeKey;
+    this.position += delta;
+    this.distance = Math.abs(delta);
 
-    this.options.onStep?.(from, to);
-    this.active = to;
+    this.options.onStep?.(from, this.activeKey);
     this.host.requestUpdate();
     // A step by hand gives the new Story its full time.
     this.restartTimer();
-  }
-
-  /** Gives the highlight to the Story at `index`. */
-  select(index: number) {
-    this.step(index - this.active);
   }
 
   private get shouldAdvance() {
@@ -295,6 +379,15 @@ export class CarouselController implements ReactiveController {
     this.stopTimer();
     this.syncTimer();
   }
+
+  private readonly onMediaChange = (event: MediaQueryListEvent) => {
+    const layout = this.layout;
+    this.narrow = event.matches;
+    if (this.layout === layout) return;
+
+    this.options.onLayoutChange?.();
+    this.host.requestUpdate();
+  };
 
   private readonly onPointerEnter = () => {
     this.hovered = true;
@@ -348,14 +441,85 @@ export class CarouselController implements ReactiveController {
     capture: true,
   };
 
+  /** Pair: both Stories, each keyed by its index. */
+  private pairSlides(): Slide[] {
+    const { active } = this;
+    return [0, 1].map((index) => ({
+      key: index,
+      offset: index - active,
+      active: index === active,
+      hidden: false,
+    }));
+  }
+
   /**
-   * One item: the card centered over the background.
-   * Two items: both cards side by side, with the arrows.
+   * Rolling: the slides around the highlighted one, keyed by their position.
+   * Up to VISIBLE_SIDE show on each side, fewer when there aren't enough
+   * Stories to fill both sides without repeating: half on each side, the
+   * extra one after it. With four, the Story opposite the highlighted one
+   * shows at both ends; with two (narrow screens), the other one shows on
+   * both sides.
+   */
+  private rollingSlides(): Slide[] {
+    const { count } = this;
+    const even = count === 2 || count === 4;
+    const before = even ? count / 2 : Math.floor((count - 1) / 2);
+    const after = even ? count / 2 : count - 1 - before;
+
+    const slides: Slide[] = [];
+    for (let offset = -RENDERED_SIDE; offset <= RENDERED_SIDE; offset += 1) {
+      slides.push({
+        key: this.position + offset,
+        offset,
+        active: offset === 0,
+        hidden:
+          Math.abs(offset) > VISIBLE_SIDE || offset < -before || offset > after,
+      });
+    }
+    return slides;
+  }
+
+  private renderSlides<T>(items: readonly T[], renderSlide: RenderSlide<T>) {
+    const { layout } = this;
+    const slides = layout === "pair" ? this.pairSlides() : this.rollingSlides();
+
+    return repeat(
+      slides,
+      (slide) => slide.key,
+      (slide) => {
+        const index =
+          layout === "pair" ? slide.key : wrap(slide.key, this.count);
+        return html`
+          <div
+            class="slide"
+            data-index=${index}
+            ?data-active=${slide.active}
+            ?data-hidden=${slide.hidden}
+            ?inert=${slide.hidden}
+            style=${styleMap({ "--place": String(slide.offset) })}
+          >
+            ${renderSlide(items[index], slide)}
+          </div>
+        `;
+      },
+    );
+  }
+
+  /**
+   * One item: the card centered over the background. More: the cards in the
+   * pair or rolling layout, with the arrows.
    */
   render<T>(items: readonly T[], renderSlide: RenderSlide<T>) {
-    if (items.length === 1) {
+    if (this.layout === "solo") {
       return html`
-        <div class="carousel" data-solo>${renderSlide(items[0], 0, true)}</div>
+        <div class="carousel" data-layout="solo">
+          ${renderSlide(items[0], {
+            key: 0,
+            offset: 0,
+            active: true,
+            hidden: false,
+          })}
+        </div>
       `;
     }
 
@@ -365,6 +529,7 @@ export class CarouselController implements ReactiveController {
     return html`
       <div
         class="carousel"
+        data-layout=${this.layout}
         role="region"
         aria-roledescription=${labels.carouselRole}
         aria-label=${labels.carousel}
@@ -375,18 +540,14 @@ export class CarouselController implements ReactiveController {
       >
         <div
           class="track"
+          style=${styleMap({
+            "--slide-duration": this.distance > 1 ? "0.52s" : "0.4s",
+          })}
           @pointerdown=${this.onPointerDown}
           @pointerup=${this.onPointerUp}
           @click=${this.onClickCapture}
         >
-          ${items.map((item, index) => {
-            const active = index === this.active;
-            return html`
-              <div class="slide" data-index=${index} ?data-active=${active}>
-                ${renderSlide(item, index, active)}
-              </div>
-            `;
-          })}
+          ${this.renderSlides(items, renderSlide)}
         </div>
         <button
           type="button"

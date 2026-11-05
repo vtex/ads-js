@@ -116,25 +116,27 @@ page. Always pin an exact version: a pinned URL never changes.
 
 ## Attributes
 
-The element requests a Story from the VTEX Ads ad API with
-[`@vtex/ads-core`](../core) and renders the first Story of the placement.
+The element requests the placement's Stories from the VTEX Ads ad API with
+[`@vtex/ads-core`](../core) and shows them in a carousel (see
+[Layout](#layout)).
 
-| Attribute           | Required | Description                                                                                                           |
-| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                               |
-| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                        |
-| `placement`         | Yes      | The Story placement configured for the publisher                                                                      |
-| `user-id`           | No       | The shopper's id, when known                                                                                          |
-| `account-name`      | No       | The VTEX account name                                                                                                 |
-| `channel`           | No       | `site` or `app`. Other values are not sent                                                                            |
-| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                        |
-| `inactive-autoplay` | No       | With two Stories, the card without the highlight also plays its video, muted. Off by default: it shows only its cover |
+| Attribute           | Required | Description                                                                                                                                |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                                                    |
+| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                             |
+| `placement`         | Yes      | The Story placement configured for the publisher                                                                                           |
+| `user-id`           | No       | The shopper's id, when known                                                                                                               |
+| `account-name`      | No       | The VTEX account name                                                                                                                      |
+| `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                 |
+| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                             |
+| `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                   |
+| `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. Off by default: they show only their cover |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout`, requests the Story again; a new `timeout` applies to the next
-request.
+`timeout` and `inactive-autoplay`, requests the Stories again; a new
+`timeout` applies to the next request.
 
 ## Customization
 
@@ -156,18 +158,23 @@ vtex-ads-story {
 
 ## Layout
 
-The element requests up to two Stories and lays them out in a 500px tall
+The element requests up to `quantity` Stories and lays them out in a 500px tall
 band as wide as its parent:
 
 - **One Story**: the card is centered over a background. On screens 576px
   wide or less, the card shows alone, without the background.
 - **Two Stories**: both cards side by side. One has the highlight (full size);
-  the other is smaller and dimmed. The highlight moves to the other card every
-  5 seconds, except while the pointer is over the carousel, the keyboard
-  focus is in it, or the player is open. It also moves with the arrows, a
-  swipe, or a click on the dimmed card. Clicking the highlighted card opens
-  the player. On screens 576px wide or less, the highlighted card is centered
-  with the other peeking at its side.
+  the other is smaller and dimmed.
+- **Three or more**: the highlighted card in the middle, the others on each
+  side, smaller and dimmed, up to two per side. Every card moves one place per
+  step. With four, the Story opposite the highlighted one shows at both ends.
+  Two Stories also show this way on screens 576px wide or less, with the
+  other one on both sides.
+
+With more than one Story, the highlight moves to the next card every 5
+seconds, except while the pointer is over the carousel, the keyboard focus
+is in it, or the player is open. It also moves with the arrows, a swipe, or a
+click on a dimmed card. Clicking the highlighted card opens the player.
 
 ## Development
 

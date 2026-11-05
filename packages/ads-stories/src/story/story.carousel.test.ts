@@ -15,7 +15,12 @@ import {
 } from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
-import { AUTO_ADVANCE_MS, carouselStyles } from "../components/carousel";
+import {
+  AUTO_ADVANCE_MS,
+  carouselStyles,
+  NARROW_SCREEN,
+  RENDERED_SIDE,
+} from "../components/carousel";
 import {
   mockStories,
   mockStory,
@@ -83,7 +88,7 @@ describe("vtex-ads-story carousel", () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
     const el = await mount();
 
-    expect(query(el, ".carousel")?.hasAttribute("data-solo")).toBe(true);
+    expect(query(el, ".carousel")?.getAttribute("data-layout")).toBe("solo");
     expect(slides(el)).toHaveLength(0);
     expect(query(el, ".arrow")).toBeNull();
   });
@@ -92,7 +97,7 @@ describe("vtex-ads-story carousel", () => {
     const el = await mount();
     const carousel = query(el, ".carousel");
 
-    expect(carousel?.hasAttribute("data-solo")).toBe(false);
+    expect(carousel?.getAttribute("data-layout")).toBe("pair");
     expect(carousel?.getAttribute("role")).toBe("region");
     expect(carousel?.getAttribute("aria-roledescription")).toBe("carrossel");
     expect(slides(el)).toHaveLength(2);
@@ -213,7 +218,7 @@ describe("vtex-ads-story carousel", () => {
 
       await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS * 2);
 
-      expect(query(el, ".carousel")?.hasAttribute("data-solo")).toBe(true);
+      expect(query(el, ".carousel")?.getAttribute("data-layout")).toBe("solo");
     });
   });
 
@@ -269,6 +274,199 @@ describe("vtex-ads-story carousel", () => {
       expect(carouselStyles.cssText).toMatch(
         /\.slide:not\(\[data-active\]\) \.card-sound\s*\{\s*display: none;/,
       );
+    });
+  });
+
+  describe("three or more Stories", () => {
+    const storiesOf = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        ...mockStory,
+        ad_id: `story-ad-${index}`,
+        position: index,
+      }));
+
+    const visible = (el: VtexAdsStoryElement) =>
+      slides(el).filter((slide) => !slide.hasAttribute("data-hidden"));
+
+    // The Story index of each visible card, left to right.
+    const visibleIndexes = (el: VtexAdsStoryElement) =>
+      visible(el)
+        .sort(
+          (a, b) =>
+            Number(a.style.getPropertyValue("--place")) -
+            Number(b.style.getPropertyValue("--place")),
+        )
+        .map((slide) => Number(slide.dataset.index));
+
+    const highlighted = (el: VtexAdsStoryElement) =>
+      query(el, ".slide[data-active]");
+
+    const atPlace = (el: VtexAdsStoryElement, place: number) =>
+      visible(el).find(
+        (slide) => slide.style.getPropertyValue("--place") === String(place),
+      );
+
+    async function mountWith(
+      count: number,
+      attributes: Record<string, string> = REQUIRED_ATTRIBUTES,
+    ) {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(storiesOf(count)));
+      return mount(attributes);
+    }
+
+    it("puts the highlighted Story in the middle, the others around it", async () => {
+      const el = await mountWith(3);
+
+      expect(query(el, ".carousel")?.getAttribute("data-layout")).toBe(
+        "rolling",
+      );
+      expect(highlighted(el)?.dataset.index).toBe("0");
+      expect(highlighted(el)?.style.getPropertyValue("--place")).toBe("0");
+      expect(visibleIndexes(el)).toEqual([2, 0, 1]);
+    });
+
+    it("shows up to two cards on each side", async () => {
+      const el = await mountWith(5);
+      expect(visibleIndexes(el)).toEqual([3, 4, 0, 1, 2]);
+    });
+
+    it("shows the Story opposite the highlighted one at both ends with four", async () => {
+      const el = await mountWith(4);
+      expect(visibleIndexes(el)).toEqual([2, 3, 0, 1, 2]);
+    });
+
+    it("keeps hidden cards in the DOM, out of reach, so they slide in", async () => {
+      const el = await mountWith(3);
+      const hidden = slides(el).filter((slide) =>
+        slide.hasAttribute("data-hidden"),
+      );
+
+      expect(slides(el)).toHaveLength(RENDERED_SIDE * 2 + 1);
+      expect(hidden.every((slide) => slide.hasAttribute("inert"))).toBe(true);
+      expect(visible(el).some((slide) => slide.hasAttribute("inert"))).toBe(
+        false,
+      );
+    });
+
+    it("moves every card one place with the arrows, keeping their DOM", async () => {
+      const el = await mountWith(5);
+      const next = atPlace(el, 1);
+
+      await click(el, ".arrow-next");
+
+      expect(highlighted(el)).toBe(next);
+      expect(highlighted(el)?.dataset.index).toBe("1");
+      expect(visibleIndexes(el)).toEqual([4, 0, 1, 2, 3]);
+
+      await click(el, ".arrow-previous");
+      await click(el, ".arrow-previous");
+      expect(visibleIndexes(el)).toEqual([2, 3, 4, 0, 1]);
+    });
+
+    it("moves the clicked card to the middle", async () => {
+      const el = await mountWith(5);
+
+      atPlace(el, 2)?.querySelector<HTMLElement>(".card-open")?.click();
+      await el.updateComplete;
+
+      expect(highlighted(el)?.dataset.index).toBe("2");
+      expect(query(el, ".player")).toBeNull();
+    });
+
+    it("opens the highlighted Story in the player", async () => {
+      const el = await mountWith(3);
+      await click(el, ".arrow-next");
+
+      await click(el, ".slide[data-active] .card-open");
+
+      expect(query(el, ".player")).not.toBeNull();
+      expect(highlighted(el)?.dataset.index).toBe("1");
+    });
+
+    it("plays only the highlighted card by default", async () => {
+      const el = await mountWith(5);
+      const withVideo = slides(el).filter((slide) =>
+        slide.querySelector("video"),
+      );
+
+      expect(withVideo).toEqual([highlighted(el)]);
+    });
+
+    it("plays the visible cards with inactive-autoplay, not the hidden ones", async () => {
+      const el = await mountWith(5, {
+        ...REQUIRED_ATTRIBUTES,
+        "inactive-autoplay": "",
+      });
+
+      expect(visible(el).every((slide) => slide.querySelector("video"))).toBe(
+        true,
+      );
+      expect(
+        slides(el)
+          .filter((slide) => slide.hasAttribute("data-hidden"))
+          .some((slide) => slide.querySelector("video")),
+      ).toBe(false);
+    });
+
+    it("moves the video with the highlight", async () => {
+      const el = await mountWith(3);
+
+      await click(el, ".arrow-next");
+
+      const withVideo = slides(el).filter((slide) =>
+        slide.querySelector("video"),
+      );
+      expect(withVideo).toEqual([highlighted(el)]);
+    });
+  });
+
+  describe("narrow screens", () => {
+    let listeners: ((event: MediaQueryListEvent) => void)[];
+    let narrow: boolean;
+
+    beforeEach(() => {
+      listeners = [];
+      narrow = true;
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        get matches() {
+          return query === NARROW_SCREEN.toString() && narrow;
+        },
+        addEventListener: (
+          _type: string,
+          listener: (event: MediaQueryListEvent) => void,
+        ) => listeners.push(listener),
+        removeEventListener: () => undefined,
+      }));
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("rolls two Stories, with the other one on both sides", async () => {
+      const el = await mount();
+
+      expect(query(el, ".carousel")?.getAttribute("data-layout")).toBe(
+        "rolling",
+      );
+      const sides = slides(el)
+        .filter((slide) => !slide.hasAttribute("data-hidden"))
+        .map((slide) => slide.dataset.index);
+      expect(sides.sort()).toEqual(["0", "1", "1"]);
+    });
+
+    it("switches to the pair layout when the screen gets wide", async () => {
+      const el = await mount();
+
+      narrow = false;
+      for (const listener of listeners) {
+        listener({ matches: false } as MediaQueryListEvent);
+      }
+      await el.updateComplete;
+
+      expect(query(el, ".carousel")?.getAttribute("data-layout")).toBe("pair");
+      expect(slides(el)).toHaveLength(2);
+      expect(slideVideo(el, 0)).not.toBeNull();
     });
   });
 });

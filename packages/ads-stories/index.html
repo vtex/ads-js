@@ -76,6 +76,32 @@
     </section>
 
     <section>
+      <h2>Three Stories</h2>
+      <p class="note">
+        The highlighted card in the middle, the others around it: every card
+        moves one place per step.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Four Stories</h2>
+      <p class="note">
+        Two cards on each side: the Story opposite the highlighted one shows at
+        both ends.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="four_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
       <h2>Slow ad server</h2>
       <p class="note">
         The response takes 3 s, longer than the default 2 s timeout, so nothing
@@ -136,6 +162,8 @@
       const SCENARIOS = {
         default: { delayMs: 500, count: 1 },
         two_stories: { delayMs: 500, count: 2 },
+        three_stories: { delayMs: 500, count: 3 },
+        four_stories: { delayMs: 500, count: 4 },
         slow_stories: { delayMs: 3000, count: 1 },
         empty_stories: { delayMs: 500, count: 0 },
       };
