@@ -59,4 +59,13 @@ describe("httpClient", () => {
       expect.objectContaining({ method: "DELETE" }),
     );
   });
+
+  it("passes the signal to fetch", async () => {
+    const { signal } = new AbortController();
+    await httpClient.post(baseUrl, path, { foo: "bar" }, { signal });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(path),
+      expect.objectContaining({ signal }),
+    );
+  });
 });

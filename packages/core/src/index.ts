@@ -7,6 +7,7 @@ export {
 export type {
   RawAdsByPlacements,
   RawAdsResponse,
+  StoriesByPlacements,
   Facet,
   Identity,
   GetAdsArgs,
@@ -22,11 +23,14 @@ export type {
 } from "./hydration/types";
 export type {
   SponsoredProductDetail,
+  StoryAdDetail,
+  StoryProduct,
   Channel,
   Placement,
   PlacementBody,
   AdType,
 } from "./clients/adServer/types";
+export type { GetAdsOptions } from "./clients/adServer";
 export type {
   Product,
   PriceRange,

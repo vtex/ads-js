@@ -36,7 +36,9 @@ export default defineConfig([
       o.jsxFactory = "React.createElement";
       o.jsxFragment = "React.Fragment";
     },
-    outExtension: () => ({ js: ".cjs.js" }),
+    // ".cjs": the package is "type": "module", so Node would load a .js file
+    // (even ".cjs.js") as an ES module and find no exports.
+    outExtension: () => ({ js: ".cjs" }),
     external: ["react", "react-dom", "@vtex/ads-core"],
   },
 ]);

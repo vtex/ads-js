@@ -3,8 +3,9 @@
 VTEX Ads Stories web component. Framework-agnostic: works on any HTML5 page,
 including VTEX IO, FastStore and non-VTEX storefronts.
 
-> Work in progress. Currently renders one fixed test Story, which opens in a
-> player at the bottom right. The carousel, fed by the ad API, comes next.
+> Work in progress. Currently requests one Story from the ad API and renders
+> it as a card, which opens in a player at the bottom right. The carousel and
+> the ad events come next.
 
 ## npm
 
@@ -21,7 +22,11 @@ defineVtexAdsStories();
 ```
 
 ```html
-<vtex-ads-story></vtex-ads-story>
+<vtex-ads-story
+  publisher-id="your-publisher-id"
+  session-id="the-store-session-id"
+  placement="home_stories"
+></vtex-ads-story>
 ```
 
 Importing the package registers nothing: the element is only registered when
@@ -50,8 +55,18 @@ project (requires `@types/react` 18.2.6 or newer, including 19):
 // e.g. in your app's entry file or a .d.ts file
 import type {} from "@vtex/ads-stories/react";
 
-export const Ad = () => <vtex-ads-story />;
+export const Ad = () => (
+  <vtex-ads-story
+    publisher-id="your-publisher-id"
+    session-id="the-store-session-id"
+    placement="home_stories"
+  />
+);
 ```
+
+The JSX types include the element's attributes: `publisher-id`, `session-id`
+and `placement` are required, as in HTML, and `channel` only accepts `site` or
+`app`.
 
 Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in `tsconfig.json`.
 Without it, TypeScript reports
@@ -72,7 +87,11 @@ page. Always pin an exact version: a pinned URL never changes.
   crossorigin="anonymous"
 ></script>
 
-<vtex-ads-story></vtex-ads-story>
+<vtex-ads-story
+  publisher-id="your-publisher-id"
+  session-id="the-store-session-id"
+  placement="home_stories"
+></vtex-ads-story>
 ```
 
 - The full file URL works too:
@@ -94,6 +113,27 @@ page. Always pin an exact version: a pinned URL never changes.
   `script-src` (`https://unpkg.com` or `https://cdn.jsdelivr.net`).
 - The script also exposes `window.VtexAdsStories` with the same API as the npm
   package.
+
+## Attributes
+
+The element requests a Story from the VTEX Ads ad API with
+[`@vtex/ads-core`](../core) and renders the first Story of the placement.
+
+| Attribute      | Required | Description                                                                    |
+| -------------- | -------- | ------------------------------------------------------------------------------ |
+| `publisher-id` | Yes      | The publisher the ads are requested for                                        |
+| `session-id`   | Yes      | The store's session id. Use the same one sent with the store's other ad events |
+| `placement`    | Yes      | The Story placement configured for the publisher                               |
+| `user-id`      | No       | The shopper's id, when known                                                   |
+| `account-name` | No       | The VTEX account name                                                          |
+| `channel`      | No       | `site` or `app`. Other values are not sent                                     |
+| `timeout`      | No       | Time limit for the ad request, in milliseconds. Default `2000`                 |
+
+The element renders nothing while the request is pending, when a required
+attribute is missing, when the request fails or takes longer than `timeout`,
+or when the placement has no Story. Changing any of these attributes, except
+`timeout`, requests the Story again; a new `timeout` applies to the next
+request.
 
 ## Customization
 
