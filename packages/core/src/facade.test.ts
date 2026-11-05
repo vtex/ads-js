@@ -270,10 +270,17 @@ describe("facade", () => {
     });
     it("should return Story ads grouped by placement", async () => {
       // Arrange
-      const mockAdServerResponse = { home_stories: [mockStory] };
+      const otherStory = { ...mockStory, ad_id: "story2" };
+      const mockAdServerResponse = {
+        home_stories: [mockStory],
+        pdp_stories: [otherStory],
+      };
       mockedGetAds.mockResolvedValue(mockAdServerResponse);
       mockedGetSponsoredProductArray.mockReturnValue([]);
-      mockedGetStoryArray.mockReturnValue([["home_stories", [mockStory]]]);
+      mockedGetStoryArray.mockReturnValue([
+        ["home_stories", [mockStory]],
+        ["pdp_stories", [otherStory]],
+      ]);
 
       // Act
       const result = await getRawAds(mockGetAdsArgs);
@@ -281,7 +288,10 @@ describe("facade", () => {
       // Assert
       expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
       expect(mockedGetAds).toHaveBeenCalledTimes(1);
-      expect(result.stories).toEqual({ home_stories: [mockStory] });
+      expect(result.stories).toEqual({
+        home_stories: [mockStory],
+        pdp_stories: [otherStory],
+      });
       expect(result.sponsoredProducts).toEqual({});
     });
   });
@@ -421,6 +431,7 @@ describe("facade", () => {
       );
 
       // Assert
+      expect(mockedIntelligentSearchFetcher).not.toHaveBeenCalled();
       expect(result).toEqual({
         sponsoredProducts: {
           byPlacement: {},
@@ -506,7 +517,10 @@ describe("facade", () => {
       mockedGetSponsoredProductArray.mockReturnValue([]);
       mockedGetStoryArray.mockReturnValue([["home_stories", [mockStory]]]);
       mockedBuildOffers.mockReturnValue([]);
-      mockedIntelligentSearchFetcher.mockResolvedValue([]);
+      // Would lose the Stories if it were called.
+      mockedIntelligentSearchFetcher.mockRejectedValue(
+        new Error("Search error"),
+      );
 
       // Act
       const result = await getHydratedAds(
@@ -518,10 +532,7 @@ describe("facade", () => {
       // Assert
       expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
       expect(mockedGetAds).toHaveBeenCalledTimes(1);
-      expect(mockedIntelligentSearchFetcher).toHaveBeenCalledWith(
-        [],
-        mockGetAdsArgs.identity,
-      );
+      expect(mockedIntelligentSearchFetcher).not.toHaveBeenCalled();
       expect(result.stories).toEqual({ home_stories: [mockStory] });
     });
   });

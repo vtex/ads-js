@@ -26,7 +26,13 @@ import { buildOffers } from "./hydration/mappers";
 
 const toStoriesByPlacements = (
   stories: StoriesByPlacement[],
-): StoriesByPlacements => Object.fromEntries(stories);
+): StoriesByPlacements => {
+  const byPlacements = {} as StoriesByPlacements;
+  for (const [placement, placementStories] of stories) {
+    byPlacements[placement] = placementStories;
+  }
+  return byPlacements;
+};
 
 /**
  * Fetches raw advertisement data without enriching it with product details.
@@ -97,7 +103,11 @@ export const getHydratedAds = async <T extends object>(
   );
   const ads = getSponsoredProductArray(adResponse);
 
-  const products = await fetcher(buildOffers(ads), args.identity);
+  // Nothing to hydrate (no sponsored products, as with Stories only): no
+  // product request, so its failure can't lose the Stories.
+  const offers = buildOffers(ads);
+  const products =
+    offers.length > 0 ? await fetcher(offers, args.identity) : [];
 
   const mergedResult = mergeAdsWithProducts<T>(products, ads, matcher);
 
