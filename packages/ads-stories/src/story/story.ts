@@ -128,6 +128,9 @@ export class VtexAdsStoryElement extends LitElement {
    */
   private readonly cardVideos = new Map<number, VideoController>();
 
+  /** The sound was on when the highlight moved: the new card turns it on. */
+  private soundPending = false;
+
   private readonly carousel = new CarouselController(this, {
     labels: LABELS,
     onStep: (from, to) => this.leaveHighlight(from, to),
@@ -218,6 +221,7 @@ export class VtexAdsStoryElement extends LitElement {
   // it.
   private showStories(stories: StoryAd[]) {
     this.cardVideos.clear();
+    this.soundPending = false;
     this.carousel.reset(stories.length);
     this.stories = stories;
   }
@@ -236,13 +240,25 @@ export class VtexAdsStoryElement extends LitElement {
   }
 
   // The card losing the highlight goes quiet: muted if it keeps playing, or
-  // back to its cover. Its next video then starts fresh. Cards no longer
-  // rendered (the rolling layout drops them as it moves) leave with their
-  // videos.
+  // back to its cover. Its next video then starts fresh. If its sound was
+  // on, the sound moves to the new highlighted card, once its video renders.
+  // Cards no longer rendered (the rolling layout drops them as it moves)
+  // leave with their videos.
   private leaveHighlight(from: number, to: number) {
     const video = this.cardVideos.get(from);
+    // Still pending: moved again before the last step rendered.
+    this.soundPending ||= video !== undefined && !video.muted;
     if (this.inactiveAutoplay) video?.mute();
     else video?.reset();
+
+    if (this.soundPending) {
+      void this.updateComplete.then(() => {
+        // Moved again meanwhile: that step's own callback takes the sound.
+        if (!this.soundPending || this.carousel.activeKey !== to) return;
+        this.soundPending = false;
+        this.videoFor(to).playWithSound();
+      });
+    }
 
     for (const key of this.cardVideos.keys()) {
       if (Math.abs(key - to) > RENDERED_SIDE) this.cardVideos.delete(key);

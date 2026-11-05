@@ -174,7 +174,9 @@ band as wide as its parent:
 With more than one Story, the highlight moves to the next card every 5
 seconds, except while the pointer is over the carousel, the keyboard focus
 is in it, or the player is open. It also moves with the arrows, a swipe, or a
-click on a dimmed card. Clicking the highlighted card opens the player.
+click on a dimmed card. Clicking the highlighted card opens the player. If
+the highlighted card's sound is on, the next highlighted card plays with sound
+too, or muted if the browser blocks it.
 
 ## Development
 

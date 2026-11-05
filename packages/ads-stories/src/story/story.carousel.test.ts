@@ -222,6 +222,96 @@ describe("vtex-ads-story carousel", () => {
     });
   });
 
+  describe("sound", () => {
+    // Lets the step render and the new card's video start.
+    async function settle(el: VtexAdsStoryElement) {
+      await el.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve));
+      await el.updateComplete;
+    }
+
+    // As if the shopper turned the highlighted card's sound on.
+    async function turnSoundOn(el: VtexAdsStoryElement, index = 0) {
+      const video = slideVideo(el, index);
+      video?.play();
+      if (video) video.muted = false;
+      video?.dispatchEvent(new Event("volumechange"));
+      await el.updateComplete;
+    }
+
+    it("carries the sound on to the next highlighted card", async () => {
+      const el = await mount();
+      await turnSoundOn(el);
+
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      const video = slideVideo(el, 1);
+      expect(video?.muted).toBe(false);
+      expect(video?.paused).toBe(false);
+    });
+
+    it("keeps the next card muted when the sound was off", async () => {
+      const el = await mount();
+      slideVideo(el, 0)?.play();
+
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      expect(slideVideo(el, 1)?.muted).toBe(true);
+    });
+
+    it("plays muted when the browser blocks the sound", async () => {
+      const el = await mount();
+      await turnSoundOn(el);
+      vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementationOnce(() =>
+        Promise.reject(new DOMException("Blocked", "NotAllowedError")),
+      );
+
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      const video = slideVideo(el, 1);
+      expect(video?.muted).toBe(true);
+      expect(video?.paused).toBe(false);
+    });
+
+    it("carries the sound across steps taken before the first renders", async () => {
+      getRawAdsMock.mockResolvedValue(
+        rawAdsWith([mockStory, ...mockStories.slice(1, 3)]),
+      );
+      const el = await mount();
+      const highlightedVideo = () =>
+        query<HTMLVideoElement>(el, ".slide[data-active] video");
+      highlightedVideo()?.play();
+      const first = highlightedVideo();
+      if (first) first.muted = false;
+      first?.dispatchEvent(new Event("volumechange"));
+      await el.updateComplete;
+
+      query(el, ".arrow-next")?.click();
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      expect(query(el, ".slide[data-active]")?.dataset.index).toBe("2");
+      expect(highlightedVideo()?.muted).toBe(false);
+    });
+
+    it("mutes the card that keeps playing behind with inactive-autoplay", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "inactive-autoplay": "",
+      });
+      await turnSoundOn(el);
+
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      expect(slideVideo(el, 0)?.muted).toBe(true);
+      expect(slideVideo(el, 1)?.muted).toBe(false);
+    });
+  });
+
   describe("inactive-autoplay", () => {
     it("is off by default: only the highlighted card has a video", async () => {
       const el = await mount();

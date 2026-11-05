@@ -61,6 +61,22 @@ export class VideoController {
     if (video) video.muted = true;
   }
 
+  /**
+   * Plays with the sound on. A browser that blocks playing with sound (for
+   * example, without a recent tap) gets it muted instead: the video keeps
+   * playing, and the sound button offers to turn it on.
+   */
+  playWithSound() {
+    const video = this.ref.value;
+    if (!video) return;
+
+    video.muted = false;
+    video.play()?.catch(() => {
+      video.muted = true;
+      playVideo(video);
+    });
+  }
+
   toggleMuted() {
     const video = this.ref.value;
     if (video) video.muted = !video.muted;

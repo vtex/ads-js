@@ -224,6 +224,7 @@ export interface CarouselOptions {
   /**
    * Called when the highlight moves, before the host renders it, with the
    * keys (see Slide) of the slide that loses it and the one that gets it.
+   * The host's updateComplete then resolves once the step is rendered.
    */
   onStep?: (from: number, to: number) => void;
   /**
@@ -346,8 +347,10 @@ export class CarouselController implements ReactiveController {
     this.position += delta;
     this.distance = Math.abs(delta);
 
-    this.options.onStep?.(from, this.activeKey);
+    // The update is requested first, so onStep can wait for the render that
+    // shows the step (the host's updateComplete).
     this.host.requestUpdate();
+    this.options.onStep?.(from, this.activeKey);
     // A step by hand gives the new Story its full time.
     this.restartTimer();
   }
