@@ -19,6 +19,10 @@
       .themed {
         --vtex-ads-story-radius: 40px;
       }
+
+      .note {
+        color: #666;
+      }
     </style>
   </head>
   <body>
@@ -43,10 +47,33 @@
       ></vtex-ads-story>
     </section>
 
+    <section>
+      <h2>Slow ad server</h2>
+      <p class="note">The response takes 3 s.</p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="slow_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>No Story</h2>
+      <p class="note">
+        The placement comes back empty, so nothing renders below.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="empty_stories"
+      ></vtex-ads-story>
+    </section>
+
     <!--
-      The ad server is mocked: requests to it get one test Story per Story
-      placement. Installed before the element loads, since the source build
-      reads fetch when @vtex/ads-core loads.
+      The ad server is mocked: each Story placement gets the test Story, with
+      the delay and content set for it in SCENARIOS. Installed before the
+      element loads, since the source build reads fetch when @vtex/ads-core
+      loads.
 
       Default: loads the source through Vite (reloads on save).
       ?cdn: loads the built standalone script from dist/cdn, the same file
@@ -56,20 +83,41 @@
       import { mockStory } from "./src/story/story.mock.ts";
 
       const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/";
-      // Simulated ad server latency, to see the element while it loads.
-      const DELAY_MS = 500;
+
+      // How the mock answers each placement. Any other placement gets the
+      // default. delayMs simulates the ad server latency; empty returns the
+      // placement without Stories.
+      const SCENARIOS = {
+        default: { delayMs: 500, empty: false },
+        slow_stories: { delayMs: 3000, empty: false },
+        empty_stories: { delayMs: 500, empty: true },
+      };
+
+      const scenarioFor = (placement) =>
+        SCENARIOS[placement] ?? SCENARIOS.default;
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       const nativeFetch = window.fetch.bind(window);
       window.fetch = async (input, init) => {
         const url = typeof input === "string" ? input : input.url;
         if (!url.startsWith(AD_SERVER)) return nativeFetch(input, init);
 
-        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
-
         const { placements } = JSON.parse(init.body);
+        const requested = Object.entries(placements);
+
+        // One response for all placements: it takes as long as the slowest.
+        await wait(
+          Math.max(
+            ...requested.map(([placement]) => scenarioFor(placement).delayMs),
+          ),
+        );
+
         const body = { request_id: "playground" };
-        for (const [placement, { types }] of Object.entries(placements)) {
-          body[placement] = types.includes("story") ? [mockStory] : [];
+        for (const [placement, { types }] of requested) {
+          const { empty } = scenarioFor(placement);
+          body[placement] =
+            types.includes("story") && !empty ? [mockStory] : [];
         }
         return new Response(JSON.stringify(body), {
           headers: { "content-type": "application/json" },
