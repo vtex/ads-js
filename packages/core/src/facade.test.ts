@@ -227,6 +227,7 @@ describe("facade", () => {
       expect(mockedGetAds).toHaveBeenCalledWith(
         mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
+        undefined,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
         mockAdServerResponse,
@@ -348,6 +349,7 @@ describe("facade", () => {
       expect(mockedGetAds).toHaveBeenCalledWith(
         mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
+        undefined,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
         mockAdServerResponse,
@@ -548,6 +550,43 @@ describe("facade", () => {
         mockGetAdsArgs.identity,
       );
       expect(result.stories).toEqual({ home_stories: [mockStory] });
+    });
+  });
+
+  describe("request options", () => {
+    it("passes the options to the ad server in getRawAds", async () => {
+      mockedGetAds.mockResolvedValue({});
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      const options = { signal: new AbortController().signal };
+
+      await getRawAds(mockGetAdsArgs, options);
+
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.identity.publisherId,
+        mockGetAdsArgs,
+        options,
+      );
+    });
+
+    it("passes the options to the ad server in getHydratedAds", async () => {
+      mockedGetAds.mockResolvedValue({});
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedBuildOffers.mockReturnValue([]);
+      mockedIntelligentSearchFetcher.mockResolvedValue([]);
+      const options = { signal: new AbortController().signal };
+
+      await getHydratedAds(
+        mockGetAdsArgs,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
+        options,
+      );
+
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.identity.publisherId,
+        mockGetAdsArgs,
+        options,
+      );
     });
   });
 

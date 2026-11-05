@@ -30,6 +30,7 @@ export type {
   PlacementBody,
   AdType,
 } from "./clients/adServer/types";
+export type { GetAdsOptions } from "./clients/adServer";
 export type {
   Product,
   PriceRange,

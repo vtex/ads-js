@@ -7,12 +7,18 @@ export interface HttpClientOptions {
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
+export interface RequestOptions {
+  /** Aborts the request, including reading the response body. */
+  signal?: AbortSignal;
+}
+
 const createHttpClient = () => {
   const request = async <T, U = unknown>(
     baseUrl: string,
     path: string,
     method: HttpMethod,
     body?: U,
+    options?: RequestOptions,
   ) => {
     const url = new URL(path, baseUrl).toString();
 
@@ -23,6 +29,7 @@ const createHttpClient = () => {
     return fetch(url, {
       body: body ? JSON.stringify(body) : undefined,
       method,
+      signal: options?.signal,
       headers: {
         accept: "application/json",
         ...contentType,
@@ -48,8 +55,9 @@ const createHttpClient = () => {
     baseUrl: string,
     path: string,
     body: U,
+    options?: RequestOptions,
   ): Promise<T> => {
-    return request(baseUrl, path, "POST", body);
+    return request(baseUrl, path, "POST", body, options);
   };
 
   const put = async <T = unknown, U = unknown>(
