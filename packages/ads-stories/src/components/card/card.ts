@@ -118,6 +118,11 @@ export interface CardOptions {
   label: string;
   /** Called on click, Enter or Space. */
   onSelect: () => void;
+  /**
+   * Whether the video plays over the cover (default true). Without it, the
+   * card shows only the cover, with no sound button.
+   */
+  withVideo?: boolean;
   /** Accessible names of the sound button, shown when the card has a video. */
   soundOnLabel: string;
   soundOffLabel: string;
@@ -154,9 +159,11 @@ export function renderCard(
   video: VideoController,
   options: CardOptions,
 ) {
+  const withVideo = options.withVideo ?? true;
+
   return html`
     <div class="card">
-      ${renderMedia(story, video)}
+      ${renderMedia(story, video, withVideo)}
       <button
         type="button"
         class="card-open"
@@ -165,7 +172,7 @@ export function renderCard(
       >
         <span class="play" aria-hidden="true">${icon("play")}</span>
       </button>
-      ${hasVideo(story, video) && !video.paused
+      ${withVideo && hasVideo(story, video) && !video.paused
         ? renderSoundButton(video, options)
         : nothing}
     </div>

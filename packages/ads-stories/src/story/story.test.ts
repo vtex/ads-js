@@ -108,7 +108,7 @@ describe("vtex-ads-story", () => {
   });
 
   describe("ad request", () => {
-    it("requests one Story for the placement", async () => {
+    it("requests up to two Stories for the placement", async () => {
       await mount();
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
@@ -122,7 +122,7 @@ describe("vtex-ads-story", () => {
             channel: undefined,
           },
           search: {},
-          placements: { home_stories: { quantity: 1, types: ["story"] } },
+          placements: { home_stories: { quantity: 2, types: ["story"] } },
         },
         { signal: expect.any(AbortSignal) },
       );

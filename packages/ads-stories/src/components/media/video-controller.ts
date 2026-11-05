@@ -56,6 +56,11 @@ export class VideoController {
     else video.pause();
   }
 
+  mute() {
+    const video = this.ref.value;
+    if (video) video.muted = true;
+  }
+
   toggleMuted() {
     const video = this.ref.value;
     if (video) video.muted = !video.muted;

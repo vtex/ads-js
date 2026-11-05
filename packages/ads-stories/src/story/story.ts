@@ -1,11 +1,11 @@
 import { css, html, LitElement, nothing, type PropertyValues } from "lit";
 import type { Channel } from "@vtex/ads-core";
 import { cardStyles, renderCard } from "../components/card";
-import { carouselStyles, renderCarousel } from "../components/carousel";
+import { CarouselController, carouselStyles } from "../components/carousel";
 import { VideoController } from "../components/media";
 import { PlayerController, playerStyles } from "../components/player";
 import type { StoryAd } from "../types";
-import { fetchStory } from "../utils/fetch-story";
+import { fetchStories } from "../utils/fetch-story";
 
 export const TAG_NAME = "vtex-ads-story";
 
@@ -35,6 +35,11 @@ const channelConverter = {
 // Temporary: fixed texts until the store can set them by attribute.
 const LABELS = {
   watch: "Assistir vídeo",
+  show: "Mostrar vídeo",
+  carousel: "Vídeos",
+  carouselRole: "carrossel",
+  previous: "Vídeo anterior",
+  next: "Próximo vídeo",
   player: "Vídeo",
   expand: "Expandir vídeo",
   collapse: "Reduzir vídeo",
@@ -56,7 +61,8 @@ export class VtexAdsStoryElement extends LitElement {
     accountName: { attribute: "account-name" },
     channel: { converter: channelConverter },
     timeout: { type: Number },
-    story: { state: true },
+    inactiveAutoplay: { type: Boolean, attribute: "inactive-autoplay" },
+    stories: { state: true },
   };
 
   /** Required. The publisher the ads are requested for. */
@@ -75,9 +81,15 @@ export class VtexAdsStoryElement extends LitElement {
    * request; it doesn't request again.
    */
   declare timeout?: number;
+  /**
+   * With more than one Story, whether the cards without the highlight also
+   * play their video, muted. Off by default: they show only their cover, and
+   * only the highlighted card plays.
+   */
+  declare inactiveAutoplay: boolean;
 
-  /** The Story shown, or undefined while loading, on error or with none. */
-  declare private story?: StoryAd;
+  /** The Stories shown: none while loading, on error or with none. */
+  declare private stories: StoryAd[];
 
   /**
    * Cancels the request in progress. Kept, already aborted, when leaving the
@@ -98,7 +110,15 @@ export class VtexAdsStoryElement extends LitElement {
     playerStyles,
   ];
 
-  private readonly cardVideo = new VideoController(this);
+  /** One per card, in the order of `stories`. */
+  private cardVideos: VideoController[] = [];
+
+  private readonly carousel = new CarouselController(this, {
+    labels: LABELS,
+    onStep: (from) => this.leaveHighlight(from),
+    // The player shows the highlighted Story: the highlight stays on it.
+    locked: () => this.player.isOpen,
+  });
 
   private readonly player = new PlayerController(this, {
     label: LABELS.player,
@@ -112,6 +132,12 @@ export class VtexAdsStoryElement extends LitElement {
     onClose: () => this.closePlayer(),
   });
 
+  constructor() {
+    super();
+    this.inactiveAutoplay = false;
+    this.stories = [];
+  }
+
   // Lit keeps the card's DOM when the element is moved (removed and appended
   // again), but the browser pauses a removed video and doesn't autoplay it
   // again. resume() only plays a video that autoplays (not with reduced
@@ -120,7 +146,7 @@ export class VtexAdsStoryElement extends LitElement {
   // in the DOM until the next update and would play for a moment.
   connectedCallback() {
     super.connectedCallback();
-    this.cardVideo.resume();
+    for (const video of this.cardVideos) video.resume();
 
     // Moved while its request was pending: that request was cancelled.
     if (this.request?.signal.aborted) void this.loadStory();
@@ -148,11 +174,9 @@ export class VtexAdsStoryElement extends LitElement {
     const request = new AbortController();
     this.request = request;
 
-    // The Story shown no longer matches the request either. The card's next
-    // video starts fresh: a failed load of the old one doesn't hide it.
+    // The Stories shown no longer match the request either.
     this.player.close();
-    this.cardVideo.reset();
-    this.story = undefined;
+    this.showStories([]);
 
     // Off the page (an attribute changed just before the element was
     // removed): keep the cancelled request, so connecting again requests.
@@ -161,7 +185,7 @@ export class VtexAdsStoryElement extends LitElement {
       return;
     }
 
-    const story = await fetchStory(this, {
+    const stories = await fetchStories(this, {
       signal: request.signal,
       timeout: this.timeout,
     });
@@ -170,14 +194,34 @@ export class VtexAdsStoryElement extends LitElement {
     // response is not shown.
     if (request.signal.aborted) return;
     this.request = undefined;
-    this.story = story;
+    this.showStories(stories);
+  }
+
+  // Each card's video starts fresh: a failed load of an old one doesn't hide
+  // it.
+  private showStories(stories: StoryAd[]) {
+    this.cardVideos = stories.map(() => new VideoController(this));
+    this.carousel.reset(stories.length);
+    this.stories = stories;
+  }
+
+  private get activeVideo(): VideoController | undefined {
+    return this.cardVideos[this.carousel.active];
+  }
+
+  // The card losing the highlight goes quiet: muted if it keeps playing, or
+  // back to its cover. Its next video then starts fresh.
+  private leaveHighlight(index: number) {
+    const video = this.cardVideos[index];
+    if (this.inactiveAutoplay) video?.mute();
+    else video?.reset();
   }
 
   private openPlayer() {
     if (this.player.isOpen) return;
 
     // While the player is open, the card behind it stops on its cover.
-    this.cardVideo.pause();
+    this.activeVideo?.pause();
     void this.player.open();
   }
 
@@ -188,26 +232,38 @@ export class VtexAdsStoryElement extends LitElement {
     if (!this.player.isOpen) return;
 
     this.player.close();
-    this.cardVideo.resume();
-    this.renderRoot.querySelector<HTMLElement>(".root .card-open")?.focus();
+    this.activeVideo?.resume();
+    this.renderRoot
+      .querySelector<HTMLElement>(
+        ".carousel[data-solo] .card-open, .slide[data-active] .card-open",
+      )
+      ?.focus();
   }
 
+  // The highlighted card opens the player; another one takes the highlight.
+  private readonly renderSlide = (
+    story: StoryAd,
+    index: number,
+    active: boolean,
+  ) =>
+    renderCard(story, this.cardVideos[index], {
+      label: active ? LABELS.watch : LABELS.show,
+      soundOnLabel: LABELS.soundOn,
+      soundOffLabel: LABELS.soundOff,
+      withVideo: active || this.inactiveAutoplay,
+      onSelect: active
+        ? () => this.openPlayer()
+        : () => this.carousel.select(index),
+    });
+
   protected render() {
-    const { story } = this;
-    if (!story) return nothing;
+    const { stories } = this;
+    const active = stories[this.carousel.active];
+    if (!active) return nothing;
 
     return html`
-      <div class="root">
-        ${renderCarousel(
-          renderCard(story, this.cardVideo, {
-            label: LABELS.watch,
-            soundOnLabel: LABELS.soundOn,
-            soundOffLabel: LABELS.soundOff,
-            onSelect: () => this.openPlayer(),
-          }),
-        )}
-      </div>
-      ${this.player.render(story)}
+      <div class="root">${this.carousel.render(stories, this.renderSlide)}</div>
+      ${this.player.render(active)}
     `;
   }
 }

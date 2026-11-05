@@ -28,11 +28,16 @@ export function hasVideo(story: StoryMedia, video: VideoController) {
 
 /**
  * The Story cover and, with a media_url, the video looping muted over it. If
- * the video can't load, it is removed and the cover underneath stays.
+ * the video can't load, it is removed and the cover underneath stays. With
+ * withVideo false, only the cover.
  */
-export function renderMedia(story: StoryMedia, video: VideoController) {
+export function renderMedia(
+  story: StoryMedia,
+  video: VideoController,
+  withVideo = true,
+) {
   const posterUrl = httpUrl(story.poster_url);
-  const mediaUrl = httpUrl(story.media_url);
+  const mediaUrl = withVideo ? httpUrl(story.media_url) : null;
 
   // Muted and inline is what browsers, iOS included, allow to autoplay. The
   // muted attribute and property are both set, since browsers differ on

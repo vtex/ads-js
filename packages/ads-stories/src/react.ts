@@ -28,6 +28,11 @@ export interface VtexAdsStoryAttributes {
   channel?: Channel;
   /** Time limit for the ad request, in milliseconds (default 2000). */
   timeout?: number;
+  /**
+   * With more than one Story, the cards without the highlight also play
+   * their video, muted. Off by default.
+   */
+  "inactive-autoplay"?: boolean;
 }
 
 export type VtexAdsStoryProps = DetailedHTMLProps<
