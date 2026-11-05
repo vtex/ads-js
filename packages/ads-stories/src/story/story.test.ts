@@ -21,8 +21,9 @@ const getRawAdsMock = vi.mocked(getRawAds);
 const COVER = mockStory.poster_url;
 const VIDEO = mockStory.media_url;
 
-// Lets the ad request resolve and the element render its result.
-async function flush(el: VtexAdsStoryElement) {
+// Lets the ad request resolve and the element render its result. Use it after
+// anything that requests a Story (mounting, changing a request attribute).
+async function flushRequest(el: VtexAdsStoryElement) {
   await el.updateComplete;
   await new Promise((resolve) => setTimeout(resolve));
   await el.updateComplete;
@@ -34,7 +35,7 @@ async function mount(attributes: Record<string, string> = REQUIRED_ATTRIBUTES) {
     el.setAttribute(name, value);
   }
   document.body.appendChild(el);
-  await flush(el);
+  await flushRequest(el);
   return el;
 }
 
@@ -45,8 +46,9 @@ function deferred() {
   return { promise, resolve };
 }
 
-// Lets the element render, and the player show after it renders.
-async function settle(el: VtexAdsStoryElement) {
+// Lets the element render, and the player show after it renders. Does not wait
+// for an ad request: use flushRequest for that.
+async function flushRender(el: VtexAdsStoryElement) {
   await el.updateComplete;
   await el.updateComplete;
 }
@@ -145,11 +147,39 @@ describe("vtex-ads-story", () => {
       ).toBe(5000);
     });
 
+    it("cancels the request after the timeout attribute, not the default", async () => {
+      vi.useFakeTimers();
+      try {
+        getRawAdsMock.mockReturnValue(deferred().promise);
+        const el = document.createElement(TAG_NAME);
+        for (const [name, value] of Object.entries({
+          ...REQUIRED_ATTRIBUTES,
+          timeout: "5000",
+        })) {
+          el.setAttribute(name, value);
+        }
+        document.body.appendChild(el);
+        await el.updateComplete;
+
+        const signal = getRawAdsMock.mock.calls[0][1]?.signal;
+        expect(signal?.aborted).toBe(false);
+
+        // Past the 2 s default: still pending.
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(signal?.aborted).toBe(false);
+
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(signal?.aborted).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("does not request again when only the timeout changes", async () => {
       const el = await mount();
 
       el.setAttribute("timeout", "5000");
-      await flush(el);
+      await flushRequest(el);
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
     });
@@ -174,9 +204,14 @@ describe("vtex-ads-story", () => {
 
     it("renders nothing when the request fails", async () => {
       getRawAdsMock.mockRejectedValue(new Error("Ad server error"));
+      // fetchStory logs the failure.
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const el = await mount();
 
       expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+      consoleError.mockRestore();
     });
 
     it("renders nothing when the placement has no Story", async () => {
@@ -209,7 +244,7 @@ describe("vtex-ads-story", () => {
       getRawAdsMock.mockResolvedValue(rawAdsWith([other], "other_stories"));
 
       el.setAttribute("placement", "other_stories");
-      await flush(el);
+      await flushRequest(el);
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(2);
       expect(el.shadowRoot?.querySelector(".poster")?.getAttribute("src")).toBe(
@@ -226,13 +261,13 @@ describe("vtex-ads-story", () => {
 
       const el = await mount();
       el.setAttribute("session-id", "session-2");
-      await flush(el);
+      await flushRequest(el);
 
       const latest = { ...mockStory, poster_url: "https://cdn.example/2.jpg" };
       second.resolve(rawAdsWith([latest]));
-      await flush(el);
+      await flushRequest(el);
       first.resolve(rawAdsWith([mockStory]));
-      await flush(el);
+      await flushRequest(el);
 
       expect(el.shadowRoot?.querySelector(".poster")?.getAttribute("src")).toBe(
         latest.poster_url,
@@ -248,7 +283,7 @@ describe("vtex-ads-story", () => {
       const el = await mount();
 
       el.setAttribute("session-id", "session-2");
-      await flush(el);
+      await flushRequest(el);
 
       expect(signalOf(0)?.aborted).toBe(true);
       expect(signalOf(1)?.aborted).toBe(false);
@@ -269,7 +304,7 @@ describe("vtex-ads-story", () => {
 
       el.remove();
       document.body.appendChild(el);
-      await flush(el);
+      await flushRequest(el);
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(2);
       expect(el.shadowRoot?.querySelector(".card")).not.toBeNull();
@@ -280,7 +315,7 @@ describe("vtex-ads-story", () => {
 
       el.remove();
       document.body.appendChild(el);
-      await flush(el);
+      await flushRequest(el);
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
       expect(signalOf(0)?.aborted).toBe(false);
@@ -323,7 +358,7 @@ describe("vtex-ads-story", () => {
     it("opens the same Story in the player when the card is clicked", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
 
       const players = getPlayers(el);
       expect(players).toHaveLength(1);
@@ -335,9 +370,9 @@ describe("vtex-ads-story", () => {
     it("opens the player only once", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(1);
     });
@@ -345,7 +380,7 @@ describe("vtex-ads-story", () => {
     it("focuses the close button when the player opens", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
 
       expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
         "Fechar vídeo",
@@ -365,7 +400,7 @@ describe("vtex-ads-story", () => {
       const el = await mount();
       getVideos(el).card?.play();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
 
       const { card, player } = getVideos(el);
       expect(card?.paused).toBe(true);
@@ -376,9 +411,9 @@ describe("vtex-ads-story", () => {
     it("plays the card video again when the player closes", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       el.shadowRoot?.querySelector<HTMLElement>(".player-close")?.click();
-      await settle(el);
+      await flushRender(el);
 
       expect(getVideos(el).card?.paused).toBe(false);
     });
@@ -386,9 +421,9 @@ describe("vtex-ads-story", () => {
     it("plays the card video again when the player closes with Escape", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-      await settle(el);
+      await flushRender(el);
 
       expect(getVideos(el).card?.paused).toBe(false);
     });
@@ -396,11 +431,11 @@ describe("vtex-ads-story", () => {
     it("plays the card video again when the expanded backdrop is clicked", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       el.shadowRoot?.querySelector<HTMLElement>(".player-expand")?.click();
-      await settle(el);
+      await flushRender(el);
       el.shadowRoot?.querySelector<HTMLElement>(".player")?.click();
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(getVideos(el).card?.paused).toBe(false);
@@ -409,9 +444,9 @@ describe("vtex-ads-story", () => {
     it("closes from the close button and focuses the card again", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       el.shadowRoot?.querySelector<HTMLElement>(".player-close")?.click();
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(el.shadowRoot?.activeElement).toBe(getCard(el));
@@ -420,9 +455,9 @@ describe("vtex-ads-story", () => {
     it("closes on Escape", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
     });
@@ -430,11 +465,11 @@ describe("vtex-ads-story", () => {
     it("does not resume the card video when the element is removed", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       expect(getVideos(el).card?.paused).toBe(true);
 
       el.remove();
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(getVideos(el).card?.paused).toBe(true);
@@ -443,11 +478,11 @@ describe("vtex-ads-story", () => {
     it("closes when an attribute changes", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       getRawAdsMock.mockReturnValue(deferred().promise);
 
       el.setAttribute("session-id", "session-2");
-      await flush(el);
+      await flushRequest(el);
 
       expect(getPlayers(el)).toHaveLength(0);
     });
@@ -455,9 +490,9 @@ describe("vtex-ads-story", () => {
     it("closes when the element is removed", async () => {
       const el = await mount();
       getCard(el)?.click();
-      await settle(el);
+      await flushRender(el);
       el.remove();
-      await settle(el);
+      await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
     });

@@ -28,13 +28,17 @@ function hangUntilAborted() {
 const signalOfFirstCall = () => getRawAdsMock.mock.calls[0][1]?.signal;
 
 describe("fetchStory", () => {
+  let consoleError: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     getRawAdsMock.mockReset();
     vi.useFakeTimers();
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    consoleError.mockRestore();
   });
 
   it("resolves to the first Story of the placement", async () => {
@@ -54,6 +58,7 @@ describe("fetchStory", () => {
     await vi.advanceTimersByTimeAsync(1);
     await expect(story).resolves.toBeUndefined();
     expect(signalOfFirstCall()?.reason).toMatchObject({ name: "TimeoutError" });
+    expect(consoleError).not.toHaveBeenCalled();
   }
 
   it("gives up after 2 s by default", async () => {
@@ -81,6 +86,18 @@ describe("fetchStory", () => {
 
     await expect(story).resolves.toBeUndefined();
     expect(signalOfFirstCall()?.aborted).toBe(true);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("logs a failed request and resolves to undefined", async () => {
+    const error = new TypeError("Failed to fetch");
+    getRawAdsMock.mockRejectedValue(error);
+
+    await expect(fetchStory(REQUEST)).resolves.toBeUndefined();
+    expect(consoleError).toHaveBeenCalledWith(
+      "[vtex-ads-story] Story request failed",
+      error,
+    );
   });
 
   it("clears the time limit once the request settles", async () => {

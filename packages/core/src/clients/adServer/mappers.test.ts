@@ -10,6 +10,7 @@ import {
   SponsoredProductDetail,
   StoryAdDetail,
 } from "./types";
+import { mockStory } from "./story.mock";
 import { Offer } from "../../hydration/types";
 import { expect, it, describe } from "vitest";
 
@@ -160,33 +161,8 @@ describe.concurrent("getSponsoredProductArray", () => {
   });
 });
 
-const sampleStory: StoryAdDetail = {
-  type: "story",
-  ad_id: "story1",
-  campaign_id: "campaign1",
-  seller_id: "1",
-  position: 0,
-  campaign_name: "Story campaign",
-  asset_type: "video",
-  media_url: "https://cdn.example.com/story.mp4",
-  poster_url: "https://cdn.example.com/story.jpg",
-  duration_seconds: 14,
-  destination_url: "https://www.publisher.com/produto/p",
-  product: {
-    product_sku: "sku1",
-    seller_id: "1",
-    product_name: "Product 1",
-    image_url: "https://cdn.example.com/product.jpg",
-    url: "https://www.publisher.com/produto/p",
-    product_metadata: {},
-  },
-  impression_url: "https://events.example.com/impression",
-  view_url: "https://events.example.com/view",
-  click_url: "https://events.example.com/click",
-};
-
 const linkStory: StoryAdDetail = {
-  ...sampleStory,
+  ...mockStory,
   ad_id: "story2",
   position: 1,
   destination_url: "https://advertiser.example.com/promo",
@@ -210,43 +186,39 @@ describe.concurrent("getStoryArray", () => {
 
   it("should return Stories grouped by placement, keeping link Stories", () => {
     const adResponse: AdResponse = {
-      home_stories: [sampleStory, linkStory],
+      home_stories: [mockStory, linkStory],
     };
 
     expect(getStoryArray(adResponse)).toEqual([
-      ["home_stories", [sampleStory, linkStory]],
+      ["home_stories", [mockStory, linkStory]],
     ]);
   });
 
   it("should drop other ad types and placements without Stories", () => {
     const adResponse: AdResponse = {
-      home_stories: [sampleStory, sampleProductAd],
+      home_stories: [mockStory, sampleProductAd],
       search_top_product: [sampleProductAd],
     };
 
-    expect(getStoryArray(adResponse)).toEqual([
-      ["home_stories", [sampleStory]],
-    ]);
+    expect(getStoryArray(adResponse)).toEqual([["home_stories", [mockStory]]]);
   });
 
   it("should ignore envelope fields that are not ad arrays", () => {
     const adResponse = {
-      home_stories: [sampleStory],
+      home_stories: [mockStory],
       request_id: "request",
       query_id: "query",
       query_at: "2026-11-04T00:00:00Z",
     } as unknown as AdResponse;
 
-    expect(getStoryArray(adResponse)).toEqual([
-      ["home_stories", [sampleStory]],
-    ]);
+    expect(getStoryArray(adResponse)).toEqual([["home_stories", [mockStory]]]);
   });
 });
 
 describe.concurrent("getSponsoredProductArray with Stories", () => {
   it("should not treat Stories as sponsored products", () => {
     const adResponse: AdResponse = {
-      home_stories: [sampleStory, linkStory],
+      home_stories: [mockStory, linkStory],
       search_top_product: [sampleProductAd],
     };
 

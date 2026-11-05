@@ -9,10 +9,8 @@ import {
 } from "./clients/adServer/mappers";
 
 import { Product } from "./clients/search/types";
-import {
-  SponsoredProductDetail,
-  StoryAdDetail,
-} from "./clients/adServer/types";
+import { SponsoredProductDetail } from "./clients/adServer/types";
+import { mockStory } from "./clients/adServer/story.mock";
 import { GetAdsArgs, RawAdsResponse } from "./types";
 import {
   intelligentSearchFetcher,
@@ -166,31 +164,6 @@ describe("facade", () => {
     origin: "test",
     productTitle: "Test Product Title",
     deliveryPromisesBadges: [],
-  };
-
-  const mockStory: StoryAdDetail = {
-    type: "story",
-    ad_id: "story-ad-1",
-    campaign_id: "campaign-1",
-    seller_id: "1",
-    position: 0,
-    campaign_name: "Story campaign",
-    asset_type: "video",
-    media_url: "https://cdn.example.com/story.mp4",
-    poster_url: "https://cdn.example.com/story.jpg",
-    duration_seconds: 14,
-    destination_url: "https://www.publisher.com/produto/p",
-    product: {
-      product_sku: "sku-123",
-      seller_id: "1",
-      product_name: "Test Product",
-      image_url: "https://cdn.example.com/product.jpg",
-      url: "https://www.publisher.com/produto/p",
-      product_metadata: {},
-    },
-    impression_url: "https://events.example.com/impression",
-    view_url: "https://events.example.com/view",
-    click_url: "https://events.example.com/click",
   };
 
   describe("getRawAds", () => {

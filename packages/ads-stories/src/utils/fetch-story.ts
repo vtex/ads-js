@@ -79,9 +79,13 @@ export async function fetchStory(
     );
 
     return stories[placement]?.[0];
-  } catch {
-    // @vtex/ads-core logs HTTP and validation errors; a cancelled or timed out
-    // request needs no log.
+  } catch (error) {
+    // A cancelled or timed out request needs no log. Anything else (network
+    // failure, HTTP or validation error) is logged, so a failing request can
+    // be told apart from a placement with no Story.
+    if (!limit.signal.aborted) {
+      console.error("[vtex-ads-story] Story request failed", error);
+    }
     return undefined;
   } finally {
     limit.clear();
