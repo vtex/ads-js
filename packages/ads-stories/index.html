@@ -56,11 +56,15 @@
       import { mockStory } from "./src/story/story.mock.ts";
 
       const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/";
+      // Simulated ad server latency, to see the element while it loads.
+      const DELAY_MS = 500;
 
       const nativeFetch = window.fetch.bind(window);
       window.fetch = async (input, init) => {
         const url = typeof input === "string" ? input : input.url;
         if (!url.startsWith(AD_SERVER)) return nativeFetch(input, init);
+
+        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
 
         const { placements } = JSON.parse(init.body);
         const body = { request_id: "playground" };
