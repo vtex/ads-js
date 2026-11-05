@@ -149,6 +149,9 @@ export class VtexAdsStoryElement extends LitElement {
     pauseLabel: LABELS.pause,
     soundOnLabel: LABELS.soundOn,
     soundOffLabel: LABELS.soundOff,
+    previousLabel: LABELS.previous,
+    nextLabel: LABELS.next,
+    onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
   });
 
@@ -242,8 +245,9 @@ export class VtexAdsStoryElement extends LitElement {
   // The card losing the highlight goes quiet: muted if it keeps playing, or
   // back to its cover. Its next video then starts fresh. If its sound was
   // on, the sound moves to the new highlighted card, once its video renders.
-  // Cards no longer rendered (the rolling layout drops them as it moves)
-  // leave with their videos.
+  // With the player open (it stepped), the new card stays on its cover
+  // behind it instead. Cards no longer rendered (the rolling layout drops
+  // them as it moves) leave with their videos.
   private leaveHighlight(from: number, to: number) {
     const video = this.cardVideos.get(from);
     // Still pending: moved again before the last step rendered.
@@ -251,7 +255,11 @@ export class VtexAdsStoryElement extends LitElement {
     if (this.inactiveAutoplay) video?.mute();
     else video?.reset();
 
-    if (this.soundPending) {
+    if (this.player.isOpen) {
+      this.soundPending = false;
+      // Paused before it starts, its autoplay doesn't start either.
+      void this.updateComplete.then(() => this.videoFor(to).pause());
+    } else if (this.soundPending) {
       void this.updateComplete.then(() => {
         // Moved again meanwhile: that step's own callback takes the sound.
         if (!this.soundPending || this.carousel.activeKey !== to) return;
@@ -263,6 +271,13 @@ export class VtexAdsStoryElement extends LitElement {
     for (const key of this.cardVideos.keys()) {
       if (Math.abs(key - to) > RENDERED_SIDE) this.cardVideos.delete(key);
     }
+  }
+
+  // The player's previous and next buttons: the highlight moves with the
+  // Story the player shows.
+  private stepInPlayer(delta: number) {
+    this.carousel.step(delta, { evenIfLocked: true });
+    void this.player.showNext();
   }
 
   private openPlayer() {
@@ -280,7 +295,9 @@ export class VtexAdsStoryElement extends LitElement {
     if (!this.player.isOpen) return;
 
     this.player.close();
-    this.activeVideo?.resume();
+    // The highlighted card, and with inactive-autoplay the others, which may
+    // have been highlighted and paused while the player stepped.
+    for (const video of this.cardVideos.values()) video.resume();
     this.renderRoot
       .querySelector<HTMLElement>(
         '.carousel[data-layout="solo"] .card-open, .slide[data-active] .card-open',
@@ -311,7 +328,7 @@ export class VtexAdsStoryElement extends LitElement {
 
     return html`
       <div class="root">${this.carousel.render(stories, this.renderSlide)}</div>
-      ${this.player.render(active)}
+      ${this.player.render(active, { navigation: stories.length > 1 })}
     `;
   }
 }

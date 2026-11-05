@@ -8,7 +8,7 @@ Show the placement's Stories in a carousel, in a 500px tall band as wide as the 
 - **Two**: both cards side by side. The highlighted card is full size and the other smaller and dimmed.
 - **Three or more**: the highlighted card in the middle and the others on each side, smaller and dimmed, up to two per side. Every card moves one place per step. With four, the Story opposite the highlighted one shows at both ends. On screens 576px wide or less, two Stories also show this way, with the other one on both sides.
 
-With more than one Story, the highlight moves to the next card every 5 seconds, except while the pointer is over the carousel, the keyboard focus is in it, or the player is open. It also moves with the previous and next arrows, a swipe, or a click on a dimmed card. Clicking the highlighted card opens it in the player. If the highlighted card's sound is on, the next highlighted card plays with sound too (muted instead, if the browser blocks it).
+With more than one Story, the highlight moves to the next card every 5 seconds, except while the pointer is over the carousel, the keyboard focus is in it, or the player is open. It also moves with the previous and next arrows, a swipe, or a click on a dimmed card. Clicking the highlighted card opens it in the player. If the highlighted card's sound is on, the next highlighted card plays with sound too (muted instead, if the browser blocks it). With more than one Story, the mini player has previous and next buttons above its top left: they change the video in the player, and the carousel highlight follows.
 
 New attributes, also in the React JSX types:
 

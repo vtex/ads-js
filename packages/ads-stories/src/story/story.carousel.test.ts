@@ -312,6 +312,78 @@ describe("vtex-ads-story carousel", () => {
     });
   });
 
+  describe("player navigation", () => {
+    const highlightedCard = (el: VtexAdsStoryElement) =>
+      query(el, ".slide[data-active]");
+
+    async function openPlayer(el: VtexAdsStoryElement) {
+      await click(el, ".slide[data-active] .card-open");
+    }
+
+    it("has no previous and next with a single Story", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
+      const el = await mount();
+      await click(el, ".card-open");
+
+      expect(query(el, ".player")).not.toBeNull();
+      expect(query(el, ".player-nav")).toBeNull();
+    });
+
+    it("shows the next Story in the player and moves the highlight with it", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
+      const el = await mount();
+      await openPlayer(el);
+
+      await click(el, ".player-next");
+      await el.updateComplete;
+
+      expect(query(el, ".player .poster")?.getAttribute("src")).toBe(
+        mockStories[1].poster_url,
+      );
+      expect(highlightedCard(el)?.dataset.index).toBe("1");
+      expect(query<HTMLVideoElement>(el, ".player video")?.paused).toBe(false);
+    });
+
+    it("steps back past the first Story to the last", async () => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
+      const el = await mount();
+      await openPlayer(el);
+
+      await click(el, ".player-previous");
+
+      expect(query(el, ".player .poster")?.getAttribute("src")).toBe(
+        mockStories[2].poster_url,
+      );
+      expect(highlightedCard(el)?.dataset.index).toBe("2");
+    });
+
+    // jsdom doesn't autoplay: this checks the new card's video is paused,
+    // which in browsers also stops its autoplay.
+    it("keeps the new highlighted card paused behind the player", async () => {
+      const el = await mount();
+      await openPlayer(el);
+      const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
+
+      await click(el, ".player-next");
+      await el.updateComplete;
+
+      expect(pause.mock.contexts).toContain(slideVideo(el, 1));
+      pause.mockRestore();
+    });
+
+    it("plays the highlighted card again when the player closes", async () => {
+      const el = await mount();
+      await openPlayer(el);
+      await click(el, ".player-next");
+      await el.updateComplete;
+
+      await click(el, ".player-close");
+
+      expect(query(el, ".player")).toBeNull();
+      expect(slideVideo(el, 1)?.paused).toBe(false);
+    });
+  });
+
   describe("inactive-autoplay", () => {
     it("is off by default: only the highlighted card has a video", async () => {
       const el = await mount();

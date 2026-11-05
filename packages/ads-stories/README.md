@@ -3,9 +3,9 @@
 VTEX Ads Stories web component. Framework-agnostic: works on any HTML5 page,
 including VTEX IO, FastStore and non-VTEX storefronts.
 
-> Work in progress. Currently requests one Story from the ad API and renders
-> it as a card, which opens in a player at the bottom right. The carousel and
-> the ad events come next.
+> Work in progress. Currently requests the placement's Stories from the ad
+> API and shows them in a carousel, whose cards open in a player at the bottom
+> right. The ad events come next.
 
 ## npm
 
@@ -177,6 +177,10 @@ is in it, or the player is open. It also moves with the arrows, a swipe, or a
 click on a dimmed card. Clicking the highlighted card opens the player. If
 the highlighted card's sound is on, the next highlighted card plays with sound
 too, or muted if the browser blocks it.
+
+With more than one Story, the mini player has previous and next buttons above
+its top left. They change the video in the player, and the carousel highlight
+follows, while the carousel's own advance stays stopped.
 
 ## Development
 

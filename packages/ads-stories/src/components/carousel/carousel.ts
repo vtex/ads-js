@@ -339,9 +339,14 @@ export class CarouselController implements ReactiveController {
     this.restartTimer();
   }
 
-  /** Moves the highlight by `delta` Stories, wrapping around the ends. */
-  step(delta: number) {
-    if (this.count < 2 || delta === 0 || this.options.locked?.()) return;
+  /**
+   * Moves the highlight by `delta` Stories, wrapping around the ends. While
+   * locked, only with `evenIfLocked` (for example, the player stepping to
+   * the next Story it shows).
+   */
+  step(delta: number, { evenIfLocked = false } = {}) {
+    if (this.count < 2 || delta === 0) return;
+    if (this.options.locked?.() && !evenIfLocked) return;
 
     const from = this.activeKey;
     this.position += delta;

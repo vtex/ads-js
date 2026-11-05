@@ -109,6 +109,12 @@ export const playerStyles = css`
     gap: 8px;
   }
 
+  /* Previous and next Story, above the card's top left (mini player only). */
+  .player-nav {
+    right: auto;
+    left: 0;
+  }
+
   .player-button {
     display: grid;
     width: 36px;
@@ -218,6 +224,13 @@ export interface PlayerOptions {
   pauseLabel: string;
   soundOnLabel: string;
   soundOffLabel: string;
+  previousLabel: string;
+  nextLabel: string;
+  /**
+   * Called by the previous (-1) and next (1) buttons. Show the Story it
+   * leads to with the next render(), then call showNext().
+   */
+  onStep?: (delta: number) => void;
   /**
    * Called by the close button, Escape and a click on the expanded view's
    * backdrop. Call close() from it.
@@ -292,6 +305,20 @@ export class PlayerController implements ReactiveController {
     if (dialog) this.hide(dialog);
     this.isOpen = false;
     this.host.requestUpdate();
+  }
+
+  /**
+   * After the host renders a different Story in the open player: its video
+   * starts from the top and plays, with the sound as the shopper left it. A
+   * failed load of the previous video doesn't hide the new one.
+   */
+  async showNext() {
+    if (!this.isOpen) return;
+
+    this.video.failed = false;
+    this.host.requestUpdate();
+    await this.host.updateComplete;
+    if (this.isOpen) this.video.play();
   }
 
   // Mini: a manual popover, or a non-modal dialog without popover support.
@@ -386,11 +413,39 @@ export class PlayerController implements ReactiveController {
     `;
   }
 
+  /** Previous and next Story, above the mini player's top left. */
+  private renderNavigation() {
+    const { options } = this;
+    const step = (delta: number) => () => options.onStep?.(delta);
+
+    return html`
+      <div class="player-controls player-nav">
+        <button
+          type="button"
+          class="player-button player-previous"
+          aria-label=${options.previousLabel}
+          @click=${step(-1)}
+        >
+          ${icon("previous")}
+        </button>
+        <button
+          type="button"
+          class="player-button player-next"
+          aria-label=${options.nextLabel}
+          @click=${step(1)}
+        >
+          ${icon("next")}
+        </button>
+      </div>
+    `;
+  }
+
   /**
    * The player <dialog> while it is open. Clicking the video also plays or
-   * pauses it.
+   * pauses it. With `navigation` (more than one Story), the mini player has
+   * previous and next buttons.
    */
-  render(story: StoryMedia) {
+  render(story: StoryMedia, { navigation = false } = {}) {
     if (!this.isOpen) return nothing;
 
     const { video, options, expanded } = this;
@@ -409,6 +464,7 @@ export class PlayerController implements ReactiveController {
         @cancel=${this.onCancel}
       >
         <div class="player-frame">
+          ${navigation && !expanded ? this.renderNavigation() : nothing}
           <div class="player-controls">
             <button
               type="button"

@@ -16,6 +16,8 @@ describe("PlayerController", () => {
     pauseLabel: "Pausar vídeo",
     soundOnLabel: "Ativar som",
     soundOffLabel: "Desativar som",
+    previousLabel: "Vídeo anterior",
+    nextLabel: "Próximo vídeo",
   };
 
   beforeAll(() => {
@@ -297,6 +299,72 @@ describe("PlayerController", () => {
       expect(player.querySelector(".player-sound")).toBeNull();
       expect(player.hasAttribute("data-paused")).toBe(false);
       expect(player.querySelector(".poster")).not.toBeNull();
+    });
+  });
+
+  describe("navigation", () => {
+    const videoStory = {
+      poster_url: "https://example.com/cover.jpg",
+      media_url: "https://example.com/video.mp4",
+    };
+
+    // Opened with previous and next, as the element does with more than one
+    // Story.
+    async function setupWithNavigation(navigation = true) {
+      const onStep = vi.fn();
+      const { container, controller } = mountHost(
+        (host) =>
+          new PlayerController(host, { ...labels, onClose: vi.fn(), onStep }),
+        (player) => player.render(videoStory, { navigation }),
+      );
+      await controller.open();
+      const player = container.querySelector("dialog");
+      if (!player) throw new Error("The player did not render");
+      return { controller, player, onStep };
+    }
+
+    it("has no previous and next without navigation", async () => {
+      const { player } = await setupWithNavigation(false);
+      expect(player.querySelector(".player-nav")).toBeNull();
+    });
+
+    it("puts previous and next above the mini player's top left", async () => {
+      const { player } = await setupWithNavigation();
+      const buttons = [...player.querySelectorAll(".player-nav button")];
+
+      expect(
+        buttons.map((button) => button.getAttribute("aria-label")),
+      ).toEqual(["Vídeo anterior", "Próximo vídeo"]);
+    });
+
+    it("steps back and forth", async () => {
+      const { player, onStep } = await setupWithNavigation();
+
+      player.querySelector<HTMLButtonElement>(".player-previous")?.click();
+      player.querySelector<HTMLButtonElement>(".player-next")?.click();
+
+      expect(onStep.mock.calls).toEqual([[-1], [1]]);
+    });
+
+    it("has no previous and next while expanded", async () => {
+      const { player } = await setupWithNavigation();
+
+      player.querySelector<HTMLButtonElement>(".player-expand")?.click();
+      await vi.waitFor(() => expect(shownAs(player)).toBe("modal"));
+
+      expect(player.querySelector(".player-nav")).toBeNull();
+    });
+
+    it("plays the next video, even after the previous one failed", async () => {
+      const { controller, player } = await setupWithNavigation();
+      player.querySelector("video")?.dispatchEvent(new Event("error"));
+      await vi.waitFor(() => expect(player.querySelector("video")).toBeNull());
+
+      await controller.showNext();
+
+      const video = player.querySelector("video");
+      expect(video).not.toBeNull();
+      expect(video?.paused).toBe(false);
     });
   });
 });
