@@ -19,6 +19,7 @@
       .themed {
         --vtex-ads-story-radius: 40px;
         --vtex-ads-story-solo-background: #ffe3ec;
+        --vtex-ads-story-accent: #e31c57;
       }
 
       .note {
@@ -98,6 +99,22 @@
         publisher-id="playground-publisher"
         session-id="playground-session"
         placement="four_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Another locale and currency</h2>
+      <p class="note">
+        With <code>locale="es-AR"</code> and <code>currency="ARS"</code>, the
+        product prices read <code>$ 129,90</code> instead of
+        <code>R$ 129,90</code>.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="four_stories"
+        locale="es-AR"
+        currency="ARS"
       ></vtex-ads-story>
     </section>
 

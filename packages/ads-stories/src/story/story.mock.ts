@@ -20,7 +20,14 @@ export const mockStory: StoryAdDetail = {
   poster_url: "https://dummyimage.com/1080x1920/e31c57/fff",
   duration_seconds: 10,
   destination_url: "https://www.example.com/product/p",
-  product: null,
+  product: {
+    product_sku: "sku-1",
+    seller_id: "1",
+    product_name: "Tênis de corrida leve com amortecimento responsivo",
+    image_url: "https://dummyimage.com/240x240/fff/e31c57&text=SKU+1",
+    url: "https://www.example.com/product/p",
+    product_metadata: { price: 159.9, promotional_price: 129.9 },
+  },
   impression_url: "https://events.example/impression",
   view_url: "https://events.example/view",
   click_url: "https://events.example/click",
@@ -39,6 +46,14 @@ export const mockStories: StoryAdDetail[] = [
     poster_url: "https://dummyimage.com/1080x1920/1c57e3/fff",
     duration_seconds: 5,
     destination_url: "https://www.example.com/product-2/p",
+    product: {
+      product_sku: "sku-2",
+      seller_id: "1",
+      product_name: "Garrafa térmica 500 ml",
+      image_url: "https://dummyimage.com/240x240/fff/1c57e3&text=SKU+2",
+      url: "https://www.example.com/product-2/p",
+      product_metadata: { price: 89.9 },
+    },
   },
   {
     ...mockStory,
@@ -50,6 +65,14 @@ export const mockStories: StoryAdDetail[] = [
     poster_url: "https://dummyimage.com/1080x1920/1ce357/fff",
     duration_seconds: 15,
     destination_url: "https://www.example.com/product-3/p",
+    product: {
+      product_sku: "sku-3",
+      seller_id: "1",
+      product_name: "Mochila urbana",
+      image_url: "https://dummyimage.com/240x240/fff/1ce357&text=SKU+3",
+      url: "https://www.example.com/product-3/p",
+      product_metadata: {},
+    },
   },
   {
     ...mockStory,
@@ -58,7 +81,9 @@ export const mockStories: StoryAdDetail[] = [
     position: 3,
     campaign_name: "Story campaign 4",
     poster_url: "https://dummyimage.com/1080x1920/e3a51c/fff",
-    destination_url: "https://www.example.com/product-4/p",
+    // A link destination: no product.
+    destination_url: "https://www.example.com/campaign",
+    product: null,
   },
 ];
 

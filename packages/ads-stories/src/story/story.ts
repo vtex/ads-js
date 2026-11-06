@@ -9,6 +9,12 @@ import {
 } from "../components/carousel";
 import { VideoController } from "../components/media";
 import {
+  DEFAULT_LOCALE,
+  priceFormatter,
+  productStyles,
+  toCardProduct,
+} from "../components/product";
+import {
   neighborOffsets,
   PlayerController,
   playerStyles,
@@ -68,6 +74,13 @@ const LABELS = {
   pause: "Pausar vídeo",
   soundOn: "Ativar som",
   soundOff: "Desativar som",
+  addToCart: "Adicionar ao carrinho",
+  viewProduct: "Ver produto",
+  /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
+  product: (name: string, price?: string, listPrice?: string) => {
+    if (price && listPrice) return `${name}, de ${listPrice} por ${price}`;
+    return price ? `${name}, ${price}` : name;
+  },
   /** Tells the cards apart: "Mostrar vídeo 2 de 4". */
   position: (label: string, index: number, count: number) =>
     count > 1 ? `${label} ${index + 1} de ${count}` : label,
@@ -85,6 +98,8 @@ export class VtexAdsStoryElement extends LitElement {
     channel: { converter: channelConverter },
     timeout: { type: Number },
     quantity: { type: Number },
+    locale: {},
+    currency: {},
     inactiveAutoplay: {
       type: Boolean,
       attribute: "inactive-autoplay",
@@ -115,6 +130,16 @@ export class VtexAdsStoryElement extends LitElement {
    */
   declare quantity?: number;
   /**
+   * Locale of the prices, as a BCP 47 tag ("pt-BR", "es-AR"). Missing or
+   * invalid: the page's `lang`, then pt-BR.
+   */
+  declare locale?: string;
+  /**
+   * Currency of the prices, as an ISO 4217 code ("BRL", "ARS"). Missing or
+   * invalid: BRL.
+   */
+  declare currency?: string;
+  /**
    * With more than one Story, whether the cards without the highlight also
    * play their video, muted. Off by default: they show only their cover, and
    * only the highlighted card plays.
@@ -139,6 +164,7 @@ export class VtexAdsStoryElement extends LitElement {
       }
     `,
     cardStyles,
+    productStyles,
     carouselStyles,
     playerStyles,
   ];
@@ -186,6 +212,8 @@ export class VtexAdsStoryElement extends LitElement {
     previousLabel: LABELS.previous,
     nextLabel: LABELS.next,
     neighborLabel: LABELS.show,
+    addToCartLabel: LABELS.addToCart,
+    viewProductLabel: LABELS.viewProduct,
     onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
   });
@@ -322,12 +350,13 @@ export class VtexAdsStoryElement extends LitElement {
     void this.player.showNext(delta);
   }
 
-  private openPlayer() {
+  // From the card's product, the player opens with the product panel open.
+  private openPlayer({ productOpen = false } = {}) {
     if (this.player.isOpen) return;
 
     // While the player is open, the card behind it stops on its cover.
     this.activeVideo?.pause();
-    void this.player.open();
+    void this.player.open({ productOpen });
   }
 
   // The player also closes on its own when the element leaves the page,
@@ -349,6 +378,29 @@ export class VtexAdsStoryElement extends LitElement {
 
   // The highlighted card opens the player; another one takes the highlight.
   // Hidden cards, out of sight, show only their cover.
+  // The formatter for the current locale and currency, made again only when
+  // either changes.
+  private formatter?: {
+    key: string;
+    format: (amount: number) => string;
+  };
+
+  private get formatPrice() {
+    const locale =
+      this.locale ||
+      this.closest<HTMLElement>("[lang]")?.lang ||
+      DEFAULT_LOCALE;
+    const key = `${locale}|${this.currency ?? ""}`;
+    if (this.formatter?.key !== key) {
+      this.formatter = { key, format: priceFormatter(locale, this.currency) };
+    }
+    return this.formatter.format;
+  }
+
+  private productOf(story: StoryAd) {
+    return toCardProduct(story, this.formatPrice, LABELS.product);
+  }
+
   private readonly renderSlide = (
     story: StoryAd,
     { key, index, offset, active, hidden }: Slide,
@@ -362,9 +414,14 @@ export class VtexAdsStoryElement extends LitElement {
       soundOnLabel: LABELS.soundOn,
       soundOffLabel: LABELS.soundOff,
       withVideo: active || (this.inactiveAutoplay && !hidden),
+      product: this.productOf(story),
       onSelect: active
         ? () => this.openPlayer()
         : () => this.carousel.step(offset),
+      // On a card without the highlight, the product moves it, as the card.
+      onProductSelect: active
+        ? () => this.openPlayer({ productOpen: true })
+        : undefined,
     });
 
   protected render() {
@@ -387,6 +444,7 @@ export class VtexAdsStoryElement extends LitElement {
       ${this.player.render(active, {
         navigation: stories.length > 1,
         neighbors,
+        product: this.productOf(active),
       })}
     `;
   }

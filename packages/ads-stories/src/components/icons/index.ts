@@ -12,6 +12,7 @@ import {
 import previous from "./assets/caret-left-bold.svg?raw";
 import next from "./assets/caret-right-bold.svg?raw";
 import close from "./assets/close.svg?raw";
+import caretUp from "./assets/caret-up-bold.svg?raw";
 import collapse from "./assets/collapse.svg?raw";
 import expand from "./assets/expand.svg?raw";
 import pause from "./assets/pause-fill.svg?raw";
@@ -20,6 +21,7 @@ import soundOff from "./assets/speaker-x-fill.svg?raw";
 import soundOn from "./assets/speaker-high-fill.svg?raw";
 
 export const icons = {
+  caretUp,
   close,
   collapse,
   expand,

@@ -34,6 +34,8 @@ describe("PlayerController", () => {
     previousLabel: "Vídeo anterior",
     nextLabel: "Próximo vídeo",
     neighborLabel: "Mostrar vídeo",
+    addToCartLabel: "Adicionar ao carrinho",
+    viewProductLabel: "Ver produto",
   };
 
   beforeAll(() => {
@@ -51,14 +53,18 @@ describe("PlayerController", () => {
   });
 
   // Rendered and opened as the element does it. onClose closes the player.
-  async function setup(storyToPlay: StoryMedia = story) {
+  async function setup(
+    storyToPlay: StoryMedia = story,
+    renderOptions?: PlayerRenderOptions,
+    openOptions?: Parameters<PlayerController["open"]>[0],
+  ) {
     const onClose = vi.fn(() => controller.close());
     const { host, container, controller } = mountHost(
       (host) => new PlayerController(host, { ...labels, onClose }),
-      (player) => player.render(storyToPlay),
+      (player) => player.render(storyToPlay, renderOptions),
     );
     opened.push(controller);
-    await controller.open();
+    await controller.open(openOptions);
 
     const player = container.querySelector("dialog");
     if (!player) throw new Error("The player did not render");
@@ -240,6 +246,127 @@ describe("PlayerController", () => {
 
     expect(container.querySelector("dialog")).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  describe("product", () => {
+    const product = {
+      name: "Tênis",
+      imageUrl: "https://example.com/shoe.jpg",
+      price: "R$ 129,90",
+      listPrice: "R$ 159,90",
+      url: "https://www.example.com/tenis/p",
+      label: "Tênis, de R$ 159,90 por R$ 129,90",
+    };
+    const withVideo = { ...story, media_url: "https://example.com/story.mp4" };
+
+    async function setupWithProduct(
+      openOptions?: Parameters<PlayerController["open"]>[0],
+      storyToPlay: StoryMedia = withVideo,
+    ) {
+      const result = await setup(storyToPlay, { product }, openOptions);
+      const { player } = result;
+      return {
+        ...result,
+        pill: () => player.querySelector<HTMLElement>(".card .card-product"),
+        summary: () =>
+          player.querySelector<HTMLButtonElement>(".product-summary"),
+        panel: () => player.querySelector<HTMLElement>(".product-panel"),
+        video: player.querySelector("video"),
+      };
+    }
+
+    it("shows the pill at the bottom of the video, closed", async () => {
+      const { pill, summary, panel } = await setupWithProduct();
+
+      expect(pill()?.hasAttribute("data-open")).toBe(false);
+      expect(summary()?.getAttribute("aria-label")).toBe(product.label);
+      expect(summary()?.getAttribute("aria-expanded")).toBe("false");
+      expect(summary()?.getAttribute("aria-controls")).toBe(panel()?.id);
+      expect(panel()?.hasAttribute("inert")).toBe(true);
+      expect(pill()?.querySelector(".product-name")?.textContent).toBe("Tênis");
+    });
+
+    it("has no pill without a product", async () => {
+      const { player } = await setup();
+
+      expect(player.querySelector(".card-product")).toBeNull();
+    });
+
+    it("opens and closes the panel from the pill, without pausing", async () => {
+      const { pill, summary, panel, video } = await setupWithProduct();
+
+      summary()?.click();
+      expect(pill()?.hasAttribute("data-open")).toBe(true);
+      expect(summary()?.getAttribute("aria-expanded")).toBe("true");
+      expect(panel()?.hasAttribute("inert")).toBe(false);
+
+      summary()?.click();
+      expect(pill()?.hasAttribute("data-open")).toBe(false);
+      expect(video?.paused).toBe(false);
+    });
+
+    it("has add to cart and the product page in a new tab", async () => {
+      const { summary, panel } = await setupWithProduct();
+      summary()?.click();
+
+      const addToCart = panel()?.querySelector(".product-add-to-cart");
+      expect(addToCart?.tagName).toBe("BUTTON");
+      expect(addToCart?.textContent?.trim()).toBe("Adicionar ao carrinho");
+      const view = panel()?.querySelector<HTMLAnchorElement>(".product-view");
+      expect(view?.textContent?.trim()).toBe("Ver produto");
+      expect(view?.href).toBe(product.url);
+      expect(view?.target).toBe("_blank");
+      expect(view?.rel).toBe("noopener noreferrer");
+    });
+
+    it("opens with the panel open when asked", async () => {
+      const { pill } = await setupWithProduct({ productOpen: true });
+
+      expect(pill()?.hasAttribute("data-open")).toBe(true);
+    });
+
+    it("closes the panel on a click on the video, without pausing", async () => {
+      const { player, pill, video } = await setupWithProduct({
+        productOpen: true,
+      });
+
+      player.querySelector<HTMLElement>(".card")?.click();
+
+      expect(pill()?.hasAttribute("data-open")).toBe(false);
+      expect(video?.paused).toBe(false);
+    });
+
+    it("closes the panel on a step", async () => {
+      const { controller, pill } = await setupWithProduct({
+        productOpen: true,
+      });
+
+      await controller.showNext(1);
+
+      expect(pill()?.hasAttribute("data-open")).toBe(false);
+    });
+
+    it("opens closed again after closing", async () => {
+      const { container, controller, summary } = await setupWithProduct();
+      summary()?.click();
+
+      controller.close();
+      await controller.open();
+
+      // A new dialog: the one from setup was removed with the close.
+      const pill = container.querySelector(".card .card-product");
+      expect(pill?.hasAttribute("data-open")).toBe(false);
+    });
+
+    it("keeps the panel open when switching to the expanded view", async () => {
+      const { player, toggleExpanded, pill } = await setupWithProduct({
+        productOpen: true,
+      });
+      await toggleExpanded();
+
+      expect(player.hasAttribute("data-expanded")).toBe(true);
+      expect(pill()?.hasAttribute("data-open")).toBe(true);
+    });
   });
 
   describe("video", () => {

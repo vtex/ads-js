@@ -130,12 +130,14 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
 | `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
 | `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
+| `locale`            | No       | Locale of the product prices, as a BCP 47 tag (`pt-BR`, `es-AR`). Default: the `lang` of the closest element that has one (usually `<html>`), then `pt-BR`                              |
+| `currency`          | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
 | `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout` and `inactive-autoplay`, requests the Stories again; a new
+`timeout`, `inactive-autoplay`, `locale` and `currency`, requests the Stories again; a new
 `timeout` applies to the next request.
 
 ## Customization
@@ -146,6 +148,7 @@ vtex-ads-story {
   --vtex-ads-story-color-text: #1f1f1f;
   --vtex-ads-story-radius: 20px;
   --vtex-ads-story-solo-background: #fafafa;
+  --vtex-ads-story-accent: #2f97d2;
 }
 ```
 
@@ -155,6 +158,7 @@ vtex-ads-story {
 | `--vtex-ads-story-color-text`      | inherited | All text                                   |
 | `--vtex-ads-story-radius`          | `20px`    | Card and background corners                |
 | `--vtex-ads-story-solo-background` | `#fafafa` | Background behind the card, with one Story |
+| `--vtex-ads-story-accent`          | `#2f97d2` | The product panel's buttons                |
 
 ## Layout
 
@@ -176,6 +180,23 @@ except while the pointer is over the carousel, the keyboard focus is in it, or
 the player is open. It also moves with the arrows, a swipe, or a click on a
 dimmed card. If the highlighted card's sound is on, the next highlighted card
 plays with sound too, or muted if the browser blocks it.
+
+### Product
+
+When the Story's destination is a product, the card shows it at the bottom: its
+image, its name (up to two lines) and its price. On sale, the "from" price
+shows struck through beside it.
+
+In the player, the same product sits at the bottom of the video. Clicking it
+opens a panel with an add to cart button and a view product link (the product
+page, in a new tab). Clicking the product on the highlighted card opens the
+player with the panel already open; on another card, it moves the highlight, as
+the card does. Clicking the video or moving to another Story closes the panel.
+Adding to the cart does nothing yet.
+
+Prices are formatted with `locale` and `currency`. The ad API doesn't send
+prices yet: the card reads them from the product's `product_metadata` (`price`,
+and `promotional_price` when on sale) and shows only the name without them.
 
 ### Player
 
