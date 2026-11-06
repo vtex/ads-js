@@ -106,13 +106,49 @@ describe("vtex-ads-story carousel", () => {
     expect(query(el, ".arrow-next")).not.toBeNull();
   });
 
-  it("names the highlighted card Watch and the other Show", async () => {
+  // Covers have no alt text: the position tells the cards apart.
+  it("names each card Watch or Show with its position", async () => {
     const el = await mount();
-    const labels = slides(el).map((slide) =>
-      slide.querySelector(".card-open")?.getAttribute("aria-label"),
-    );
+    const labels = () =>
+      slides(el).map((slide) =>
+        slide.querySelector(".card-open")?.getAttribute("aria-label"),
+      );
 
-    expect(labels).toEqual(["Assistir vídeo", "Mostrar vídeo"]);
+    expect(labels()).toEqual(["Assistir vídeo 1 de 2", "Mostrar vídeo 2 de 2"]);
+
+    await click(el, ".arrow-next");
+    expect(labels()).toEqual(["Mostrar vídeo 1 de 2", "Assistir vídeo 2 de 2"]);
+  });
+
+  it("names a single Story's card without a position", async () => {
+    getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
+    const el = await mount();
+
+    expect(query(el, ".card-open")?.getAttribute("aria-label")).toBe(
+      "Assistir vídeo",
+    );
+  });
+
+  it("advances again after reloading with the pointer over it", async () => {
+    const el = await mount();
+    query(el, ".carousel")?.dispatchEvent(new PointerEvent("pointerenter"));
+
+    // The carousel leaves the page while loading, without a pointerleave.
+    el.setAttribute("placement", "other_stories");
+    getRawAdsMock.mockResolvedValue(
+      rawAdsWith([mockStory, secondStory], "other_stories"),
+    );
+    await el.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve));
+    await el.updateComplete;
+    vi.useFakeTimers();
+    // The timer started with real timers: start it again, keeping the flags.
+    await click(el, ".arrow-next");
+    await click(el, ".arrow-previous");
+
+    await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
+
+    expect(activeIndex(el)).toBe(1);
   });
 
   it("moves the highlight with the arrows, wrapping around", async () => {
@@ -276,6 +312,25 @@ describe("vtex-ads-story carousel", () => {
       expect(video?.paused).toBe(false);
     });
 
+    // The highlight moved again, removing the video: the request fails for
+    // that, not because the sound was blocked.
+    it("does not retry muted when playing failed for another reason", async () => {
+      const el = await mount();
+      await turnSoundOn(el);
+      const play = vi
+        .spyOn(HTMLMediaElement.prototype, "play")
+        .mockImplementationOnce(() =>
+          Promise.reject(new DOMException("Removed", "AbortError")),
+        );
+
+      query(el, ".arrow-next")?.click();
+      await settle(el);
+
+      expect(play).toHaveBeenCalledTimes(1);
+      expect(slideVideo(el, 1)?.paused).toBe(true);
+      play.mockRestore();
+    });
+
     it("carries the sound across steps taken before the first renders", async () => {
       getRawAdsMock.mockResolvedValue(
         rawAdsWith([mockStory, ...mockStories.slice(1, 3)]),
@@ -394,6 +449,11 @@ describe("vtex-ads-story carousel", () => {
         mockStories[2].poster_url,
         mockStories[1].poster_url,
       ]);
+      expect(
+        [...(el.shadowRoot?.querySelectorAll(".player-neighbor") ?? [])].map(
+          (cover) => cover.getAttribute("aria-label"),
+        ),
+      ).toEqual(["Mostrar vídeo 3 de 3", "Mostrar vídeo 2 de 3"]);
     });
 
     it("steps to the Story whose cover is clicked in the expanded view", async () => {

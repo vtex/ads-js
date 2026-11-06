@@ -68,6 +68,9 @@ const LABELS = {
   pause: "Pausar vídeo",
   soundOn: "Ativar som",
   soundOff: "Desativar som",
+  /** Tells the cards apart: "Mostrar vídeo 2 de 4". */
+  position: (label: string, index: number, count: number) =>
+    count > 1 ? `${label} ${index + 1} de ${count}` : label,
 };
 
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
@@ -348,10 +351,14 @@ export class VtexAdsStoryElement extends LitElement {
   // Hidden cards, out of sight, show only their cover.
   private readonly renderSlide = (
     story: StoryAd,
-    { key, offset, active, hidden }: Slide,
+    { key, index, offset, active, hidden }: Slide,
   ) =>
     renderCard(story, this.videoFor(key), {
-      label: active ? LABELS.watch : LABELS.show,
+      label: LABELS.position(
+        active ? LABELS.watch : LABELS.show,
+        index,
+        this.stories.length,
+      ),
       soundOnLabel: LABELS.soundOn,
       soundOffLabel: LABELS.soundOff,
       withVideo: active || (this.inactiveAutoplay && !hidden),
@@ -366,10 +373,14 @@ export class VtexAdsStoryElement extends LitElement {
     const active = stories[index];
     if (!active) return nothing;
 
-    const neighbors = neighborOffsets(stories.length, index).map((offset) => ({
-      offset,
-      story: stories[(index + offset + stories.length) % stories.length],
-    }));
+    const neighbors = neighborOffsets(stories.length, index).map((offset) => {
+      const neighbor = (index + offset + stories.length) % stories.length;
+      return {
+        offset,
+        story: stories[neighbor],
+        label: LABELS.position(LABELS.show, neighbor, stories.length),
+      };
+    });
 
     return html`
       <div class="root">${this.carousel.render(stories, this.renderSlide)}</div>

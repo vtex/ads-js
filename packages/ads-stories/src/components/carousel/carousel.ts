@@ -247,6 +247,8 @@ export interface Slide {
    * same Story can show in more than one slide.
    */
   key: number;
+  /** The Story's index in the list. */
+  index: number;
   /** Places from the highlighted card: negative before it, positive after. */
   offset: number;
   /** Has the highlight. */
@@ -336,6 +338,11 @@ export class CarouselController implements ReactiveController {
     this.count = count;
     this.position = 0;
     this.distance = 1;
+    // The carousel may leave the page now (the element renders nothing while
+    // it loads). Removing the element with the pointer or focus doesn't fire
+    // pointerleave or focusout, and the new one would never advance.
+    this.hovered = false;
+    this.focused = false;
     this.restartTimer();
   }
 
@@ -454,6 +461,7 @@ export class CarouselController implements ReactiveController {
     const { active } = this;
     return [0, 1].map((index) => ({
       key: index,
+      index,
       offset: index - active,
       active: index === active,
       hidden: false,
@@ -478,6 +486,7 @@ export class CarouselController implements ReactiveController {
     for (let offset = -RENDERED_SIDE; offset <= RENDERED_SIDE; offset += 1) {
       slides.push({
         key: this.position + offset,
+        index: wrap(this.position + offset, count),
         offset,
         active: offset === 0,
         hidden:
@@ -497,8 +506,7 @@ export class CarouselController implements ReactiveController {
       slides,
       (slide) => `${layout}:${slide.key}`,
       (slide) => {
-        const index =
-          layout === "pair" ? slide.key : wrap(slide.key, this.count);
+        const { index } = slide;
         return html`
           <div
             class="slide"
@@ -525,6 +533,7 @@ export class CarouselController implements ReactiveController {
         <div class="carousel" data-layout="solo">
           ${renderSlide(items[0], {
             key: 0,
+            index: 0,
             offset: 0,
             active: true,
             hidden: false,

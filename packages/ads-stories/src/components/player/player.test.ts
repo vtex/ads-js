@@ -430,6 +430,44 @@ describe("PlayerController", () => {
       expect(shownAs(player)).toBe("modal");
     });
 
+    // The single cover's offset flips on each step: its button stays, so a
+    // keyboard user who chose it keeps the focus.
+    it("keeps the single cover's button across steps with two", async () => {
+      let neighbors = [neighbor(1)];
+      const { container, controller } = mountHost(
+        (host) => new PlayerController(host, { ...labels, onClose: vi.fn() }),
+        (player) => player.render(videoStory, { navigation: true, neighbors }),
+      );
+      opened.push(controller);
+      await controller.open();
+      const player = container.querySelector("dialog");
+      if (!player) throw new Error("The player did not render");
+      await expand(player);
+      const cover = player.querySelector(".player-neighbor");
+
+      neighbors = [neighbor(-1)];
+      await controller.showNext(1);
+
+      expect(player.querySelector(".player-neighbor")).toBe(cover);
+    });
+
+    it("names each cover with its own label", async () => {
+      const { player } = await setupWithNavigation(true, {
+        neighbors: [
+          { ...neighbor(-1), label: "Mostrar vídeo 3 de 3" },
+          neighbor(1),
+        ],
+      });
+
+      await expand(player);
+
+      expect(
+        [...player.querySelectorAll(".player-neighbor")].map((cover) =>
+          cover.getAttribute("aria-label"),
+        ),
+      ).toEqual(["Mostrar vídeo 3 de 3", "Mostrar vídeo"]);
+    });
+
     it("moves the video off center, away from the other Story, with two", async () => {
       const { player } = await setupWithNavigation(true, {
         neighbors: [neighbor(1)],
@@ -779,6 +817,33 @@ describe("PlayerController", () => {
         }
       });
 
+      it("stops a step animation when collapsing or closing", async () => {
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1)],
+        });
+        await expand(player);
+        await controller.showNext(1);
+        const running = animate.mock.results.map((result) => result.value);
+
+        player.querySelector<HTMLButtonElement>(".player-expand")?.click();
+        await vi.waitFor(() => expect(shownAs(player)).toBe("popover"));
+
+        for (const animation of running) {
+          expect(animation.cancel).toHaveBeenCalledTimes(1);
+        }
+
+        await expand(player);
+        await controller.showNext(1);
+        const next = animate.mock.results
+          .slice(running.length)
+          .map((result) => result.value);
+        controller.close();
+
+        for (const animation of next) {
+          expect(animation.cancel).toHaveBeenCalledTimes(1);
+        }
+      });
+
       it("does not animate the mini player", async () => {
         const { controller } = await setupWithNavigation(true, {
           neighbors: [neighbor(-1), neighbor(1)],
@@ -842,6 +907,23 @@ describe("PlayerController", () => {
       expect(player.querySelector("video")).toBe(video);
       expect(video?.currentTime).toBe(0);
       expect(video?.paused).toBe(false);
+    });
+
+    it("keeps the sound on when the next Story gets a new video", async () => {
+      const { controller, player } = await setupWithNavigation();
+      const first = player.querySelector("video");
+      if (first) first.muted = false;
+      first?.dispatchEvent(new Event("volumechange"));
+      // The video fails: the next Story gets a new one, created muted.
+      first?.dispatchEvent(new Event("error"));
+      await vi.waitFor(() => expect(player.querySelector("video")).toBeNull());
+
+      await controller.showNext(1);
+
+      const next = player.querySelector("video");
+      expect(next).not.toBe(first);
+      expect(next?.muted).toBe(false);
+      expect(next?.paused).toBe(false);
     });
 
     it("plays the next video, even after the previous one failed", async () => {

@@ -62,28 +62,36 @@ export class VideoController {
   }
 
   /**
-   * Plays from the start. A new src starts there anyway; the same src (two
-   * Stories with one video) would otherwise go on where it was.
+   * Plays from the start, with the sound on if `withSound`. A new src starts
+   * there anyway; the same src (two Stories with one video) would otherwise
+   * go on where it was.
    */
-  restart() {
+  restart({ withSound = false } = {}) {
     const video = this.ref.value;
     if (!video) return;
 
     video.currentTime = 0;
-    playVideo(video);
+    if (withSound) this.playWithSound();
+    else playVideo(video);
   }
 
   /**
    * Plays with the sound on. A browser that blocks playing with sound (for
    * example, without a recent tap) gets it muted instead: the video keeps
-   * playing, and the sound button offers to turn it on.
+   * playing, and the sound button offers to turn it on. Not if the video was
+   * replaced or removed meanwhile (the request then fails for that reason):
+   * it would play out of sight.
    */
   playWithSound() {
     const video = this.ref.value;
     if (!video) return;
 
     video.muted = false;
-    video.play()?.catch(() => {
+    video.play()?.catch((error: unknown) => {
+      const blocked =
+        error instanceof DOMException && error.name === "NotAllowedError";
+      if (!blocked || this.ref.value !== video || !video.isConnected) return;
+
       video.muted = true;
       playVideo(video);
     });

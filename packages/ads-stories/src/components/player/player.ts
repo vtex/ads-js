@@ -410,6 +410,11 @@ export interface PlayerNeighbor {
   /** Places from the Story in the player: negative before, positive after. */
   offset: number;
   story: StoryMedia;
+  /**
+   * Accessible name of its cover, telling it apart from the others (default
+   * `neighborLabel`).
+   */
+  label?: string;
 }
 
 export interface PlayerRenderOptions {
@@ -660,6 +665,7 @@ export class PlayerController implements ReactiveController {
     if (!this.isOpen) return;
 
     document.removeEventListener("keydown", this.onKeyDown);
+    this.cancelAnimations();
     const dialog = this.dialog.value;
     if (dialog) this.hide(dialog);
     this.isOpen = false;
@@ -675,13 +681,22 @@ export class PlayerController implements ReactiveController {
   async showNext(delta = 0) {
     if (!this.isOpen) return;
 
+    // Read before the render: a Story without a video, or a video that
+    // failed, replaces the <video> with a new one, muted.
+    const withSound = !this.video.muted;
     this.video.failed = false;
     this.host.requestUpdate();
     await this.host.updateComplete;
     if (!this.isOpen) return;
 
-    this.video.restart();
+    this.video.restart({ withSound });
     this.animateStep(delta);
+  }
+
+  /** Stops a step animation still running, leaving the CSS layout. */
+  private cancelAnimations() {
+    for (const animation of this.animations) animation.cancel();
+    this.animations = [];
   }
 
   /**
@@ -724,7 +739,7 @@ export class PlayerController implements ReactiveController {
     };
     if (!sizes.frameWidth || !sizes.sideWidth) return;
 
-    for (const animation of this.animations) animation.cancel();
+    this.cancelAnimations();
     this.animations = [
       dim.animate([{ opacity: 1 }, { opacity: 0 }], STEP_ANIMATION),
       ...(this.pairDirection
@@ -781,6 +796,8 @@ export class PlayerController implements ReactiveController {
     const dialog = this.dialog.value;
     if (!dialog) return;
 
+    // A step animation would go on moving the video in the other mode.
+    this.cancelAnimations();
     this.hide(dialog);
     this.expanded = !this.expanded;
     this.switched = true;
@@ -895,17 +912,19 @@ export class PlayerController implements ReactiveController {
   private renderNeighbors(neighbors: readonly PlayerNeighbor[]) {
     const { options } = this;
 
+    // With two Stories, the single cover's offset flips between 1 and -1 on
+    // each step: a stable key keeps its button, and the focus on it.
     return repeat(
       neighbors,
-      ({ offset }) => offset,
-      ({ offset, story }) => {
+      ({ offset }) => (neighbors.length === 1 ? "single" : offset),
+      ({ offset, story, label }) => {
         const poster = httpUrl(story.poster_url);
         const side = Math.sign(offset);
         return html`
           <button
             type="button"
             class="player-neighbor"
-            aria-label=${options.neighborLabel}
+            aria-label=${label ?? options.neighborLabel}
             style=${styleMap({
               "--side": String(side),
               "--beyond": String(offset - side),
