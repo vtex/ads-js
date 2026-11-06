@@ -488,6 +488,47 @@ describe("vtex-ads-story carousel", () => {
       expect(slideVideo(el, 1)).not.toBeNull();
     });
 
+    // React 18 writes boolean props as strings: `inactive-autoplay={false}`
+    // arrives as "false", `{true}` as "true".
+    it.each(["false", "FALSE", "yes", "1", " true "])(
+      'stays off with inactive-autoplay="%s"',
+      async (value) => {
+        const el = await mount({
+          ...REQUIRED_ATTRIBUTES,
+          "inactive-autoplay": value,
+        });
+
+        expect(el.inactiveAutoplay).toBe(false);
+        expect(slideVideo(el, 1)).toBeNull();
+      },
+    );
+
+    it.each(["", "true", "TRUE"])(
+      'turns on with inactive-autoplay="%s"',
+      async (value) => {
+        const el = await mount({
+          ...REQUIRED_ATTRIBUTES,
+          "inactive-autoplay": value,
+        });
+
+        expect(el.inactiveAutoplay).toBe(true);
+        expect(slideVideo(el, 1)).not.toBeNull();
+      },
+    );
+
+    it("turns off when the attribute is removed", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "inactive-autoplay": "",
+      });
+
+      el.removeAttribute("inactive-autoplay");
+      await el.updateComplete;
+
+      expect(el.inactiveAutoplay).toBe(false);
+      expect(slideVideo(el, 1)).toBeNull();
+    });
+
     it("plays the other card's video too when on", async () => {
       const el = await mount({
         ...REQUIRED_ATTRIBUTES,
@@ -698,6 +739,42 @@ describe("vtex-ads-story carousel", () => {
         .filter((slide) => !slide.hasAttribute("data-hidden"))
         .map((slide) => slide.dataset.index);
       expect(sides.sort()).toEqual(["0", "1", "1"]);
+    });
+
+    // As if the screen got wide (or narrow, with `matches`).
+    async function resize(el: VtexAdsStoryElement, matches = false) {
+      narrow = matches;
+      for (const listener of listeners) {
+        listener({ matches } as MediaQueryListEvent);
+      }
+      await el.updateComplete;
+      await el.updateComplete;
+    }
+
+    it("renders new cards, with new videos, when the layout changes", async () => {
+      const el = await mount();
+      const before = query<HTMLVideoElement>(el, ".slide[data-active] video");
+
+      await resize(el);
+
+      const after = query<HTMLVideoElement>(el, ".slide[data-active] video");
+      expect(after).not.toBeNull();
+      expect(after).not.toBe(before);
+    });
+
+    // jsdom doesn't autoplay: this checks the new card's video is paused,
+    // which in browsers also stops its autoplay.
+    it("keeps the new highlighted card paused behind an open player", async () => {
+      const el = await mount();
+      await click(el, ".slide[data-active] .card-open");
+      const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
+
+      await resize(el);
+
+      expect(pause.mock.contexts).toContain(
+        query(el, ".slide[data-active] video"),
+      );
+      pause.mockRestore();
     });
 
     it("switches to the pair layout when the screen gets wide", async () => {

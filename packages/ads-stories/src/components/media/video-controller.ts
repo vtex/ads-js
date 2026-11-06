@@ -62,6 +62,18 @@ export class VideoController {
   }
 
   /**
+   * Plays from the start. A new src starts there anyway; the same src (two
+   * Stories with one video) would otherwise go on where it was.
+   */
+  restart() {
+    const video = this.ref.value;
+    if (!video) return;
+
+    video.currentTime = 0;
+    playVideo(video);
+  }
+
+  /**
    * Plays with the sound on. A browser that blocks playing with sound (for
    * example, without a recent tap) gets it muted instead: the video keeps
    * playing, and the sound button offers to turn it on.

@@ -641,6 +641,81 @@ describe("PlayerController", () => {
         ]);
       });
 
+      // Four Stories A B C D, A in the player: D, B and C beside it. Clicking
+      // C (two before) leaves B, D and A beside it: each comes from where it
+      // was, not from its offset plus the step.
+      it("starts each cover where its Story was, across the wraparound", async () => {
+        const [a, b, c, d] = ["a", "b", "c", "d"].map((name) => ({
+          poster_url: `https://example.com/${name}.jpg`,
+          media_url: `https://example.com/${name}.mp4`,
+        }));
+        let shown = {
+          story: a,
+          neighbors: [
+            { offset: -1, story: d },
+            { offset: 1, story: b },
+            { offset: -2, story: c },
+          ],
+        };
+        const { container, controller } = mountHost(
+          (host) => new PlayerController(host, { ...labels, onClose: vi.fn() }),
+          (player) =>
+            player.render(shown.story, {
+              navigation: true,
+              neighbors: shown.neighbors,
+            }),
+        );
+        opened.push(controller);
+        await controller.open();
+        const player = container.querySelector("dialog");
+        if (!player) throw new Error("The player did not render");
+        await expand(player);
+
+        shown = {
+          story: c,
+          neighbors: [
+            { offset: -1, story: b },
+            { offset: 1, story: d },
+            { offset: -2, story: a },
+          ],
+        };
+        await controller.showNext(-2);
+
+        const far = near + SIDE + FAR_GAP;
+        expect(animations()).toEqual([
+          ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
+          // C was the cover two before.
+          [
+            "player-stage",
+            { transform: `translateX(${-far}px) scale(${ratio})` },
+            { transform: "none" },
+            undefined,
+          ],
+          // B was after A.
+          [
+            "player-neighbor",
+            { transform: cover(near) },
+            { transform: cover(-near) },
+            undefined,
+          ],
+          // D was before A.
+          [
+            "player-neighbor",
+            { transform: cover(-near) },
+            { transform: cover(near) },
+            undefined,
+          ],
+          // A was the video.
+          [
+            "player-neighbor",
+            { transform: cover(0, 1 / ratio) },
+            { transform: cover(-far) },
+            undefined,
+          ],
+          ["player-neighbor", { opacity: 0 }, { opacity: 1 }, "::after"],
+        ]);
+      });
+
       it("swaps the video and the cover with two Stories", async () => {
         const { controller, player } = await setupWithNavigation(true, {
           neighbors: [neighbor(1)],
@@ -753,6 +828,20 @@ describe("PlayerController", () => {
       await expand(player);
 
       expect(player.querySelector("video")?.loop).toBe(true);
+    });
+
+    // Two Stories can share a video: the same src stays, and would go on
+    // where the previous Story stopped.
+    it("plays the next video from the start", async () => {
+      const { controller, player } = await setupWithNavigation();
+      const video = player.querySelector("video");
+      if (video) video.currentTime = 7;
+
+      await controller.showNext(1);
+
+      expect(player.querySelector("video")).toBe(video);
+      expect(video?.currentTime).toBe(0);
+      expect(video?.paused).toBe(false);
     });
 
     it("plays the next video, even after the previous one failed", async () => {

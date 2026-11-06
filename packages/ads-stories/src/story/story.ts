@@ -35,6 +35,16 @@ const CHANNELS: ReadonlySet<Channel> = new Set(["site", "app"]);
 const isChannel = (value: string | null): value is Channel =>
   CHANNELS.has(value as Channel);
 
+// Reads a boolean attribute: on only when present bare (`""`, as in HTML and
+// React 19) or "true"; absent, "false" or any other value is off. React 18
+// writes boolean props on custom elements as strings, so
+// `inactive-autoplay={false}` arrives as inactive-autoplay="false".
+const booleanConverter = {
+  fromAttribute: (value: string | null) =>
+    typeof value === "string" &&
+    (value === "" || value.toLowerCase() === "true"),
+};
+
 // Reads the `channel` attribute. An unknown value leaves the property
 // undefined, so it is not sent.
 const channelConverter = {
@@ -72,7 +82,11 @@ export class VtexAdsStoryElement extends LitElement {
     channel: { converter: channelConverter },
     timeout: { type: Number },
     quantity: { type: Number },
-    inactiveAutoplay: { type: Boolean, attribute: "inactive-autoplay" },
+    inactiveAutoplay: {
+      type: Boolean,
+      attribute: "inactive-autoplay",
+      converter: booleanConverter,
+    },
     stories: { state: true },
   };
 
@@ -136,16 +150,23 @@ export class VtexAdsStoryElement extends LitElement {
   private soundPending = false;
 
   /**
-   * What to do once the last step renders, when the new highlighted card's
-   * video exists (see leaveHighlight). A step taken before then replaces it.
+   * What to do once the next render is on screen, when the new highlighted
+   * card's video exists (see leaveHighlight and onLayoutChange). A step
+   * taken before then replaces it.
    */
-  private afterStep?: () => void;
+  private afterRender?: () => void;
 
   private readonly carousel = new CarouselController(this, {
     labels: LABELS,
     onStep: (from, to) => this.leaveHighlight(from, to),
-    // Every card is new: so are their videos.
-    onLayoutChange: () => this.cardVideos.clear(),
+    // Every card is new: so are their videos. Behind an open player, the
+    // new highlighted card stays on its cover, as after a step.
+    onLayoutChange: () => {
+      this.cardVideos.clear();
+      if (this.player.isOpen) {
+        this.afterRender = () => this.activeVideo?.pause();
+      }
+    },
     // The player shows the highlighted Story: the highlight stays on it.
     locked: () => this.player.isOpen,
   });
@@ -199,9 +220,9 @@ export class VtexAdsStoryElement extends LitElement {
   }
 
   protected updated() {
-    const afterStep = this.afterStep;
-    this.afterStep = undefined;
-    afterStep?.();
+    const afterRender = this.afterRender;
+    this.afterRender = undefined;
+    afterRender?.();
   }
 
   /**
@@ -242,7 +263,7 @@ export class VtexAdsStoryElement extends LitElement {
   private showStories(stories: StoryAd[]) {
     this.cardVideos.clear();
     this.soundPending = false;
-    this.afterStep = undefined;
+    this.afterRender = undefined;
     this.carousel.reset(stories.length);
     this.stories = stories;
   }
@@ -278,9 +299,9 @@ export class VtexAdsStoryElement extends LitElement {
     if (this.player.isOpen) {
       this.soundPending = false;
       // Paused before it starts, its autoplay doesn't start either.
-      this.afterStep = () => this.videoFor(to).pause();
+      this.afterRender = () => this.videoFor(to).pause();
     } else if (this.soundPending) {
-      this.afterStep = () => {
+      this.afterRender = () => {
         this.soundPending = false;
         this.videoFor(to).playWithSound();
       };

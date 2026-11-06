@@ -491,9 +491,11 @@ export class CarouselController implements ReactiveController {
     const { layout } = this;
     const slides = layout === "pair" ? this.pairSlides() : this.rollingSlides();
 
+    // The layout is part of the key: the same key in another layout is a new
+    // card, with a new video and controller (see onLayoutChange).
     return repeat(
       slides,
-      (slide) => slide.key,
+      (slide) => `${layout}:${slide.key}`,
       (slide) => {
         const index =
           layout === "pair" ? slide.key : wrap(slide.key, this.count);

@@ -120,17 +120,17 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 [`@vtex/ads-core`](../core) and shows them in a carousel (see
 [Layout](#layout)).
 
-| Attribute           | Required | Description                                                                                                                                |
-| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                                                    |
-| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                             |
-| `placement`         | Yes      | The Story placement configured for the publisher                                                                                           |
-| `user-id`           | No       | The shopper's id, when known                                                                                                               |
-| `account-name`      | No       | The VTEX account name                                                                                                                      |
-| `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                 |
-| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                             |
-| `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                   |
-| `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. Off by default: they show only their cover |
+| Attribute           | Required | Description                                                                                                                                                                             |
+| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                                                                                                 |
+| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
+| `placement`         | Yes      | The Story placement configured for the publisher                                                                                                                                        |
+| `user-id`           | No       | The shopper's id, when known                                                                                                                                                            |
+| `account-name`      | No       | The VTEX account name                                                                                                                                                                   |
+| `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
+| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
+| `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
+| `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
