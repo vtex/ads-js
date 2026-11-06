@@ -8,6 +8,11 @@ import { withTimeout } from "./with-timeout";
  */
 export const DEFAULT_TIMEOUT_MS = 2000;
 
+/**
+ * How many Stories the element asks for.
+ */
+export const DEFAULT_QUANTITY = 8;
+
 /** What the element sends to the ad API. */
 export interface StoryRequest {
   /** Required. */
@@ -19,6 +24,11 @@ export interface StoryRequest {
   userId?: string;
   accountName?: string;
   channel?: Channel;
+  /**
+   * How many Stories to ask for: the carousel positions. Missing, below 1 or
+   * not a number: DEFAULT_QUANTITY. A fraction is rounded down.
+   */
+  quantity?: number;
 }
 
 export interface FetchStoryOptions {
@@ -36,14 +46,20 @@ const toTimeout = (timeout?: number) =>
     ? timeout
     : DEFAULT_TIMEOUT_MS;
 
+const toQuantity = (quantity?: number) =>
+  quantity !== undefined && Number.isFinite(quantity) && quantity >= 1
+    ? Math.floor(quantity)
+    : DEFAULT_QUANTITY;
+
 /**
- * Requests one Story for the placement from the ad API.
+ * Requests up to `quantity` Stories for the placement from the ad API, in
+ * the order the ad API returns them.
  *
- * Resolves to undefined, without throwing, when a required value is missing,
- * during server-side rendering, when the request fails, is cancelled or takes
- * longer than the time limit, or when the placement has no Story.
+ * Resolves to an empty list, without throwing, when a required value is
+ * missing, during server-side rendering, when the request fails, is cancelled
+ * or takes longer than the time limit, or when the placement has no Story.
  */
-export async function fetchStory(
+export async function fetchStories(
   {
     publisherId,
     sessionId,
@@ -51,15 +67,17 @@ export async function fetchStory(
     userId,
     accountName,
     channel,
+    quantity,
   }: StoryRequest,
   { signal, timeout }: FetchStoryOptions = {},
-): Promise<StoryAd | undefined> {
+): Promise<StoryAd[]> {
   // No request during server-side rendering, where nothing renders. Not
   // Lit's isServer: it is also true in Node with a DOM, as in the tests.
   const onServer = globalThis.window === undefined;
-  if (onServer || !publisherId || !sessionId || !placement) return undefined;
+  if (onServer || !publisherId || !sessionId || !placement) return [];
 
   const limit = withTimeout(toTimeout(timeout), signal);
+  const count = toQuantity(quantity);
 
   try {
     const { stories } = await getRawAds(
@@ -72,13 +90,15 @@ export async function fetchStory(
           channel,
         },
         search: {},
-        // One card for now; the carousel will request more.
-        placements: { [placement]: { quantity: 1, types: ["story"] } },
+        placements: {
+          [placement]: { quantity: count, types: ["story"] },
+        },
       },
       { signal: limit.signal },
     );
 
-    return stories[placement]?.[0];
+    // The ad API may send more than asked for: only the first ones fit.
+    return (stories[placement] ?? []).slice(0, count);
   } catch (error) {
     // A cancelled or timed out request needs no log. Anything else (network
     // failure, HTTP or validation error) is logged, so a failing request can
@@ -86,7 +106,7 @@ export async function fetchStory(
     if (!limit.signal.aborted) {
       console.error("[vtex-ads-story] Story request failed", error);
     }
-    return undefined;
+    return [];
   } finally {
     limit.clear();
   }

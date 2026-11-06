@@ -18,6 +18,7 @@
 
       .themed {
         --vtex-ads-story-radius: 40px;
+        --vtex-ads-story-solo-background: #ffe3ec;
       }
 
       .note {
@@ -44,6 +45,59 @@
         publisher-id="playground-publisher"
         session-id="playground-session"
         placement="home_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Two Stories</h2>
+      <p class="note">
+        Side by side: the highlight moves every 5 s (not while the pointer is
+        over it), with the arrows, a swipe or a click on the other card. Only
+        the highlighted card plays.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="two_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Two Stories, inactive autoplay</h2>
+      <p class="note">
+        With <code>inactive-autoplay</code>, the other card also plays, muted.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="two_stories"
+        inactive-autoplay
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Three Stories</h2>
+      <p class="note">
+        The highlighted card in the middle, the others around it: every card
+        moves one place per step.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Four Stories</h2>
+      <p class="note">
+        Two cards on each side: the Story opposite the highlighted one shows at
+        both ends.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="four_stories"
       ></vtex-ads-story>
     </section>
 
@@ -87,8 +141,9 @@
     </section>
 
     <!--
-      The ad server is mocked: each Story placement gets the test Story, with
-      the delay and content set for it in SCENARIOS. Installed before the
+      The ad server is mocked: each Story placement gets the first test
+      Stories (up to the requested quantity), with the delay and count set for
+      it in SCENARIOS. Installed before the
       element loads, since the source build reads fetch when @vtex/ads-core
       loads.
 
@@ -97,17 +152,20 @@
       the CDN serves. Run `pnpm build` first.
     -->
     <script type="module">
-      import { mockStory } from "./src/story/story.mock.ts";
+      import { mockStories } from "./src/story/story.mock.ts";
 
       const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/";
 
       // How the mock answers each placement. Any other placement gets the
-      // default. delayMs simulates the ad server latency; empty returns the
-      // placement without Stories.
+      // default. delayMs simulates the ad server latency; count is how many
+      // Stories the placement has (0: none).
       const SCENARIOS = {
-        default: { delayMs: 500, empty: false },
-        slow_stories: { delayMs: 3000, empty: false },
-        empty_stories: { delayMs: 500, empty: true },
+        default: { delayMs: 500, count: 1 },
+        two_stories: { delayMs: 500, count: 2 },
+        three_stories: { delayMs: 500, count: 3 },
+        four_stories: { delayMs: 500, count: 4 },
+        slow_stories: { delayMs: 3000, count: 1 },
+        empty_stories: { delayMs: 500, count: 0 },
       };
 
       const scenarioFor = (placement) =>
@@ -142,10 +200,11 @@
         );
 
         const body = { request_id: "playground" };
-        for (const [placement, { types }] of requested) {
-          const { empty } = scenarioFor(placement);
-          body[placement] =
-            types.includes("story") && !empty ? [mockStory] : [];
+        for (const [placement, { quantity, types }] of requested) {
+          const { count } = scenarioFor(placement);
+          body[placement] = types.includes("story")
+            ? mockStories.slice(0, Math.min(count, quantity))
+            : [];
         }
         return new Response(JSON.stringify(body), {
           headers: { "content-type": "application/json" },

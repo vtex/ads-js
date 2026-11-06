@@ -4,11 +4,13 @@ import { hasVideo, renderMedia, type VideoController } from "../media";
 import type { StoryMedia } from "../../types";
 
 export const cardStyles = css`
+  /* 9:16 at the height its container gives it (--card-height, default
+     500px). */
   .card {
     position: relative;
     box-sizing: border-box;
-    width: calc(500px * 9 / 16);
-    height: 500px;
+    width: calc(var(--card-height, 500px) * 9 / 16);
+    height: var(--card-height, 500px);
     overflow: hidden;
     border-radius: var(--vtex-ads-story-radius, 20px);
     background: #000;
@@ -116,6 +118,11 @@ export interface CardOptions {
   label: string;
   /** Called on click, Enter or Space. */
   onSelect: () => void;
+  /**
+   * Whether the video plays over the cover (default true). Without it, the
+   * card shows only the cover, with no sound button.
+   */
+  withVideo?: boolean;
   /** Accessible names of the sound button, shown when the card has a video. */
   soundOnLabel: string;
   soundOffLabel: string;
@@ -152,9 +159,11 @@ export function renderCard(
   video: VideoController,
   options: CardOptions,
 ) {
+  const withVideo = options.withVideo ?? true;
+
   return html`
     <div class="card">
-      ${renderMedia(story, video)}
+      ${renderMedia(story, video, { withVideo })}
       <button
         type="button"
         class="card-open"
@@ -163,7 +172,7 @@ export function renderCard(
       >
         <span class="play" aria-hidden="true">${icon("play")}</span>
       </button>
-      ${hasVideo(story, video) && !video.paused
+      ${withVideo && hasVideo(story, video) && !video.paused
         ? renderSoundButton(video, options)
         : nothing}
     </div>

@@ -91,6 +91,14 @@ describe("vtex-ads-story", () => {
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
   });
 
+  it("renders the card centered over the one-Story background", async () => {
+    const el = await mount();
+    const carousel = el.shadowRoot?.querySelector(".carousel");
+
+    expect(carousel?.getAttribute("data-layout")).toBe("solo");
+    expect(carousel?.querySelector(".card")).not.toBeNull();
+  });
+
   it("renders the Story's cover and video", async () => {
     const el = await mount();
     const card = el.shadowRoot?.querySelector(".card");
@@ -100,7 +108,7 @@ describe("vtex-ads-story", () => {
   });
 
   describe("ad request", () => {
-    it("requests one Story for the placement", async () => {
+    it("requests up to eight Stories for the placement", async () => {
       await mount();
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
@@ -114,7 +122,7 @@ describe("vtex-ads-story", () => {
             channel: undefined,
           },
           search: {},
-          placements: { home_stories: { quantity: 1, types: ["story"] } },
+          placements: { home_stories: { quantity: 8, types: ["story"] } },
         },
         { signal: expect.any(AbortSignal) },
       );
@@ -137,11 +145,31 @@ describe("vtex-ads-story", () => {
       });
     });
 
+    it("requests the quantity attribute's number of Stories", async () => {
+      await mount({ ...REQUIRED_ATTRIBUTES, quantity: "3" });
+
+      expect(getRawAdsMock.mock.calls[0][0].placements).toEqual({
+        home_stories: { quantity: 3, types: ["story"] },
+      });
+    });
+
+    it("requests again when the quantity attribute changes", async () => {
+      const el = await mount();
+
+      el.setAttribute("quantity", "4");
+      await flushRequest(el);
+
+      expect(getRawAdsMock).toHaveBeenCalledTimes(2);
+      expect(
+        getRawAdsMock.mock.calls[1][0].placements.home_stories.quantity,
+      ).toBe(4);
+    });
+
     it("passes the timeout attribute as a number", async () => {
       await mount({ ...REQUIRED_ATTRIBUTES, timeout: "5000" });
 
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
-      // fetchStory reads it; the element only forwards the property.
+      // fetchStories reads it; the element only forwards the property.
       expect(
         document.querySelector<VtexAdsStoryElement>(TAG_NAME)?.timeout,
       ).toBe(5000);

@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getRawAds, type RawAdsResponse } from "@vtex/ads-core";
-import { DEFAULT_TIMEOUT_MS, fetchStory } from "./fetch-story";
+import {
+  DEFAULT_QUANTITY,
+  DEFAULT_TIMEOUT_MS,
+  fetchStories,
+} from "./fetch-story";
 import { mockStory, rawAdsWith } from "../story/story.mock";
 
 vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
@@ -27,7 +31,7 @@ function hangUntilAborted() {
 
 const signalOfFirstCall = () => getRawAdsMock.mock.calls[0][1]?.signal;
 
-describe("fetchStory", () => {
+describe("fetchStories", () => {
   let consoleError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -41,22 +45,72 @@ describe("fetchStory", () => {
     consoleError.mockRestore();
   });
 
-  it("resolves to the first Story of the placement", async () => {
+  it("resolves to the Stories of the placement", async () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
 
-    await expect(fetchStory(REQUEST)).resolves.toEqual(mockStory);
+    await expect(fetchStories(REQUEST)).resolves.toEqual([mockStory]);
   });
+
+  const storiesOf = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      ...mockStory,
+      ad_id: `story-ad-${index}`,
+    }));
+
+  const requestedQuantity = () =>
+    getRawAdsMock.mock.calls[0][0].placements.home_stories.quantity;
+
+  it(`requests ${DEFAULT_QUANTITY} Stories by default and keeps no more`, async () => {
+    const stories = storiesOf(DEFAULT_QUANTITY + 1);
+    getRawAdsMock.mockResolvedValue(rawAdsWith(stories));
+
+    await expect(fetchStories(REQUEST)).resolves.toEqual(
+      stories.slice(0, DEFAULT_QUANTITY),
+    );
+    expect(getRawAdsMock.mock.calls[0][0].placements).toEqual({
+      home_stories: { quantity: DEFAULT_QUANTITY, types: ["story"] },
+    });
+  });
+
+  it("requests the given quantity and keeps no more", async () => {
+    const stories = storiesOf(4);
+    getRawAdsMock.mockResolvedValue(rawAdsWith(stories));
+
+    await expect(fetchStories({ ...REQUEST, quantity: 3 })).resolves.toEqual(
+      stories.slice(0, 3),
+    );
+    expect(requestedQuantity()).toBe(3);
+  });
+
+  it("rounds a fractional quantity down", async () => {
+    getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
+
+    await fetchStories({ ...REQUEST, quantity: 2.7 });
+
+    expect(requestedQuantity()).toBe(2);
+  });
+
+  it.each([0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    `requests ${DEFAULT_QUANTITY} for a quantity of %s`,
+    async (quantity) => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
+
+      await fetchStories({ ...REQUEST, quantity });
+
+      expect(requestedQuantity()).toBe(DEFAULT_QUANTITY);
+    },
+  );
 
   // Starts a hanging request and checks it is cancelled exactly at `ms`.
   async function expectGivesUpAfter(ms: number, timeout?: number) {
     hangUntilAborted();
 
-    const story = fetchStory(REQUEST, { timeout });
+    const story = fetchStories(REQUEST, { timeout });
     await vi.advanceTimersByTimeAsync(ms - 1);
     expect(signalOfFirstCall()?.aborted).toBe(false);
 
     await vi.advanceTimersByTimeAsync(1);
-    await expect(story).resolves.toBeUndefined();
+    await expect(story).resolves.toEqual([]);
     expect(signalOfFirstCall()?.reason).toMatchObject({ name: "TimeoutError" });
     expect(consoleError).not.toHaveBeenCalled();
   }
@@ -81,19 +135,19 @@ describe("fetchStory", () => {
     hangUntilAborted();
     const controller = new AbortController();
 
-    const story = fetchStory(REQUEST, { signal: controller.signal });
+    const story = fetchStories(REQUEST, { signal: controller.signal });
     controller.abort();
 
-    await expect(story).resolves.toBeUndefined();
+    await expect(story).resolves.toEqual([]);
     expect(signalOfFirstCall()?.aborted).toBe(true);
     expect(consoleError).not.toHaveBeenCalled();
   });
 
-  it("logs a failed request and resolves to undefined", async () => {
+  it("logs a failed request and resolves to no Stories", async () => {
     const error = new TypeError("Failed to fetch");
     getRawAdsMock.mockRejectedValue(error);
 
-    await expect(fetchStory(REQUEST)).resolves.toBeUndefined();
+    await expect(fetchStories(REQUEST)).resolves.toEqual([]);
     expect(consoleError).toHaveBeenCalledWith(
       "[vtex-ads-story] Story request failed",
       error,
@@ -103,7 +157,7 @@ describe("fetchStory", () => {
   it("clears the time limit once the request settles", async () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
 
-    await fetchStory(REQUEST);
+    await fetchStories(REQUEST);
 
     expect(vi.getTimerCount()).toBe(0);
   });
