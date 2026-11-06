@@ -170,13 +170,31 @@ describe("vtex-ads-story", () => {
       );
     });
 
-    it("opens the player when the highlighted card's product is clicked", async () => {
+    it("opens the player with the product panel open from the card's product", async () => {
       const el = await mount();
 
       productOf(el)?.click();
       await flushRender(el);
 
       expect(el.shadowRoot?.querySelectorAll(".player")).toHaveLength(1);
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .card-product")
+          ?.hasAttribute("data-open"),
+      ).toBe(true);
+    });
+
+    it("opens the player with the panel closed from the card", async () => {
+      const el = await mount();
+
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-open")?.click();
+      await flushRender(el);
+
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .card-product")
+          ?.hasAttribute("data-open"),
+      ).toBe(false);
     });
   });
 

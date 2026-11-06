@@ -11,7 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
-import { renderProduct, type CardProduct } from "../product";
+import { renderExpandableProduct, type CardProduct } from "../product";
 import type { StoryMedia } from "../../types";
 
 /**
@@ -342,6 +342,13 @@ export const playerStyles = css`
       height: 56px;
     }
 
+    /* "Adicionar ao carrinho" fits on one line in the narrow mini player. */
+    .player:not([data-expanded]) .product-action {
+      height: 40px;
+      padding: 0 8px;
+      font-size: 12px;
+    }
+
     .player[data-expanded] {
       background: #000;
     }
@@ -417,6 +424,9 @@ export interface PlayerOptions {
   nextLabel: string;
   /** Accessible name of another Story's cover in the expanded view. */
   neighborLabel: string;
+  /** The product panel's buttons. */
+  addToCartLabel: string;
+  viewProductLabel: string;
   /**
    * Called by the previous (-1) and next (1) buttons, by another Story's
    * cover in the expanded view (its offset) and, in the expanded view, when
@@ -625,6 +635,9 @@ export class PlayerController implements ReactiveController {
   /** Rendered and, once the host has updated, shown. */
   isOpen = false;
   private expanded = false;
+
+  /** The product panel is open. Closed again on a step and on opening. */
+  private productOpen = false;
   /** Switched modes at least once: only the first opening fades in. */
   private switched = false;
   /** The dialog is showing, in the mode `expanded` says. */
@@ -665,13 +678,18 @@ export class PlayerController implements ReactiveController {
     this.close();
   }
 
-  /** Opens the mini player, plays the video and focuses the close button. */
-  async open() {
+  /**
+   * Opens the mini player, plays the video and focuses the close button.
+   * With `productOpen`, the product panel shows open (the shopper chose the
+   * product).
+   */
+  async open({ productOpen = false }: { productOpen?: boolean } = {}) {
     if (this.isOpen) return;
 
     document.addEventListener("keydown", this.onKeyDown);
     this.isOpen = true;
     this.expanded = false;
+    this.productOpen = productOpen;
     this.switched = false;
     this.rendered = undefined;
     this.beforeStep = undefined;
@@ -713,6 +731,8 @@ export class PlayerController implements ReactiveController {
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
     this.video.failed = false;
+    // Another Story, another product: its panel starts closed.
+    this.productOpen = false;
     this.host.requestUpdate();
     await this.host.updateComplete;
     if (!this.isOpen) return;
@@ -873,17 +893,39 @@ export class PlayerController implements ReactiveController {
    * They follow the video's own events, so a blocked autoplay shows as
    * paused.
    */
+  private readonly toggleProduct = () => {
+    this.productOpen = !this.productOpen;
+    this.host.requestUpdate();
+  };
+
   /**
-   * The product pill at the bottom of the video, for display only for now.
-   * A click on it doesn't reach the video, so it doesn't pause it.
+   * A click on the video: closes the product panel when it is open, plays or
+   * pauses the video otherwise.
+   */
+  private readonly onVideoClick = () => {
+    if (this.productOpen) this.toggleProduct();
+    else this.video.togglePlayback();
+  };
+
+  /**
+   * The product pill at the bottom of the video, which opens the panel with
+   * its actions. Clicks on it don't reach the video.
    */
   private renderProduct(product: CardProduct) {
+    const { options } = this;
+
     return html`
       <div
         class="player-product"
         @click=${(event: Event) => event.stopPropagation()}
       >
-        ${renderProduct(product)}
+        ${renderExpandableProduct(product, {
+          open: this.productOpen,
+          onToggle: this.toggleProduct,
+          panelId: "player-product-panel",
+          addToCartLabel: options.addToCartLabel,
+          viewProductLabel: options.viewProductLabel,
+        })}
       </div>
     `;
   }
@@ -1055,7 +1097,7 @@ export class PlayerController implements ReactiveController {
           </div>
           <div class="player-stage" ${ref(this.stage)}>
             ${navigation ? this.renderNavigation() : nothing}
-            <div class="card" @click=${() => video.togglePlayback()}>
+            <div class="card" @click=${this.onVideoClick}>
               ${renderMedia(story, video, {
                 loop: !advances,
                 onEnded: advances ? () => options.onStep?.(1) : undefined,

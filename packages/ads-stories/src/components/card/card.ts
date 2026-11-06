@@ -127,11 +127,10 @@ export interface CardOptions {
   /** Accessible names of the sound button, shown when the card has a video. */
   soundOnLabel: string;
   soundOffLabel: string;
-  /**
-   * The Story's product, shown at the bottom of the card. Clicking it does
-   * the same as clicking the card, for now.
-   */
+  /** The Story's product, shown at the bottom of the card. */
   product?: CardProduct;
+  /** Called by a click on the product (default onSelect). */
+  onProductSelect?: () => void;
 }
 
 /**
@@ -183,7 +182,10 @@ export function renderCard(
         ? renderSoundButton(video, options)
         : nothing}
       ${options.product
-        ? renderProduct(options.product, options.onSelect)
+        ? renderProduct(
+            options.product,
+            options.onProductSelect ?? options.onSelect,
+          )
         : nothing}
     </div>
   `;

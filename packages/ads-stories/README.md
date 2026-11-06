@@ -148,6 +148,7 @@ vtex-ads-story {
   --vtex-ads-story-color-text: #1f1f1f;
   --vtex-ads-story-radius: 20px;
   --vtex-ads-story-solo-background: #fafafa;
+  --vtex-ads-story-accent: #2f97d2;
 }
 ```
 
@@ -157,6 +158,7 @@ vtex-ads-story {
 | `--vtex-ads-story-color-text`      | inherited | All text                                   |
 | `--vtex-ads-story-radius`          | `20px`    | Card and background corners                |
 | `--vtex-ads-story-solo-background` | `#fafafa` | Background behind the card, with one Story |
+| `--vtex-ads-story-accent`          | `#2f97d2` | The product panel's buttons                |
 
 ## Layout
 
@@ -183,9 +185,15 @@ plays with sound too, or muted if the browser blocks it.
 
 When the Story's destination is a product, the card shows it at the bottom: its
 image, its name (up to two lines) and its price. On sale, the "from" price
-shows struck through beside it. Clicking it does the same as clicking the card.
-The player shows the same product at the bottom of the video, for display
-only for now.
+shows struck through beside it.
+
+In the player, the same product sits at the bottom of the video. Clicking it
+opens a panel with an add to cart button and a view product link (the product
+page, in a new tab). Clicking the product on the highlighted card opens the
+player with the panel already open; on another card, it moves the highlight, as
+the card does. Clicking the video or moving to another Story closes the panel.
+Adding to the cart does nothing yet.
+
 Prices are formatted with `locale` and `currency`. The ad API doesn't send
 prices yet: the card reads them from the product's `product_metadata` (`price`,
 and `promotional_price` when on sale) and shows only the name without them.

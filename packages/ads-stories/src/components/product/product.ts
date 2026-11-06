@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { icon } from "../icons";
 import { httpUrl } from "../media";
 import type { StoryAd } from "../../types";
 import { readProductPrice } from "./price";
@@ -10,6 +11,8 @@ export interface CardProduct {
   price?: string;
   /** The "from" price, struck through. Only with a price. */
   listPrice?: string;
+  /** The product page, opened by view product link button. */
+  url?: string;
   /** Accessible name of the product button: name and prices. */
   label: string;
 }
@@ -26,7 +29,7 @@ export type ProductLabel = (
  * (its destination is a link) or the product has no name.
  */
 export function toCardProduct(
-  story: Pick<StoryAd, "product">,
+  story: Pick<StoryAd, "product" | "destination_url">,
   format: (amount: number) => string,
   label: ProductLabel,
 ): CardProduct | undefined {
@@ -44,6 +47,7 @@ export function toCardProduct(
     imageUrl: httpUrl(product.image_url) ?? undefined,
     price,
     listPrice,
+    url: httpUrl(story.destination_url) ?? undefined,
     label: label(name, price, listPrice),
   };
 }
@@ -61,7 +65,7 @@ function renderPrice(price: string, listPrice?: string) {
 }
 
 // Image, name and prices: what the pill shows.
-function renderContent(product: CardProduct) {
+function renderSummary(product: CardProduct) {
   return html`
     ${product.imageUrl
       ? html`<img class="product-image" alt="" src=${product.imageUrl} />`
@@ -74,25 +78,12 @@ function renderContent(product: CardProduct) {
 }
 
 /**
- * The product pill: image, name (up to two lines), price and, on sale, the
- * "from" price struck through. Without a price, only the name.
- *
- * With onSelect, a button of its own, beside the card's (a button can't
- * contain another). Without it, for display only: screen readers read its
- * label ("Tênis, de R$ 159,90 por R$ 129,90") instead of the bare prices.
+ * The product pill on the carousel card: image, name (up to two lines),
+ * price and, on sale, the "from" price struck through. Without a price, only
+ * the name. A button of its own, beside the card's (a button can't contain
+ * another).
  */
-export function renderProduct(product: CardProduct, onSelect?: () => void) {
-  if (!onSelect) {
-    return html`
-      <div class="card-product">
-        <span class="product-label">${product.label}</span>
-        <span class="product-content" aria-hidden="true">
-          ${renderContent(product)}
-        </span>
-      </div>
-    `;
-  }
-
+export function renderProduct(product: CardProduct, onSelect: () => void) {
   return html`
     <button
       type="button"
@@ -100,7 +91,69 @@ export function renderProduct(product: CardProduct, onSelect?: () => void) {
       aria-label=${product.label}
       @click=${onSelect}
     >
-      ${renderContent(product)}
+      ${renderSummary(product)}
     </button>
+  `;
+}
+
+export interface ExpandableProductOptions {
+  /** Whether the panel with the actions shows. */
+  open: boolean;
+  /** Called by the pill's button, to open or close the panel. */
+  onToggle: () => void;
+  /** Id of the panel, for the button's aria-controls. */
+  panelId: string;
+  addToCartLabel: string;
+  viewProductLabel: string;
+}
+
+/**
+ * The product pill in the player. The pill is a button that opens a panel
+ * below it, as in the prototype, with "Adicionar ao carrinho" and "Ver
+ * produto" (the product page, in a new tab; only with a URL). Open, the pill
+ * turns white.
+ *
+ * Adding to the cart does nothing yet: it will emit an event for the store
+ * to handle.
+ */
+export function renderExpandableProduct(
+  product: CardProduct,
+  options: ExpandableProductOptions,
+) {
+  const { open } = options;
+
+  return html`
+    <div class="card-product product-expandable" ?data-open=${open}>
+      <button
+        type="button"
+        class="product-summary"
+        aria-label=${product.label}
+        aria-expanded=${open ? "true" : "false"}
+        aria-controls=${options.panelId}
+        @click=${options.onToggle}
+      >
+        ${renderSummary(product)}
+        <span class="product-toggle">${icon("caretUp")}</span>
+      </button>
+      <div id=${options.panelId} class="product-panel" ?inert=${!open}>
+        <div class="product-actions">
+          <button type="button" class="product-action product-add-to-cart">
+            ${options.addToCartLabel}
+          </button>
+          ${product.url
+            ? html`
+                <a
+                  class="product-action product-view"
+                  href=${product.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ${options.viewProductLabel}
+                </a>
+              `
+            : nothing}
+        </div>
+      </div>
+    </div>
   `;
 }

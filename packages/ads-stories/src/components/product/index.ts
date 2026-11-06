@@ -1,6 +1,14 @@
-export { renderProduct, toCardProduct } from "./product";
+export {
+  renderExpandableProduct,
+  renderProduct,
+  toCardProduct,
+} from "./product";
 export { productStyles } from "./product.styles";
-export type { CardProduct, ProductLabel } from "./product";
+export type {
+  CardProduct,
+  ExpandableProductOptions,
+  ProductLabel,
+} from "./product";
 export {
   DEFAULT_CURRENCY,
   DEFAULT_LOCALE,

@@ -74,6 +74,8 @@ const LABELS = {
   pause: "Pausar vídeo",
   soundOn: "Ativar som",
   soundOff: "Desativar som",
+  addToCart: "Adicionar ao carrinho",
+  viewProduct: "Ver produto",
   /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
   product: (name: string, price?: string, listPrice?: string) => {
     if (price && listPrice) return `${name}, de ${listPrice} por ${price}`;
@@ -210,6 +212,8 @@ export class VtexAdsStoryElement extends LitElement {
     previousLabel: LABELS.previous,
     nextLabel: LABELS.next,
     neighborLabel: LABELS.show,
+    addToCartLabel: LABELS.addToCart,
+    viewProductLabel: LABELS.viewProduct,
     onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
   });
@@ -346,12 +350,13 @@ export class VtexAdsStoryElement extends LitElement {
     void this.player.showNext(delta);
   }
 
-  private openPlayer() {
+  // From the card's product, the player opens with the product panel open.
+  private openPlayer({ productOpen = false } = {}) {
     if (this.player.isOpen) return;
 
     // While the player is open, the card behind it stops on its cover.
     this.activeVideo?.pause();
-    void this.player.open();
+    void this.player.open({ productOpen });
   }
 
   // The player also closes on its own when the element leaves the page,
@@ -413,6 +418,10 @@ export class VtexAdsStoryElement extends LitElement {
       onSelect: active
         ? () => this.openPlayer()
         : () => this.carousel.step(offset),
+      // On a card without the highlight, the product moves it, as the card.
+      onProductSelect: active
+        ? () => this.openPlayer({ productOpen: true })
+        : undefined,
     });
 
   protected render() {
