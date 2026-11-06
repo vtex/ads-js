@@ -86,6 +86,86 @@ describe("vtex-ads-story", () => {
     expect(() => defineVtexAdsStories()).not.toThrow();
   });
 
+  describe("product", () => {
+    const productOf = (el: VtexAdsStoryElement) =>
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product");
+    const text = (node: Element | null | undefined) =>
+      node?.textContent?.replace(/\s/g, " ").trim();
+
+    it("shows the product with its price in pt-BR and BRL by default", async () => {
+      const el = await mount();
+      const product = productOf(el);
+
+      expect(text(product?.querySelector(".product-name"))).toBe(
+        mockStory.product?.product_name,
+      );
+      expect(text(product?.querySelector(".product-price > span"))).toBe(
+        "R$ 129,90",
+      );
+      expect(text(product?.querySelector(".product-list-price"))).toBe(
+        "R$ 159,90",
+      );
+      expect(product?.getAttribute("aria-label")?.replace(/\s/g, " ")).toBe(
+        `${mockStory.product?.product_name}, de R$ 159,90 por R$ 129,90`,
+      );
+    });
+
+    it("formats the price with the locale and currency attributes", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        locale: "en-US",
+        currency: "USD",
+      });
+
+      expect(text(productOf(el)?.querySelector(".product-price > span"))).toBe(
+        "$129.90",
+      );
+    });
+
+    it("uses the page's lang without a locale attribute", async () => {
+      document.documentElement.lang = "en-US";
+      try {
+        const el = await mount({ ...REQUIRED_ATTRIBUTES, currency: "USD" });
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("$129.90");
+      } finally {
+        document.documentElement.lang = "";
+      }
+    });
+
+    it("formats again when the currency changes, without a new request", async () => {
+      const el = await mount();
+      el.setAttribute("currency", "USD");
+      await flushRender(el);
+
+      expect(text(productOf(el)?.querySelector(".product-price > span"))).toBe(
+        "US$ 129,90",
+      );
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows no product when the Story has none", async () => {
+      getRawAdsMock.mockResolvedValue(
+        rawAdsWith([{ ...mockStory, product: null }]),
+      );
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).not.toBeNull();
+      expect(productOf(el)).toBeNull();
+    });
+
+    it("opens the player when the highlighted card's product is clicked", async () => {
+      const el = await mount();
+
+      productOf(el)?.click();
+      await flushRender(el);
+
+      expect(el.shadowRoot?.querySelectorAll(".player")).toHaveLength(1);
+    });
+  });
+
   it("renders one card", async () => {
     const el = await mount();
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
@@ -436,7 +516,7 @@ describe("vtex-ads-story", () => {
       getCard(el)?.click();
       await flushRender(el);
 
-      expect(getPlayers(el)).toHaveLength(1);
+      expect(el.shadowRoot?.querySelectorAll(".player")).toHaveLength(1);
     });
 
     it("focuses the close button when the player opens", async () => {

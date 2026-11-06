@@ -1,6 +1,7 @@
 import { css, html, nothing } from "lit";
 import { icon } from "../icons";
 import { hasVideo, renderMedia, type VideoController } from "../media";
+import { renderProduct, type CardProduct } from "../product";
 import type { StoryMedia } from "../../types";
 
 export const cardStyles = css`
@@ -126,6 +127,11 @@ export interface CardOptions {
   /** Accessible names of the sound button, shown when the card has a video. */
   soundOnLabel: string;
   soundOffLabel: string;
+  /**
+   * The Story's product, shown at the bottom of the card. Clicking it does
+   * the same as clicking the card, for now.
+   */
+  product?: CardProduct;
 }
 
 /**
@@ -150,9 +156,10 @@ function renderSoundButton(video: VideoController, options: CardOptions) {
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
  * muted over it (see renderMedia). A button with a play icon in the middle
- * covers the card, and a sound button shows while the video plays. The sound
- * button is beside the card's button, not inside it: a button can't contain
- * another.
+ * covers the card, and a sound button shows while the video plays. With a
+ * product, its pill sits at the bottom (see renderProduct). The sound and
+ * product buttons are beside the card's button, not inside it: a button
+ * can't contain another.
  */
 export function renderCard(
   story: StoryMedia,
@@ -174,6 +181,9 @@ export function renderCard(
       </button>
       ${withVideo && hasVideo(story, video) && !video.paused
         ? renderSoundButton(video, options)
+        : nothing}
+      ${options.product
+        ? renderProduct(options.product, options.onSelect)
         : nothing}
     </div>
   `;

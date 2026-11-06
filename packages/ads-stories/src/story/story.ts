@@ -9,6 +9,12 @@ import {
 } from "../components/carousel";
 import { VideoController } from "../components/media";
 import {
+  DEFAULT_LOCALE,
+  priceFormatter,
+  productStyles,
+  toCardProduct,
+} from "../components/product";
+import {
   neighborOffsets,
   PlayerController,
   playerStyles,
@@ -68,6 +74,11 @@ const LABELS = {
   pause: "Pausar vídeo",
   soundOn: "Ativar som",
   soundOff: "Desativar som",
+  /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
+  product: (name: string, price?: string, listPrice?: string) => {
+    if (price && listPrice) return `${name}, de ${listPrice} por ${price}`;
+    return price ? `${name}, ${price}` : name;
+  },
   /** Tells the cards apart: "Mostrar vídeo 2 de 4". */
   position: (label: string, index: number, count: number) =>
     count > 1 ? `${label} ${index + 1} de ${count}` : label,
@@ -85,6 +96,8 @@ export class VtexAdsStoryElement extends LitElement {
     channel: { converter: channelConverter },
     timeout: { type: Number },
     quantity: { type: Number },
+    locale: {},
+    currency: {},
     inactiveAutoplay: {
       type: Boolean,
       attribute: "inactive-autoplay",
@@ -115,6 +128,16 @@ export class VtexAdsStoryElement extends LitElement {
    */
   declare quantity?: number;
   /**
+   * Locale of the prices, as a BCP 47 tag ("pt-BR", "es-AR"). Missing or
+   * invalid: the page's `lang`, then pt-BR.
+   */
+  declare locale?: string;
+  /**
+   * Currency of the prices, as an ISO 4217 code ("BRL", "ARS"). Missing or
+   * invalid: BRL.
+   */
+  declare currency?: string;
+  /**
    * With more than one Story, whether the cards without the highlight also
    * play their video, muted. Off by default: they show only their cover, and
    * only the highlighted card plays.
@@ -139,6 +162,7 @@ export class VtexAdsStoryElement extends LitElement {
       }
     `,
     cardStyles,
+    productStyles,
     carouselStyles,
     playerStyles,
   ];
@@ -349,6 +373,25 @@ export class VtexAdsStoryElement extends LitElement {
 
   // The highlighted card opens the player; another one takes the highlight.
   // Hidden cards, out of sight, show only their cover.
+  // The formatter for the current locale and currency, made again only when
+  // either changes.
+  private formatter?: {
+    key: string;
+    format: (amount: number) => string;
+  };
+
+  private get formatPrice() {
+    const locale =
+      this.locale ||
+      this.closest<HTMLElement>("[lang]")?.lang ||
+      DEFAULT_LOCALE;
+    const key = `${locale}|${this.currency ?? ""}`;
+    if (this.formatter?.key !== key) {
+      this.formatter = { key, format: priceFormatter(locale, this.currency) };
+    }
+    return this.formatter.format;
+  }
+
   private readonly renderSlide = (
     story: StoryAd,
     { key, index, offset, active, hidden }: Slide,
@@ -362,6 +405,7 @@ export class VtexAdsStoryElement extends LitElement {
       soundOnLabel: LABELS.soundOn,
       soundOffLabel: LABELS.soundOff,
       withVideo: active || (this.inactiveAutoplay && !hidden),
+      product: toCardProduct(story, this.formatPrice, LABELS.product),
       onSelect: active
         ? () => this.openPlayer()
         : () => this.carousel.step(offset),
