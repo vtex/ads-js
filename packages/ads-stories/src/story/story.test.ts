@@ -156,6 +156,20 @@ describe("vtex-ads-story", () => {
       expect(productOf(el)).toBeNull();
     });
 
+    it("shows the highlighted Story's product in the player", async () => {
+      const el = await mount();
+      productOf(el)?.click();
+      await flushRender(el);
+
+      const pill = el.shadowRoot?.querySelector(".player .card-product");
+      expect(text(pill?.querySelector(".product-name"))).toBe(
+        mockStory.product?.product_name,
+      );
+      expect(text(pill?.querySelector(".product-price > span"))).toBe(
+        "R$ 129,90",
+      );
+    });
+
     it("opens the player when the highlighted card's product is clicked", async () => {
       const el = await mount();
 

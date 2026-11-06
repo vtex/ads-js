@@ -11,6 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
+import { renderProduct, type CardProduct } from "../product";
 import type { StoryMedia } from "../../types";
 
 /**
@@ -128,6 +129,26 @@ export const playerStyles = css`
   .player-sound .icon {
     width: 20px;
     height: 20px;
+  }
+
+  /* The product pill, larger than on the carousel card (as in the
+     prototype). Its wrapper only stops clicks: the pill places itself. */
+  .player-product {
+    display: contents;
+  }
+
+  .player .product-info {
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  .player .product-image {
+    width: 72px;
+    height: 72px;
+  }
+
+  .player .product-price {
+    color: rgba(255, 255, 255, 0.7);
   }
 
   /* Above the card: on narrow screens the expanded card can cover them. */
@@ -316,6 +337,11 @@ export const playerStyles = css`
       height: 391px;
     }
 
+    .player:not([data-expanded]) .product-image {
+      width: 56px;
+      height: 56px;
+    }
+
     .player[data-expanded] {
       background: #000;
     }
@@ -425,6 +451,8 @@ export interface PlayerRenderOptions {
   navigation?: boolean;
   /** The other Stories beside the expanded video (see neighborOffsets). */
   neighbors?: readonly PlayerNeighbor[];
+  /** The Story's product, shown at the bottom of the video. */
+  product?: CardProduct;
 }
 
 /**
@@ -845,6 +873,21 @@ export class PlayerController implements ReactiveController {
    * They follow the video's own events, so a blocked autoplay shows as
    * paused.
    */
+  /**
+   * The product pill at the bottom of the video, for display only for now.
+   * A click on it doesn't reach the video, so it doesn't pause it.
+   */
+  private renderProduct(product: CardProduct) {
+    return html`
+      <div
+        class="player-product"
+        @click=${(event: Event) => event.stopPropagation()}
+      >
+        ${renderProduct(product)}
+      </div>
+    `;
+  }
+
   private renderVideoControls() {
     const { video, options } = this;
 
@@ -949,7 +992,7 @@ export class PlayerController implements ReactiveController {
    */
   render(
     story: StoryMedia,
-    { navigation = false, neighbors = [] }: PlayerRenderOptions = {},
+    { navigation = false, neighbors = [], product }: PlayerRenderOptions = {},
   ) {
     if (!this.isOpen) return nothing;
 
@@ -1018,6 +1061,7 @@ export class PlayerController implements ReactiveController {
                 onEnded: advances ? () => options.onStep?.(1) : undefined,
               })}
               ${withVideo ? this.renderVideoControls() : nothing}
+              ${product ? this.renderProduct(product) : nothing}
             </div>
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>

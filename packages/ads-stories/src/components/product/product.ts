@@ -60,12 +60,39 @@ function renderPrice(price: string, listPrice?: string) {
   `;
 }
 
+// Image, name and prices: what the pill shows.
+function renderContent(product: CardProduct) {
+  return html`
+    ${product.imageUrl
+      ? html`<img class="product-image" alt="" src=${product.imageUrl} />`
+      : nothing}
+    <span class="product-info">
+      <span class="product-name">${product.name}</span>
+      ${product.price ? renderPrice(product.price, product.listPrice) : nothing}
+    </span>
+  `;
+}
+
 /**
  * The product pill: image, name (up to two lines), price and, on sale, the
- * "from" price struck through. Without a price, only the name. A button of
- * its own, beside the card's (a button can't contain another).
+ * "from" price struck through. Without a price, only the name.
+ *
+ * With onSelect, a button of its own, beside the card's (a button can't
+ * contain another). Without it, for display only: screen readers read its
+ * label ("Tênis, de R$ 159,90 por R$ 129,90") instead of the bare prices.
  */
-export function renderProduct(product: CardProduct, onSelect: () => void) {
+export function renderProduct(product: CardProduct, onSelect?: () => void) {
+  if (!onSelect) {
+    return html`
+      <div class="card-product">
+        <span class="product-label">${product.label}</span>
+        <span class="product-content" aria-hidden="true">
+          ${renderContent(product)}
+        </span>
+      </div>
+    `;
+  }
+
   return html`
     <button
       type="button"
@@ -73,15 +100,7 @@ export function renderProduct(product: CardProduct, onSelect: () => void) {
       aria-label=${product.label}
       @click=${onSelect}
     >
-      ${product.imageUrl
-        ? html`<img class="product-image" alt="" src=${product.imageUrl} />`
-        : nothing}
-      <span class="product-info">
-        <span class="product-name">${product.name}</span>
-        ${product.price
-          ? renderPrice(product.price, product.listPrice)
-          : nothing}
-      </span>
+      ${renderContent(product)}
     </button>
   `;
 }

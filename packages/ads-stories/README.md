@@ -184,6 +184,8 @@ plays with sound too, or muted if the browser blocks it.
 When the Story's destination is a product, the card shows it at the bottom: its
 image, its name (up to two lines) and its price. On sale, the "from" price
 shows struck through beside it. Clicking it does the same as clicking the card.
+The player shows the same product at the bottom of the video, for display
+only for now.
 Prices are formatted with `locale` and `currency`. The ad API doesn't send
 prices yet: the card reads them from the product's `product_metadata` (`price`,
 and `promotional_price` when on sale) and shows only the name without them.

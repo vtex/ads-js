@@ -20,7 +20,6 @@ export const productStyles = css`
     color: #fff;
     font: inherit;
     text-align: left;
-    cursor: pointer;
     isolation: isolate;
     transition: transform 0.2s ease;
   }
@@ -35,6 +34,25 @@ export const productStyles = css`
     box-shadow: inset 0 0 3px rgba(255, 255, 255, 0.42);
     content: "";
     transition: background-color 0.2s ease;
+  }
+
+  button.card-product {
+    cursor: pointer;
+  }
+
+  /* The display-only pill: its content lays out as the button's. */
+  .product-content {
+    display: contents;
+  }
+
+  /* Read by screen readers, not shown. */
+  .product-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .card-product:focus-visible {

@@ -392,6 +392,10 @@ export class VtexAdsStoryElement extends LitElement {
     return this.formatter.format;
   }
 
+  private productOf(story: StoryAd) {
+    return toCardProduct(story, this.formatPrice, LABELS.product);
+  }
+
   private readonly renderSlide = (
     story: StoryAd,
     { key, index, offset, active, hidden }: Slide,
@@ -405,7 +409,7 @@ export class VtexAdsStoryElement extends LitElement {
       soundOnLabel: LABELS.soundOn,
       soundOffLabel: LABELS.soundOff,
       withVideo: active || (this.inactiveAutoplay && !hidden),
-      product: toCardProduct(story, this.formatPrice, LABELS.product),
+      product: this.productOf(story),
       onSelect: active
         ? () => this.openPlayer()
         : () => this.carousel.step(offset),
@@ -431,6 +435,7 @@ export class VtexAdsStoryElement extends LitElement {
       ${this.player.render(active, {
         navigation: stories.length > 1,
         neighbors,
+        product: this.productOf(active),
       })}
     `;
   }

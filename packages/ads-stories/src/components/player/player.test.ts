@@ -51,11 +51,14 @@ describe("PlayerController", () => {
   });
 
   // Rendered and opened as the element does it. onClose closes the player.
-  async function setup(storyToPlay: StoryMedia = story) {
+  async function setup(
+    storyToPlay: StoryMedia = story,
+    renderOptions?: PlayerRenderOptions,
+  ) {
     const onClose = vi.fn(() => controller.close());
     const { host, container, controller } = mountHost(
       (host) => new PlayerController(host, { ...labels, onClose }),
-      (player) => player.render(storyToPlay),
+      (player) => player.render(storyToPlay, renderOptions),
     );
     opened.push(controller);
     await controller.open();
@@ -240,6 +243,53 @@ describe("PlayerController", () => {
 
     expect(container.querySelector("dialog")).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  describe("product", () => {
+    const product = {
+      name: "Tênis",
+      imageUrl: "https://example.com/shoe.jpg",
+      price: "R$ 129,90",
+      listPrice: "R$ 159,90",
+      label: "Tênis, de R$ 159,90 por R$ 129,90",
+    };
+    const withVideo = { ...story, media_url: "https://example.com/story.mp4" };
+
+    it("shows the product pill at the bottom of the video", async () => {
+      const { player } = await setup(story, { product });
+      const pill = player.querySelector(".card .card-product");
+
+      expect(pill).not.toBeNull();
+      // Display only for now: no button.
+      expect(pill?.tagName).toBe("DIV");
+      expect(pill?.querySelector(".product-label")?.textContent).toBe(
+        product.label,
+      );
+      expect(pill?.querySelector(".product-name")?.textContent).toBe("Tênis");
+    });
+
+    it("has no pill without a product", async () => {
+      const { player } = await setup();
+
+      expect(player.querySelector(".card-product")).toBeNull();
+    });
+
+    it("keeps the pill in the expanded view", async () => {
+      const { player, toggleExpanded } = await setup(story, { product });
+      await toggleExpanded();
+
+      expect(player.hasAttribute("data-expanded")).toBe(true);
+      expect(player.querySelector(".card .card-product")).not.toBeNull();
+    });
+
+    it("doesn't pause the video when the pill is clicked", async () => {
+      const { player } = await setup(withVideo, { product });
+      const video = player.querySelector("video");
+
+      player.querySelector<HTMLElement>(".card-product")?.click();
+
+      expect(video?.paused).toBe(false);
+    });
   });
 
   describe("video", () => {

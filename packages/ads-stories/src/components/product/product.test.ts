@@ -106,6 +106,25 @@ describe("renderProduct", () => {
     expect(button?.querySelector(".product-price")).toBeNull();
   });
 
+  it("is display only without onSelect, read by its label", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    render(
+      renderProduct({ name: "Shoe", price: "$15.00", label: "Shoe, $15.00" }),
+      container,
+    );
+    const pill = container.querySelector(".card-product");
+
+    expect(pill?.tagName).toBe("DIV");
+    expect(container.querySelector("button")).toBeNull();
+    expect(pill?.querySelector(".product-label")?.textContent).toBe(
+      "Shoe, $15.00",
+    );
+    expect(
+      pill?.querySelector(".product-content")?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
   it("calls onSelect when clicked", () => {
     const { button, onSelect } = mount({ name: "Shoe", label: "Shoe" });
 
