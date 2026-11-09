@@ -96,7 +96,11 @@ describe("fetchStory", () => {
     await expect(fetchStory(REQUEST)).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalledWith(
       "[vtex-ads-story] Story request failed",
-      error,
+      {
+        placement: REQUEST.placement,
+        publisherId: REQUEST.publisherId,
+        error,
+      },
     );
   });
 
