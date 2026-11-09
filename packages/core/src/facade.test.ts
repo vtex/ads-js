@@ -3,12 +3,14 @@ import { getRawAds, getHydratedAds } from "./facade";
 import { getAds } from "./clients/adServer";
 import {
   getSponsoredProductArray,
+  getStoryArray,
   AdsByPlacement,
   getOffer,
 } from "./clients/adServer/mappers";
 
 import { Product } from "./clients/search/types";
 import { SponsoredProductDetail } from "./clients/adServer/types";
+import { mockStory } from "./clients/adServer/story.mock";
 import { GetAdsArgs, RawAdsResponse } from "./types";
 import {
   intelligentSearchFetcher,
@@ -23,6 +25,7 @@ vi.mock("./clients/adServer", () => ({
 
 vi.mock("./clients/adServer/mappers", () => ({
   getSponsoredProductArray: vi.fn(),
+  getStoryArray: vi.fn(() => []),
   getOffer: vi.fn(),
 }));
 
@@ -44,6 +47,7 @@ describe("facade", () => {
   // Mock instances
   const mockedGetAds = vi.mocked(getAds);
   const mockedGetSponsoredProductArray = vi.mocked(getSponsoredProductArray);
+  const mockedGetStoryArray = vi.mocked(getStoryArray);
   const mockedGetOffer = vi.mocked(getOffer);
   const mockedIntelligentSearchFetcher = vi.mocked(intelligentSearchFetcher);
   const mockedIntelligentSearchMatcher = vi.mocked(intelligentSearchMatcher);
@@ -52,6 +56,7 @@ describe("facade", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetStoryArray.mockReturnValue([]);
   });
 
   // Test data
@@ -183,6 +188,7 @@ describe("facade", () => {
             },
           ],
         },
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       };
@@ -194,6 +200,7 @@ describe("facade", () => {
       expect(mockedGetAds).toHaveBeenCalledWith(
         mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
+        undefined,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
         mockAdServerResponse,
@@ -208,6 +215,7 @@ describe("facade", () => {
 
       const expectedResponse: RawAdsResponse = {
         sponsoredProducts: {},
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       };
@@ -260,6 +268,32 @@ describe("facade", () => {
         },
       });
     });
+    it("should return Story ads grouped by placement", async () => {
+      // Arrange
+      const otherStory = { ...mockStory, ad_id: "story2" };
+      const mockAdServerResponse = {
+        home_stories: [mockStory],
+        pdp_stories: [otherStory],
+      };
+      mockedGetAds.mockResolvedValue(mockAdServerResponse);
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedGetStoryArray.mockReturnValue([
+        ["home_stories", [mockStory]],
+        ["pdp_stories", [otherStory]],
+      ]);
+
+      // Act
+      const result = await getRawAds(mockGetAdsArgs);
+
+      // Assert
+      expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
+      expect(mockedGetAds).toHaveBeenCalledTimes(1);
+      expect(result.stories).toEqual({
+        home_stories: [mockStory],
+        pdp_stories: [otherStory],
+      });
+      expect(result.sponsoredProducts).toEqual({});
+    });
   });
 
   describe("getHydratedAds", () => {
@@ -298,6 +332,7 @@ describe("facade", () => {
       expect(mockedGetAds).toHaveBeenCalledWith(
         mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
+        undefined,
       );
       expect(mockedGetSponsoredProductArray).toHaveBeenCalledWith(
         mockAdServerResponse,
@@ -396,11 +431,13 @@ describe("facade", () => {
       );
 
       // Assert
+      expect(mockedIntelligentSearchFetcher).not.toHaveBeenCalled();
       expect(result).toEqual({
         sponsoredProducts: {
           byPlacement: {},
           failed: [],
         },
+        stories: {},
         banners: undefined,
         sponsoredBrands: undefined,
       });
@@ -472,6 +509,68 @@ describe("facade", () => {
           sponsoredBySellerId: mockSponsoredProduct.seller_id,
         },
       });
+    });
+    it("should return Story ads without hydrating their products", async () => {
+      // Arrange
+      const mockAdServerResponse = { home_stories: [mockStory] };
+      mockedGetAds.mockResolvedValue(mockAdServerResponse);
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedGetStoryArray.mockReturnValue([["home_stories", [mockStory]]]);
+      mockedBuildOffers.mockReturnValue([]);
+      // Would lose the Stories if it were called.
+      mockedIntelligentSearchFetcher.mockRejectedValue(
+        new Error("Search error"),
+      );
+
+      // Act
+      const result = await getHydratedAds(
+        mockGetAdsArgs,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
+      );
+
+      // Assert
+      expect(mockedGetStoryArray).toHaveBeenCalledWith(mockAdServerResponse);
+      expect(mockedGetAds).toHaveBeenCalledTimes(1);
+      expect(mockedIntelligentSearchFetcher).not.toHaveBeenCalled();
+      expect(result.stories).toEqual({ home_stories: [mockStory] });
+    });
+  });
+
+  describe("request options", () => {
+    it("passes the options to the ad server in getRawAds", async () => {
+      mockedGetAds.mockResolvedValue({});
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      const options = { signal: new AbortController().signal };
+
+      await getRawAds(mockGetAdsArgs, options);
+
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.identity.publisherId,
+        mockGetAdsArgs,
+        options,
+      );
+    });
+
+    it("passes the options to the ad server in getHydratedAds", async () => {
+      mockedGetAds.mockResolvedValue({});
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      mockedBuildOffers.mockReturnValue([]);
+      mockedIntelligentSearchFetcher.mockResolvedValue([]);
+      const options = { signal: new AbortController().signal };
+
+      await getHydratedAds(
+        mockGetAdsArgs,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
+        options,
+      );
+
+      expect(mockedGetAds).toHaveBeenCalledWith(
+        mockGetAdsArgs.identity.publisherId,
+        mockGetAdsArgs,
+        options,
+      );
     });
   });
 

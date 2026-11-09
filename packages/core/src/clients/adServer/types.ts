@@ -29,7 +29,8 @@ export type AdType =
   | "banner"
   | "sponsored_brand"
   | "video"
-  | "sponsored_brand_video";
+  | "sponsored_brand_video"
+  | "story";
 
 /**
  * Configuration for ad placement requests
@@ -90,7 +91,67 @@ export interface SponsoredBrandDetail {
   }[];
 }
 
-export type AdsDetail = SponsoredProductDetail | SponsoredBrandDetail;
+/**
+ * Product featured by a Story ad. Present only when the Story's destination
+ * is the product page.
+ * @public
+ */
+export interface StoryProduct {
+  product_sku: string;
+  seller_id?: string;
+  product_name: string;
+  image_url?: string;
+  url?: string;
+  /**
+   * Catalog data indexed by the ad server. Can be empty.
+   */
+  product_metadata: Record<string, unknown>;
+}
+
+/**
+ * Story ad from the ad server response. One item per carousel card.
+ * @public
+ */
+export interface StoryAdDetail {
+  type: "story";
+  ad_id: string;
+  campaign_id: string;
+  seller_id?: string;
+  /**
+   * Position of the card in the carousel.
+   */
+  position: number;
+  campaign_name: string;
+  asset_type: "video";
+  /**
+   * 9:16 MP4 (1080 × 1920) that the player plays.
+   */
+  media_url: string;
+  /**
+   * JPG cover shown before the video starts.
+   */
+  poster_url: string;
+  /**
+   * Video duration in whole seconds, read from the stored file.
+   */
+  duration_seconds: number;
+  /**
+   * Advertiser link when the destination is a link, product page otherwise.
+   */
+  destination_url: string;
+  /**
+   * Featured product, or `null` when the destination is a link.
+   */
+  product: StoryProduct | null;
+  impression_url: string;
+  view_url: string;
+  click_url: string;
+}
+
+export type AdsDetail =
+  | SponsoredProductDetail
+  | SponsoredBrandDetail
+  | StoryAdDetail;
 
 export interface AdResponse {
   [placement: string]: AdsDetail[];

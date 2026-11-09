@@ -3,6 +3,7 @@ import {
   Placement,
   PlacementBody,
   SponsoredProductDetail,
+  StoryAdDetail,
 } from "./clients/adServer";
 
 /**
@@ -12,11 +13,18 @@ import {
 export type RawAdsByPlacements = Record<Placement, SponsoredProductDetail[]>;
 
 /**
+ * Record of Story ads grouped by placement
+ * @public
+ */
+export type StoriesByPlacements = Record<Placement, StoryAdDetail[]>;
+
+/**
  * Response object containing raw advertisements data
  * @public
  */
 export type RawAdsResponse = {
   sponsoredProducts: RawAdsByPlacements;
+  stories: StoriesByPlacements;
   // TODO: implement other ad responses.
   banners: void;
   sponsoredBrands: void;

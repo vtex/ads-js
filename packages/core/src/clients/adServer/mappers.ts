@@ -1,7 +1,9 @@
 import { Offer } from "../../hydration/types";
-import { AdResponse, SponsoredProductDetail } from "./types";
+import { AdResponse, SponsoredProductDetail, StoryAdDetail } from "./types";
 
 export type AdsByPlacement = [string, SponsoredProductDetail[]];
+
+export type StoriesByPlacement = [string, StoryAdDetail[]];
 
 /**
  * Extracts an array of sponsored products by placement from an ad response.
@@ -27,6 +29,31 @@ export const getSponsoredProductArray = (
           placement,
           ads.filter((item) => "product_sku" in item),
         ] as AdsByPlacement,
+    )
+    .filter(([_, ads]) => ads.length > 0);
+};
+
+/**
+ * Extracts an array of Story ads by placement from an ad response.
+ *
+ * Keeps only the items with `type === "story"` and drops placements left
+ * without Stories.
+ *
+ * @param adResponse - The ad response object containing ads grouped by
+ * placement.
+ *
+ * @returns storyArray An array of tuples, each containing a placement and an
+ * array of Story ads.
+ */
+export const getStoryArray = (adResponse: AdResponse): StoriesByPlacement[] => {
+  return Object.entries(adResponse)
+    .filter(([, ads]) => Array.isArray(ads))
+    .map(
+      ([placement, ads]) =>
+        [
+          placement,
+          ads.filter((item) => "type" in item && item.type === "story"),
+        ] as StoriesByPlacement,
     )
     .filter(([_, ads]) => ads.length > 0);
 };

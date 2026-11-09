@@ -19,6 +19,10 @@
       .themed {
         --vtex-ads-story-radius: 40px;
       }
+
+      .note {
+        color: #666;
+      }
     </style>
   </head>
   <body>
@@ -27,20 +31,127 @@
 
     <section>
       <h2>Default</h2>
-      <vtex-ads-story></vtex-ads-story>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="home_stories"
+      ></vtex-ads-story>
     </section>
 
     <section class="themed">
       <h2>Themed with CSS variables</h2>
-      <vtex-ads-story></vtex-ads-story>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="home_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Slow ad server</h2>
+      <p class="note">
+        The response takes 3 s, longer than the default 2 s timeout, so nothing
+        renders below.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="slow_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Slow ad server, longer timeout</h2>
+      <p class="note">
+        Same 3 s response, with <code>timeout="5000"</code>: the card shows up
+        after 3 s.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="slow_stories"
+        timeout="5000"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>No Story</h2>
+      <p class="note">
+        The placement comes back empty, so nothing renders below.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="empty_stories"
+      ></vtex-ads-story>
     </section>
 
     <!--
+      The ad server is mocked: each Story placement gets the test Story, with
+      the delay and content set for it in SCENARIOS. Installed before the
+      element loads, since the source build reads fetch when @vtex/ads-core
+      loads.
+
       Default: loads the source through Vite (reloads on save).
       ?cdn: loads the built standalone script from dist/cdn, the same file
       the CDN serves. Run `pnpm build` first.
     -->
     <script type="module">
+      import { mockStory } from "./src/story/story.mock.ts";
+
+      const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/";
+
+      // How the mock answers each placement. Any other placement gets the
+      // default. delayMs simulates the ad server latency; empty returns the
+      // placement without Stories.
+      const SCENARIOS = {
+        default: { delayMs: 500, empty: false },
+        slow_stories: { delayMs: 3000, empty: false },
+        empty_stories: { delayMs: 500, empty: true },
+      };
+
+      const scenarioFor = (placement) =>
+        SCENARIOS[placement] ?? SCENARIOS.default;
+
+      // Waits like the network, and rejects when the request is cancelled, as
+      // fetch does.
+      const wait = (ms, signal) =>
+        new Promise((resolve, reject) => {
+          signal?.throwIfAborted();
+          const timer = setTimeout(resolve, ms);
+          signal?.addEventListener("abort", () => {
+            clearTimeout(timer);
+            reject(signal.reason);
+          });
+        });
+
+      const nativeFetch = globalThis.fetch.bind(globalThis);
+      globalThis.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : input.url;
+        if (!url.startsWith(AD_SERVER)) return nativeFetch(input, init);
+
+        const { placements } = JSON.parse(init.body);
+        const requested = Object.entries(placements);
+
+        // One response for all placements: it takes as long as the slowest.
+        await wait(
+          Math.max(
+            ...requested.map(([placement]) => scenarioFor(placement).delayMs),
+          ),
+          init.signal,
+        );
+
+        const body = { request_id: "playground" };
+        for (const [placement, { types }] of requested) {
+          const { empty } = scenarioFor(placement);
+          body[placement] =
+            types.includes("story") && !empty ? [mockStory] : [];
+        }
+        return new Response(JSON.stringify(body), {
+          headers: { "content-type": "application/json" },
+        });
+      };
+
       const useCdn = new URLSearchParams(location.search).has("cdn");
       document.getElementById("source").textContent = useCdn
         ? "dist/cdn/vtex-ads-stories.js"

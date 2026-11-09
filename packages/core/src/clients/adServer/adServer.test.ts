@@ -50,7 +50,9 @@ describe("getAds", () => {
 
     const result = await getAds(publisherId, args);
 
-    expect(httpClient.post).toHaveBeenCalledWith(baseUrl, publisherId, args);
+    expect(httpClient.post).toHaveBeenCalledWith(baseUrl, publisherId, args, {
+      signal: undefined,
+    });
     expect(result).toEqual(expectedResponse);
   });
 
@@ -58,5 +60,34 @@ describe("getAds", () => {
     mockedHttpClient.post.mockRejectedValue(new Error("Network error"));
 
     await expect(getAds(publisherId, args)).rejects.toThrow("Network error");
+  });
+
+  it("passes the caller's signal to the request", async () => {
+    mockedHttpClient.post.mockResolvedValue({});
+    const { signal } = new AbortController();
+
+    await getAds(publisherId, args, { signal });
+
+    expect(httpClient.post).toHaveBeenCalledWith(baseUrl, publisherId, args, {
+      signal,
+    });
+  });
+
+  it("rejects when the caller's signal aborts", async () => {
+    // Settles only when the request's signal aborts, like a hanging fetch.
+    mockedHttpClient.post.mockImplementation(
+      (_url, _path, _body, options) =>
+        new Promise((_resolve, reject) => {
+          options?.signal?.addEventListener("abort", () =>
+            reject(options.signal?.reason),
+          );
+        }),
+    );
+    const controller = new AbortController();
+
+    const request = getAds(publisherId, args, { signal: controller.signal });
+    controller.abort();
+
+    await expect(request).rejects.toMatchObject({ name: "AbortError" });
   });
 });
