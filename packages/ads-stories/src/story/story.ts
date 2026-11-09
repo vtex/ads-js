@@ -98,7 +98,6 @@ export class VtexAdsStoryElement extends LitElement {
     channel: { converter: channelConverter },
     timeout: { type: Number },
     quantity: { type: Number },
-    locale: {},
     currency: {},
     inactiveAutoplay: {
       type: Boolean,
@@ -129,11 +128,6 @@ export class VtexAdsStoryElement extends LitElement {
    * below 1 or not a number: the default.
    */
   declare quantity?: number;
-  /**
-   * Locale of the prices, as a BCP 47 tag ("pt-BR", "es-AR"). Missing or
-   * invalid: the page's `lang`, then pt-BR.
-   */
-  declare locale?: string;
   /**
    * Currency of the prices, as an ISO 4217 code ("BRL", "ARS"). Missing or
    * invalid: BRL.
@@ -376,19 +370,20 @@ export class VtexAdsStoryElement extends LitElement {
       ?.focus();
   }
 
-  // The highlighted card opens the player; another one takes the highlight.
-  // Hidden cards, out of sight, show only their cover.
-  // The formatter for the current locale and currency, made again only when
-  // either changes.
+  // The formatter for the current language and currency, made again only
+  // when either changes.
   private formatter?: {
     key: string;
     format: (amount: number) => string;
   };
 
+  // The prices follow the language of the closest element with a `lang`,
+  // the element itself included, so a store can set one for the widget
+  // alone. An empty `lang` (unknown) is skipped; none, or an unknown one,
+  // falls back to pt-BR.
   private get formatPrice() {
     const locale =
-      this.locale ||
-      this.closest<HTMLElement>("[lang]")?.lang ||
+      this.closest<HTMLElement>('[lang]:not([lang=""])')?.lang ??
       DEFAULT_LOCALE;
     const key = `${locale}|${this.currency ?? ""}`;
     if (this.formatter?.key !== key) {
@@ -401,6 +396,8 @@ export class VtexAdsStoryElement extends LitElement {
     return toCardProduct(story, this.formatPrice, LABELS.product);
   }
 
+  // The highlighted card opens the player; another one takes the highlight.
+  // Hidden cards, out of sight, show only their cover.
   private readonly renderSlide = (
     story: StoryAd,
     { key, index, offset, active, hidden }: Slide,

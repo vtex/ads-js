@@ -30,8 +30,6 @@ export interface VtexAdsStoryAttributes {
   timeout?: number;
   /** How many Stories to ask for: the carousel positions (default 8). */
   quantity?: number;
-  /** Locale of the prices ("pt-BR"). Default: the page's `lang`, then pt-BR. */
-  locale?: string;
   /** Currency of the prices, ISO 4217 ("BRL"). Default BRL. */
   currency?: string;
   /**

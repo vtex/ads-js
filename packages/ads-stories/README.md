@@ -130,14 +130,13 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
 | `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
 | `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
-| `locale`            | No       | Locale of the product prices, as a BCP 47 tag (`pt-BR`, `es-AR`). Default: the `lang` of the closest element that has one (usually `<html>`), then `pt-BR`                              |
 | `currency`          | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
 | `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout`, `inactive-autoplay`, `locale` and `currency`, requests the Stories again; a new
+`timeout`, `inactive-autoplay` and `currency`, requests the Stories again; a new
 `timeout` applies to the next request.
 
 ## Customization
@@ -194,7 +193,11 @@ player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
 Adding to the cart does nothing yet.
 
-Prices are formatted with `locale` and `currency`. The ad API doesn't send
+Prices are formatted in the language of the closest element with a `lang`
+attribute, the element itself included (usually `<html lang>`, or
+`<vtex-ads-story lang="es-AR">` for the widget alone), and in `currency`.
+Without a `lang`, or with one the browser doesn't know, they use `pt-BR`. The
+ad API doesn't send
 prices yet: the card reads them from the product's `product_metadata` (`price`,
 and `promotional_price` when on sale) and shows only the name without them.
 

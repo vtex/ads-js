@@ -50,6 +50,19 @@ describe("priceFormatter", () => {
     expect(priceFormatter("en-US", "USD")(1234.5)).toBe("$1,234.50");
   });
 
+  it("falls back to pt-BR for a well-formed but unknown locale", () => {
+    expect(normalize(priceFormatter("xx", "BRL")(10))).toBe("R$ 10,00");
+    expect(normalize(priceFormatter("zz-ZZ", "BRL")(10))).toBe("R$ 10,00");
+  });
+
+  it("falls back to BRL for an unknown three-letter currency", () => {
+    expect(normalize(priceFormatter("pt-BR", "ABC")(10))).toBe("R$ 10,00");
+  });
+
+  it("accepts a lowercase currency code", () => {
+    expect(priceFormatter("en-US", "usd")(10)).toBe("$10.00");
+  });
+
   it("falls back to pt-BR and BRL when missing or invalid", () => {
     expect(normalize(priceFormatter()(10))).toBe("R$ 10,00");
     expect(normalize(priceFormatter("not a locale", "reais")(10))).toBe(

@@ -46,26 +46,40 @@ export function readProductPrice(
   return regular === undefined ? undefined : { price: regular };
 }
 
+// A language the browser can format numbers in.
 function isLocale(locale: string) {
   try {
-    return Intl.getCanonicalLocales(locale).length > 0;
+    return Intl.NumberFormat.supportedLocalesOf(locale).length > 0;
   } catch {
     return false;
   }
 }
 
+// Intl.supportedValuesOf is newer than the TypeScript lib this package
+// targets, and missing in older browsers.
+const intl = Intl as typeof Intl & {
+  supportedValuesOf?: (key: "currency") => string[];
+};
+
+// A currency the browser knows. Without the list (older browsers), any
+// three-letter code.
+function isCurrency(currency: string) {
+  if (!/^[a-z]{3}$/i.test(currency)) return false;
+  const known = intl.supportedValuesOf?.("currency");
+  return known ? known.includes(currency.toUpperCase()) : true;
+}
+
 /**
  * Formats amounts as the given currency in the given locale ("R$ 129,90").
- * An empty or invalid locale falls back to DEFAULT_LOCALE, and an empty or
- * invalid currency (not a three-letter ISO 4217 code) to DEFAULT_CURRENCY.
+ * An empty or unknown locale falls back to DEFAULT_LOCALE, and an empty or
+ * unknown currency (not an ISO 4217 code) to DEFAULT_CURRENCY.
  */
 export function priceFormatter(locale?: string, currency?: string) {
   const format = new Intl.NumberFormat(
     locale && isLocale(locale) ? locale : DEFAULT_LOCALE,
     {
       style: "currency",
-      currency:
-        currency && /^[a-z]{3}$/i.test(currency) ? currency : DEFAULT_CURRENCY,
+      currency: currency && isCurrency(currency) ? currency : DEFAULT_CURRENCY,
     },
   );
   return (amount: number) => format.format(amount);

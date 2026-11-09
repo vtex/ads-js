@@ -110,10 +110,10 @@ describe("vtex-ads-story", () => {
       );
     });
 
-    it("formats the price with the locale and currency attributes", async () => {
+    it("formats the price in the element's own lang and currency", async () => {
       const el = await mount({
         ...REQUIRED_ATTRIBUTES,
-        locale: "en-US",
+        lang: "en-US",
         currency: "USD",
       });
 
@@ -122,17 +122,46 @@ describe("vtex-ads-story", () => {
       );
     });
 
-    it("uses the page's lang without a locale attribute", async () => {
-      document.documentElement.lang = "en-US";
-      try {
+    describe("with the page's lang", () => {
+      afterEach(() => {
+        document.documentElement.lang = "";
+      });
+
+      it("uses it when the element has none", async () => {
+        document.documentElement.lang = "en-US";
         const el = await mount({ ...REQUIRED_ATTRIBUTES, currency: "USD" });
 
         expect(
           text(productOf(el)?.querySelector(".product-price > span")),
         ).toBe("$129.90");
-      } finally {
-        document.documentElement.lang = "";
-      }
+      });
+
+      it("skips an empty lang on the way up", async () => {
+        document.documentElement.lang = "en-US";
+        const section = document.createElement("section");
+        section.setAttribute("lang", "");
+        document.body.append(section);
+        const el = document.createElement(TAG_NAME);
+        for (const [name, value] of Object.entries(REQUIRED_ATTRIBUTES)) {
+          el.setAttribute(name, value);
+        }
+        el.setAttribute("currency", "USD");
+        section.append(el);
+        await flushRequest(el);
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("$129.90");
+      });
+
+      it("falls back to pt-BR for an unknown one", async () => {
+        document.documentElement.lang = "xx";
+        const el = await mount();
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("R$ 129,90");
+      });
     });
 
     it("formats again when the currency changes, without a new request", async () => {
