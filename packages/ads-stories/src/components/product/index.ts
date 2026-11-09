@@ -3,6 +3,8 @@ export {
   renderProduct,
   toCardProduct,
 } from "./product";
+export { renderCta, toCardCta } from "./cta";
+export type { CardCta } from "./cta";
 export { productStyles } from "./product.styles";
 export type {
   CardProduct,

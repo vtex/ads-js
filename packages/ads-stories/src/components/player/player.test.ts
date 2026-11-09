@@ -369,6 +369,42 @@ describe("PlayerController", () => {
     });
   });
 
+  describe("call to action", () => {
+    const cta = {
+      label: "Saiba mais",
+      url: "https://www.example.com/campaign",
+    };
+    const withVideo = { ...story, media_url: "https://example.com/story.mp4" };
+
+    it("shows the call to action at the bottom of the video", async () => {
+      const { player } = await setup(withVideo, { cta });
+      const link = player.querySelector<HTMLAnchorElement>(".card .card-cta");
+
+      expect(link?.href).toBe(cta.url);
+      expect(link?.target).toBe("_blank");
+      expect(link?.textContent?.trim()).toBe("Saiba mais");
+      expect(player.querySelector(".card-product")).toBeNull();
+    });
+
+    it("has no call to action without one", async () => {
+      const { player } = await setup();
+
+      expect(player.querySelector(".card-cta")).toBeNull();
+    });
+
+    it("doesn't pause the video when clicked", async () => {
+      const { player } = await setup(withVideo, { cta });
+      const video = player.querySelector("video");
+      const link = player.querySelector<HTMLAnchorElement>(".card-cta");
+      // The test doesn't navigate.
+      link?.addEventListener("click", (event) => event.preventDefault());
+
+      link?.click();
+
+      expect(video?.paused).toBe(false);
+    });
+  });
+
   describe("video", () => {
     const withVideo = { ...story, media_url: "https://example.com/story.mp4" };
 

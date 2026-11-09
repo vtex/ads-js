@@ -167,6 +167,7 @@ const linkStory: StoryAdDetail = {
   position: 1,
   destination_url: "https://advertiser.example.com/promo",
   product: null,
+  call_to_action: "Saiba mais",
 };
 
 const sampleProductAd: SponsoredProductDetail = {

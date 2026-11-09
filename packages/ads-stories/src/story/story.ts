@@ -12,6 +12,7 @@ import {
   DEFAULT_LOCALE,
   priceFormatter,
   productStyles,
+  toCardCta,
   toCardProduct,
 } from "../components/product";
 import {
@@ -419,6 +420,10 @@ export class VtexAdsStoryElement extends LitElement {
       onProductSelect: active
         ? () => this.openPlayer({ productOpen: true })
         : undefined,
+      // On the highlighted card it follows the link; on another, it moves the
+      // highlight.
+      cta: toCardCta(story),
+      onCtaSelect: active ? undefined : () => this.carousel.step(offset),
     });
 
   protected render() {
@@ -442,6 +447,7 @@ export class VtexAdsStoryElement extends LitElement {
         navigation: stories.length > 1,
         neighbors,
         product: this.productOf(active),
+        cta: toCardCta(active),
       })}
     `;
   }

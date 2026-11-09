@@ -143,6 +143,11 @@ export interface StoryAdDetail {
    * Featured product, or `null` when the destination is a link.
    */
   product: StoryProduct | null;
+  /**
+   * Text of the call to action button, set in the campaign. Only when the
+   * destination is a link.
+   */
+  call_to_action?: string | null;
   impression_url: string;
   view_url: string;
   click_url: string;

@@ -1,8 +1,10 @@
 import { css } from "lit";
 
 export const productStyles = css`
-  /* A glass pill at the bottom of the card, above its button. */
-  .card-product {
+  /* A glass pill at the bottom of the card, above its button: the product or
+     the call to action. */
+  .card-product,
+  .card-cta {
     position: absolute;
     right: 12px;
     bottom: 12px;
@@ -25,7 +27,8 @@ export const productStyles = css`
   }
 
   /* The glass's tint and inner light, darker on hover. */
-  .card-product::before {
+  .card-product::before,
+  .card-cta::before {
     position: absolute;
     inset: 0;
     z-index: -1;
@@ -36,23 +39,53 @@ export const productStyles = css`
     transition: background-color 0.2s ease;
   }
 
-  button.card-product {
+  button.card-product,
+  .card-cta {
     cursor: pointer;
   }
 
-  .card-product:focus-visible {
+  .card-product:focus-visible,
+  .card-cta:focus-visible {
     outline: 2px solid #fff;
     outline-offset: 2px;
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .card-product:hover {
+    .card-product:hover,
+    .card-cta:hover {
       transform: translateY(-2px);
     }
 
-    .card-product:hover::before {
+    .card-product:hover::before,
+    .card-cta:hover::before {
       background: rgba(0, 0, 0, 0.32);
     }
+  }
+
+  /* A Story with a link: the pill is the call to action, its text centered
+     with a caret after it. */
+  .card-cta {
+    justify-content: center;
+    gap: 6px;
+    height: 48px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .cta-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-cta .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
   }
 
   /* In the player: the pill is a toggle, with the actions panel below. */
@@ -231,12 +264,15 @@ export const productStyles = css`
 
   @media (prefers-reduced-motion: reduce) {
     .card-product,
-    .card-product:hover {
+    .card-product:hover,
+    .card-cta,
+    .card-cta:hover {
       transform: none;
       transition: none;
     }
 
     .card-product::before,
+    .card-cta::before,
     .product-summary,
     .product-toggle,
     .product-panel,
