@@ -160,7 +160,6 @@ export const productStyles = css`
     color: #fff;
   }
 
-  /* Darker on hover: lighter would lower the white label's contrast. */
   .product-add-to-cart:hover {
     background: color-mix(
       in srgb,
@@ -196,6 +195,11 @@ export const productStyles = css`
 
   .product-expandable[data-open] .product-price {
     color: inherit;
+  }
+
+  .product-expandable[data-open] .product-list-price {
+    color: #6b6b6b;
+    opacity: 1;
   }
 
   .product-expandable[data-open] .product-summary {
