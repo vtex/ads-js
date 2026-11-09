@@ -198,14 +198,65 @@ describe("vtex-ads-story carousel", () => {
     const el = await mount();
     const track = query(el, ".track");
 
-    track?.dispatchEvent(new PointerEvent("pointerdown", { clientX: 200 }));
-    track?.dispatchEvent(new PointerEvent("pointerup", { clientX: 100 }));
+    track?.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: 200,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    track?.dispatchEvent(
+      new PointerEvent("pointerup", {
+        clientX: 100,
+        bubbles: true,
+        composed: true,
+      }),
+    );
     query(el, ".slide[data-active] .card-open")?.click();
     await el.updateComplete;
     await el.updateComplete;
 
     expect(activeIndex(el)).toBe(1);
     expect(query(el, ".player")).toBeNull();
+  });
+
+  it("moves the highlight when the swipe is released off the track", async () => {
+    const el = await mount();
+
+    query(el, ".track")?.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: 200,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    query(el, ".arrow-next")?.dispatchEvent(
+      new PointerEvent("pointerup", {
+        clientX: 100,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    await el.updateComplete;
+
+    expect(activeIndex(el)).toBe(1);
+  });
+
+  it("drops a swipe the browser cancels", async () => {
+    const el = await mount();
+
+    query(el, ".track")?.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: 200,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    window.dispatchEvent(new PointerEvent("pointercancel"));
+    window.dispatchEvent(new PointerEvent("pointerup", { clientX: 100 }));
+    await el.updateComplete;
+
+    expect(activeIndex(el)).toBe(0);
   });
 
   describe("automatic advance", () => {

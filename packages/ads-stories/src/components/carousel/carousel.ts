@@ -324,6 +324,7 @@ export class CarouselController implements ReactiveController {
     this.connected = false;
     this.media?.removeEventListener("change", this.onMediaChange);
     this.media = undefined;
+    this.endSwipe();
     this.syncTimer();
   }
 
@@ -428,12 +429,18 @@ export class CarouselController implements ReactiveController {
     this.syncTimer();
   };
 
+  // The release is listened for on the window: a mouse drag can end over an
+  // arrow or off the carousel, where the track never gets the pointerup.
   private readonly onPointerDown = (event: PointerEvent) => {
+    this.endSwipe();
     this.swipe = { x: event.clientX, moved: false };
+    window.addEventListener("pointerup", this.onPointerUp);
+    window.addEventListener("pointercancel", this.onPointerCancel);
   };
 
   private readonly onPointerUp = (event: PointerEvent) => {
     const { swipe } = this;
+    this.removeSwipeListeners();
     if (!swipe) return;
 
     const distance = event.clientX - swipe.x;
@@ -442,6 +449,18 @@ export class CarouselController implements ReactiveController {
       this.step(distance < 0 ? 1 : -1);
     }
   };
+
+  private readonly onPointerCancel = () => this.endSwipe();
+
+  private endSwipe() {
+    this.removeSwipeListeners();
+    this.swipe = undefined;
+  }
+
+  private removeSwipeListeners() {
+    window.removeEventListener("pointerup", this.onPointerUp);
+    window.removeEventListener("pointercancel", this.onPointerCancel);
+  }
 
   // A swipe ends with a click on the card under the pointer: it must not
   // open the player or select that card.
@@ -563,7 +582,6 @@ export class CarouselController implements ReactiveController {
             "--slide-duration": this.distance > 1 ? "0.52s" : "0.4s",
           })}
           @pointerdown=${this.onPointerDown}
-          @pointerup=${this.onPointerUp}
           @click=${this.onClickCapture}
         >
           ${this.renderSlides(items, renderSlide)}
