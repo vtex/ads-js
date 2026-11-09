@@ -396,12 +396,16 @@ describe("PlayerController", () => {
       const { player } = await setup(withVideo, { cta });
       const video = player.querySelector("video");
       const link = player.querySelector<HTMLAnchorElement>(".card-cta");
+      if (!video || !link) throw new Error("The video or the link is missing");
       // The test doesn't navigate.
-      link?.addEventListener("click", (event) => event.preventDefault());
+      link.addEventListener("click", (event) => event.preventDefault());
+      expect(video.paused).toBe(false);
+      const pause = vi.spyOn(video, "pause");
 
-      link?.click();
+      link.click();
 
-      expect(video?.paused).toBe(false);
+      expect(pause).not.toHaveBeenCalled();
+      expect(video.paused).toBe(false);
     });
   });
 
