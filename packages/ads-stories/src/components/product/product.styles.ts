@@ -140,42 +140,45 @@ export const productStyles = css`
     box-sizing: border-box;
     height: 48px;
     padding: 0 16px;
-    border: 1px solid var(--vtex-ads-story-accent, #2f97d2);
+    border: 1px solid var(--vtex-ads-story-accent, #1b75a8);
     border-radius: 50px;
     font: inherit;
     font-size: 14px;
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
-    transition:
-      background-color 0.2s ease,
-      opacity 0.2s ease;
+    transition: background-color 0.2s ease;
   }
 
   .product-action:focus-visible {
-    outline: 2px solid var(--vtex-ads-story-accent, #2f97d2);
+    outline: 2px solid var(--vtex-ads-story-accent, #1b75a8);
     outline-offset: 2px;
   }
 
   .product-add-to-cart {
-    background: var(--vtex-ads-story-accent, #2f97d2);
+    background: var(--vtex-ads-story-accent, #1b75a8);
     color: #fff;
   }
 
+  /* Darker on hover: lighter would lower the white label's contrast. */
   .product-add-to-cart:hover {
-    opacity: 0.9;
+    background: color-mix(
+      in srgb,
+      var(--vtex-ads-story-accent, #1b75a8) 85%,
+      #000
+    );
   }
 
   .product-view {
     background: #fff;
-    color: var(--vtex-ads-story-accent, #2f97d2);
+    color: var(--vtex-ads-story-accent, #1b75a8);
   }
 
   /* A light tint of the accent. */
   .product-view:hover {
     background: color-mix(
       in srgb,
-      var(--vtex-ads-story-accent, #2f97d2) 8%,
+      var(--vtex-ads-story-accent, #1b75a8) 8%,
       #fff
     );
   }

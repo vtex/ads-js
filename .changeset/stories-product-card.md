@@ -11,4 +11,4 @@ New attributes, also in the React JSX types:
 - `locale`: locale of the prices, as a BCP 47 tag (`pt-BR`). Default: the `lang` of the closest element that has one, then `pt-BR`.
 - `currency`: currency of the prices, as an ISO 4217 code (`BRL`). Default `BRL`.
 
-New CSS variable: `--vtex-ads-story-accent` colors the product panel's buttons (default `#2f97d2`).
+New CSS variable: `--vtex-ads-story-accent` colors the product panel's buttons (default `#1b75a8`).

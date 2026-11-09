@@ -148,7 +148,7 @@ vtex-ads-story {
   --vtex-ads-story-color-text: #1f1f1f;
   --vtex-ads-story-radius: 20px;
   --vtex-ads-story-solo-background: #fafafa;
-  --vtex-ads-story-accent: #2f97d2;
+  --vtex-ads-story-accent: #1b75a8;
 }
 ```
 
@@ -158,7 +158,7 @@ vtex-ads-story {
 | `--vtex-ads-story-color-text`      | inherited | All text                                   |
 | `--vtex-ads-story-radius`          | `20px`    | Card and background corners                |
 | `--vtex-ads-story-solo-background` | `#fafafa` | Background behind the card, with one Story |
-| `--vtex-ads-story-accent`          | `#2f97d2` | The product panel's buttons                |
+| `--vtex-ads-story-accent`          | `#1b75a8` | The product panel's buttons                |
 
 ## Layout
 
