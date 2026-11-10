@@ -434,8 +434,8 @@ export class CarouselController implements ReactiveController {
   private readonly onPointerDown = (event: PointerEvent) => {
     this.endSwipe();
     this.swipe = { x: event.clientX, moved: false };
-    window.addEventListener("pointerup", this.onPointerUp);
-    window.addEventListener("pointercancel", this.onPointerCancel);
+    globalThis.addEventListener("pointerup", this.onPointerUp);
+    globalThis.addEventListener("pointercancel", this.onPointerCancel);
   };
 
   private readonly onPointerUp = (event: PointerEvent) => {
@@ -458,8 +458,8 @@ export class CarouselController implements ReactiveController {
   }
 
   private removeSwipeListeners() {
-    window.removeEventListener("pointerup", this.onPointerUp);
-    window.removeEventListener("pointercancel", this.onPointerCancel);
+    globalThis.removeEventListener("pointerup", this.onPointerUp);
+    globalThis.removeEventListener("pointercancel", this.onPointerCancel);
   }
 
   // A swipe ends with a click on the card under the pointer: it must not
