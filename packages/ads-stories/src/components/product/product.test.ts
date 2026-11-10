@@ -220,9 +220,12 @@ describe("renderExpandableProduct", () => {
     expect(container.querySelector(".product-view")).toBeNull();
   });
 
-  it("has no add to cart while the product loads", () => {
+  it("has a placeholder in place of add to cart while the product loads", () => {
     const { container } = mount({ ...product, isLoading: true }, true);
 
+    const skeleton = container.querySelector(".product-add-to-cart-loading");
+    expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
+    expect(skeleton?.textContent?.trim()).toBe("");
     expect(container.querySelector(".product-add-to-cart")).toBeNull();
     expect(container.querySelector(".product-view")).not.toBeNull();
   });

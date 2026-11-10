@@ -320,25 +320,35 @@ export const productStyles = css`
     opacity: 0.5;
   }
 
-  /* The price's placeholder: a line its height (the info's line height),
-     pulsing gently. */
-  .product-price-loading {
-    width: 64px;
-    height: 16px;
-    border-radius: 4px;
+  /* Placeholders while the product loads, pulsing gently. */
+  .product-loading {
     background: currentColor;
     opacity: 0.25;
-    animation: product-price-pulse 1.2s ease-in-out infinite alternate;
+    animation: product-loading-pulse 1.2s ease-in-out infinite alternate;
   }
 
-  @keyframes product-price-pulse {
+  @keyframes product-loading-pulse {
     to {
       opacity: 0.1;
     }
   }
 
+  /* The price's: a line its height (the info's line height). */
+  .product-price-loading {
+    width: 64px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  /* The add to cart button's: its size and shape. */
+  .product-add-to-cart-loading {
+    display: block;
+    height: 48px;
+    border-radius: 50px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .product-price-loading {
+    .product-loading {
       animation: none;
     }
   }

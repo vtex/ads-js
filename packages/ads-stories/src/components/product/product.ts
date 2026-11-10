@@ -74,7 +74,19 @@ export function toCardProduct(
 }
 
 const priceSkeleton = html`
-  <span class="product-price product-price-loading" aria-hidden="true"></span>
+  <span
+    class="product-price product-loading product-price-loading"
+    aria-hidden="true"
+  ></span>
+`;
+
+// The add to cart button's place, while the product loads. Hidden from
+// assistive technology, as the price's.
+const addToCartSkeleton = html`
+  <span
+    class="product-loading product-add-to-cart-loading"
+    aria-hidden="true"
+  ></span>
 `;
 
 // The price and, on sale, the "from" price struck through beside it. While
@@ -138,9 +150,9 @@ export interface ExpandableProductOptions {
 
 /**
  * The product pill in the player. The pill is a button that opens a panel
- * below it, as in the prototype, with "Adicionar ao carrinho" (not while the
- * product loads) and "Ver produto" (the product page, in a new tab; only
- * with a URL). Open, the pill turns white.
+ * below it, as in the prototype, with "Adicionar ao carrinho" (a placeholder
+ * while the product loads) and "Ver produto" (the product page, in a new tab;
+ * only with a URL). Open, the pill turns white.
  *
  * Adding to the cart does nothing yet: it will emit an event for the store
  * to handle.
@@ -167,7 +179,7 @@ export function renderExpandableProduct(
       <div id=${options.panelId} class="product-panel" ?inert=${!open}>
         <div class="product-actions">
           ${product.isLoading
-            ? nothing
+            ? addToCartSkeleton
             : html`
                 <button
                   type="button"

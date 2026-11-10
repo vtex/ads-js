@@ -187,7 +187,7 @@ describe("vtex-ads-story product hydration", () => {
     ).toContain("99,90");
   });
 
-  it("shows a placeholder and no add to cart while the price loads", async () => {
+  it("shows placeholders for the price and add to cart while loading", async () => {
     hangUntilAborted();
     const el = await mount(WITH_ACCOUNT);
 
@@ -196,9 +196,9 @@ describe("vtex-ads-story product hydration", () => {
     expect(pill(el)?.getAttribute("aria-label")).toBe(
       mockStory.product?.product_name,
     );
-    expect(
-      (await openPanel(el))?.querySelector(".product-add-to-cart"),
-    ).toBeNull();
+    const panel = await openPanel(el);
+    expect(panel?.querySelector(".product-add-to-cart")).toBeNull();
+    expect(panel?.querySelector(".product-add-to-cart-loading")).not.toBeNull();
   });
 
   it("uses the strategy set as a property", async () => {

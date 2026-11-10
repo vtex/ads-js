@@ -227,8 +227,8 @@ story.hydration = {
 };
 ```
 
-While the request runs, the price shows a placeholder and the panel only the
-view product link. Then the fetched price shows, as the strategy returns it,
+While the request runs, the price and the panel's add to cart button show
+placeholders. Then the fetched price shows, as the strategy returns it,
 and so does add to cart. Without one (no strategy, a request that fails or
 takes longer than `hydration-timeout`, a product not found or without a
 price), the card shows the price from the product's `product_metadata`
