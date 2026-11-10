@@ -149,10 +149,12 @@
       <h2>Product hydration</h2>
       <p class="note">
         With <code>account-name</code>, the element asks Intelligent Search
-        (mocked) for the products once the cards show. For 2 s the prices show a
-        placeholder and the player's panel has no add to cart; then the fetched
-        prices replace the ad server's (the first product drops from R$ 129,90
-        to R$ 99,90, the third gets a price it didn't have).
+        (mocked) for the products once the cards show. For 2 s the prices and
+        the player's add to cart show placeholders; then the fetched prices
+        replace the ad server's (the first product drops from R$ 129,90 to R$
+        99,90, the third gets a price it didn't have). The second one is out of
+        stock: <em>Esgotado</em>, and a disabled
+        <em>Produto indisponível</em> in the player.
       </p>
       <vtex-ads-story
         publisher-id="playground-publisher"
@@ -261,16 +263,19 @@
       // The catalog behind the mock, by SKU: what Intelligent Search sends
       // for the test Stories' products, sold by seller 1.
       const SEARCH_PRODUCTS = {
-        "sku-1": { productId: "1", Price: 99.9, ListPrice: 149.9 },
-        "sku-2": { productId: "2", Price: 79.9, ListPrice: 79.9 },
-        "sku-3": { productId: "3", Price: 49.9, ListPrice: 59.9 },
+        "sku-1": { productId: "1", Price: 99.9, ListPrice: 149.9, Stock: 10 },
+        "sku-2": { productId: "2", Price: 79.9, ListPrice: 79.9, Stock: 0 },
+        "sku-3": { productId: "3", Price: 49.9, ListPrice: 59.9, Stock: 10 },
       };
 
       const SEARCH =
         /^https:\/\/([^.]+)\.vtexcommercestable\.com\.br\/api\/intelligent-search\/product_search/;
 
       // An Intelligent Search product, with only what the hydration reads.
-      const searchProduct = (skuId, { productId, Price, ListPrice }) => ({
+      const searchProduct = (
+        skuId,
+        { productId, Price, ListPrice, Stock },
+      ) => ({
         productId,
         items: [
           {
@@ -278,7 +283,11 @@
             sellers: [
               {
                 sellerId: "1",
-                commertialOffer: { Price, ListPrice, AvailableQuantity: 10 },
+                commertialOffer: {
+                  Price,
+                  ListPrice,
+                  AvailableQuantity: Stock,
+                },
               },
             ],
           },

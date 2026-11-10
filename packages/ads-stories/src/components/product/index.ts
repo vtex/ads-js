@@ -11,6 +11,7 @@ export type {
   ExpandableProductOptions,
   FetchedProduct,
   ProductLabel,
+  ProductLabels,
 } from "./product";
 export {
   DEFAULT_CURRENCY,

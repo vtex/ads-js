@@ -35,6 +35,7 @@ describe("PlayerController", () => {
     nextLabel: "Próximo vídeo",
     neighborLabel: "Mostrar vídeo",
     addToCartLabel: "Adicionar ao carrinho",
+    unavailableLabel: "Produto indisponível",
     viewProductLabel: "Ver produto",
   };
 

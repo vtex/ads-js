@@ -207,7 +207,7 @@ carousel shows, the element fetches its products in one request, with a
 hydration strategy from [`@vtex/ads-core`](../core), and shows the details it
 reads from them over the ad API's. For now, the price is the only one.
 
-- **`hydration` property**: a strategy `{ fetcher, matcher, price }`, as an
+- **`hydration` property**: a strategy `{ fetcher, matcher, price, available? }`, as an
   object. `fetcher` and `matcher` are a `ProductFetcher` and a
   `ProductMatchesOffer`; `price` reads an offer's price from a fetched product
   (a `ProductPriceReader`). Set it before the element is on the page, or the
@@ -234,6 +234,14 @@ takes longer than `hydration-timeout`, a product not found or without a
 price), the card shows the price from the product's `product_metadata`
 (`price`, and `promotional_price` when on sale), or only the name without
 one.
+
+A strategy can also say whether the product can be bought, with an optional
+`available(product, offer)` (a `ProductAvailabilityReader`; Intelligent
+Search's reads `AvailableQuantity`). When it says no, the card and the player
+show **Esgotado** in place of the price, add to cart becomes a disabled
+**Produto indisponível**, and **Ver produto** still opens the product page.
+The Story keeps playing. Without `available`, or when it doesn't say, the
+product shows as before.
 
 ### Call to action
 

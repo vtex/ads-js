@@ -34,6 +34,7 @@ vi.mock("@vtex/ads-core", () => ({
   intelligentSearchFetcher: vi.fn(),
   intelligentSearchMatcher: vi.fn(),
   intelligentSearchPrice: vi.fn(),
+  intelligentSearchAvailability: vi.fn(),
 }));
 
 const getRawAdsMock = vi.mocked(getRawAds);

@@ -21,6 +21,11 @@ export interface CardProduct {
    * place (for now, the price's).
    */
   isLoading?: boolean;
+  /**
+   * The text shown in place of the price ("Esgotado") when the fetched
+   * product can't be bought. Add to cart then becomes a disabled button.
+   */
+  soldOut?: string;
 }
 
 /**
@@ -37,39 +42,59 @@ export type ProductLabel = (
   listPrice?: string,
 ) => string;
 
+/** The texts of the product, set by the element. */
+export interface ProductLabels {
+  /** The product button's accessible name. */
+  product: ProductLabel;
+  /** Shown in place of the price for a product that can't be bought. */
+  soldOut: string;
+}
+
 /**
  * The card's view of a Story's product, or undefined when the Story has none
  * (its destination is a link) or the product has no name.
  *
  * The price is the fetched one when there is one; while the product loads,
- * none; and otherwise the ad server's, from `product_metadata`.
+ * none; and otherwise the ad server's, from `product_metadata`. A fetched
+ * product that can't be bought shows `labels.soldOut` instead.
  */
 export function toCardProduct(
   story: Pick<StoryAd, "product" | "destination_url">,
   format: (amount: number) => string,
-  label: ProductLabel,
+  labels: ProductLabels,
   fetched?: FetchedProduct,
 ): CardProduct | undefined {
   const product = story.product;
   const name = product?.product_name?.trim();
   if (!product || !name) return undefined;
 
-  const loading = fetched === "loading";
-  const amounts = loading
-    ? undefined
-    : (fetched?.price ?? readProductPrice(product.product_metadata));
+  const base = {
+    name,
+    imageUrl: httpUrl(product.image_url) ?? undefined,
+    url: httpUrl(story.destination_url) ?? undefined,
+  };
+
+  if (fetched === "loading") {
+    return { ...base, label: labels.product(name), isLoading: true };
+  }
+  if (fetched?.available === false) {
+    return {
+      ...base,
+      label: labels.product(name, labels.soldOut),
+      soldOut: labels.soldOut,
+    };
+  }
+
+  const amounts = fetched?.price ?? readProductPrice(product.product_metadata);
   const price = amounts && format(amounts.price);
   const listPrice =
     amounts?.listPrice === undefined ? undefined : format(amounts.listPrice);
 
   return {
-    name,
-    imageUrl: httpUrl(product.image_url) ?? undefined,
+    ...base,
     price,
     listPrice,
-    url: httpUrl(story.destination_url) ?? undefined,
-    label: label(name, price, listPrice),
-    ...(loading && { isLoading: true }),
+    label: labels.product(name, price, listPrice),
   };
 }
 
@@ -90,9 +115,13 @@ const addToCartSkeleton = html`
 `;
 
 // The price and, on sale, the "from" price struck through beside it. While
-// the product loads, its placeholder; without a price, nothing.
-function renderPrice({ isLoading, price, listPrice }: CardProduct) {
+// the product loads, its placeholder; sold out, the sold out text; without a
+// price, nothing.
+function renderPrice({ isLoading, soldOut, price, listPrice }: CardProduct) {
   if (isLoading) return priceSkeleton;
+  if (soldOut) {
+    return html`<span class="product-price product-sold-out">${soldOut}</span>`;
+  }
   if (!price) return nothing;
 
   return html`
@@ -145,14 +174,38 @@ export interface ExpandableProductOptions {
   /** Id of the panel, for the button's aria-controls. */
   panelId: string;
   addToCartLabel: string;
+  /** The disabled button in place of add to cart, when sold out. */
+  unavailableLabel: string;
   viewProductLabel: string;
+}
+
+// Add to cart: its placeholder while the product loads, and a disabled
+// button when sold out.
+function renderAddToCart(
+  { isLoading, soldOut }: CardProduct,
+  { addToCartLabel, unavailableLabel }: ExpandableProductOptions,
+) {
+  if (isLoading) return addToCartSkeleton;
+  if (soldOut) {
+    return html`
+      <button type="button" class="product-action product-unavailable" disabled>
+        ${unavailableLabel}
+      </button>
+    `;
+  }
+  return html`
+    <button type="button" class="product-action product-add-to-cart">
+      ${addToCartLabel}
+    </button>
+  `;
 }
 
 /**
  * The product pill in the player. The pill is a button that opens a panel
  * below it, as in the prototype, with "Adicionar ao carrinho" (a placeholder
- * while the product loads) and "Ver produto" (the product page, in a new tab;
- * only with a URL). Open, the pill turns white.
+ * while the product loads, a disabled "Produto indisponível" when sold out)
+ * and "Ver produto" (the product page, in a new tab; only with a URL). Open,
+ * the pill turns white.
  *
  * Adding to the cart does nothing yet: it will emit an event for the store
  * to handle.
@@ -178,16 +231,7 @@ export function renderExpandableProduct(
       </button>
       <div id=${options.panelId} class="product-panel" ?inert=${!open}>
         <div class="product-actions">
-          ${product.isLoading
-            ? addToCartSkeleton
-            : html`
-                <button
-                  type="button"
-                  class="product-action product-add-to-cart"
-                >
-                  ${options.addToCartLabel}
-                </button>
-              `}
+          ${renderAddToCart(product, options)}
           ${product.url
             ? html`
                 <a

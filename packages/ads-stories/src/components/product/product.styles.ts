@@ -201,6 +201,14 @@ export const productStyles = css`
     );
   }
 
+  /* Sold out: add to cart, disabled and grayed. */
+  .product-unavailable {
+    border-color: transparent;
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.45);
+    cursor: not-allowed;
+  }
+
   .product-view {
     background: #fff;
     color: var(--vtex-ads-story-accent, #1b75a8);
@@ -318,6 +326,12 @@ export const productStyles = css`
   .product-list-price {
     font-weight: 400;
     opacity: 0.5;
+  }
+
+  /* In place of the price, for a product that can't be bought. */
+  .product-sold-out {
+    font-weight: 700;
+    opacity: 0.75;
   }
 
   /* Placeholders while the product loads, pulsing gently. */

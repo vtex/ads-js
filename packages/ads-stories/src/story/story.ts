@@ -91,6 +91,8 @@ const LABELS = {
   soundOn: "Ativar som",
   soundOff: "Desativar som",
   addToCart: "Adicionar ao carrinho",
+  unavailable: "Produto indisponível",
+  soldOut: "Esgotado",
   viewProduct: "Ver produto",
   /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
   product: (name: string, price?: string, listPrice?: string) => {
@@ -245,6 +247,7 @@ export class VtexAdsStoryElement extends LitElement {
     nextLabel: LABELS.next,
     neighborLabel: LABELS.show,
     addToCartLabel: LABELS.addToCart,
+    unavailableLabel: LABELS.unavailable,
     viewProductLabel: LABELS.viewProduct,
     onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
@@ -475,7 +478,7 @@ export class VtexAdsStoryElement extends LitElement {
     return toCardProduct(
       story,
       this.formatPrice,
-      LABELS.product,
+      LABELS,
       this.fetchedProductOf(story),
     );
   }
