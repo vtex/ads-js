@@ -173,6 +173,85 @@ describe("vtex-ads-story carousel", () => {
     expect(query(el, ".player")).toBeNull();
   });
 
+  describe("call to action", () => {
+    // A link destination: no product.
+    const linkStory = mockStories[3];
+
+    beforeEach(() => {
+      getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory, linkStory]));
+    });
+
+    it("shows it instead of a product on a Story with a link", async () => {
+      const el = await mount();
+      const [productSlide, linkSlide] = slides(el);
+
+      expect(productSlide.querySelector(".card-cta")).toBeNull();
+      expect(linkSlide.querySelector(".card-product")).toBeNull();
+      const link = linkSlide.querySelector<HTMLAnchorElement>(".card-cta");
+      expect(link?.href).toBe(linkStory.destination_url);
+      expect(link?.target).toBe("_blank");
+      expect(link?.textContent?.trim()).toBe(linkStory.call_to_action);
+    });
+
+    it("shows none on a Story with a link but no text", async () => {
+      getRawAdsMock.mockResolvedValue(
+        rawAdsWith([mockStory, { ...linkStory, call_to_action: null }]),
+      );
+      const el = await mount();
+
+      expect(query(el, ".card-cta")).toBeNull();
+    });
+
+    it("gives the highlight to its card instead of following the link", async () => {
+      const el = await mount();
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      });
+
+      query(el, ".slide:not([data-active]) .card-cta")?.dispatchEvent(event);
+      await el.updateComplete;
+      await el.updateComplete;
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(activeIndex(el)).toBe(1);
+      expect(query(el, ".player")).toBeNull();
+    });
+
+    it("follows the link on the highlighted card", async () => {
+      const el = await mount();
+      await click(el, ".arrow-next");
+      let prevented: boolean | undefined;
+      // After the element's listeners; cancels it so the test doesn't navigate.
+      document.addEventListener(
+        "click",
+        (event) => {
+          prevented = event.defaultPrevented;
+          event.preventDefault();
+        },
+        { once: true },
+      );
+
+      await click(el, ".slide[data-active] .card-cta");
+
+      expect(prevented).toBe(false);
+      expect(activeIndex(el)).toBe(1);
+      expect(query(el, ".player")).toBeNull();
+    });
+
+    it("shows it in the player", async () => {
+      const el = await mount();
+      await click(el, ".arrow-next");
+
+      await click(el, ".slide[data-active] .card-open");
+
+      expect(query<HTMLAnchorElement>(el, ".player .card-cta")?.href).toBe(
+        linkStory.destination_url,
+      );
+    });
+  });
+
   it("opens the highlighted Story in the player", async () => {
     const el = await mount();
     await click(el, ".arrow-next");

@@ -197,9 +197,17 @@ Prices are formatted in the language of the closest element with a `lang`
 attribute, the element itself included (usually `<html lang>`, or
 `<vtex-ads-story lang="es-AR">` for the widget alone), and in `currency`.
 Without a `lang`, or with one the browser doesn't know, they use `pt-BR`. The
-ad API doesn't send
-prices yet: the card reads them from the product's `product_metadata` (`price`,
-and `promotional_price` when on sale) and shows only the name without them.
+ad API doesn't send prices yet: the card reads them from the product's
+`product_metadata` (`price`, and `promotional_price` when on sale) and shows
+only the name without them.
+
+### Call to action
+
+When the Story's destination is a link (no product), the card and the player
+show a call to action at the bottom instead: a button with the text set in the
+campaign (the ad's `call_to_action`, such as "Saiba mais") and a caret, which
+opens the link in a new tab. On a card without the highlight, it moves the
+highlight, as the card does. Without a text, there is no button.
 
 ### Player
 

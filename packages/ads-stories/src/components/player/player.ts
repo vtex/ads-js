@@ -11,7 +11,12 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
-import { renderExpandableProduct, type CardProduct } from "../product";
+import {
+  renderCta,
+  renderExpandableProduct,
+  type CardCta,
+  type CardProduct,
+} from "../product";
 import type { StoryMedia } from "../../types";
 
 /**
@@ -131,9 +136,10 @@ export const playerStyles = css`
     height: 20px;
   }
 
-  /* The product pill, larger than on the carousel card (as in the
-     prototype). Its wrapper only stops clicks: the pill places itself. */
-  .player-product {
+  /* The product pill or the call to action. Their wrapper only stops clicks:
+     the pill places itself. The product is larger than on the carousel card
+     (as in the prototype). */
+  .player-destination {
     display: contents;
   }
 
@@ -463,7 +469,12 @@ export interface PlayerRenderOptions {
   neighbors?: readonly PlayerNeighbor[];
   /** The Story's product, shown at the bottom of the video. */
   product?: CardProduct;
+  /** The Story's call to action, for a link destination (no product). */
+  cta?: CardCta;
 }
+
+// What shows at the bottom of the video: one or the other.
+type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta">;
 
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
@@ -908,24 +919,33 @@ export class PlayerController implements ReactiveController {
   };
 
   /**
-   * The product pill at the bottom of the video, which opens the panel with
-   * its actions. Clicks on it don't reach the video.
+   * At the bottom of the video, the product pill, which opens the panel with
+   * its actions, or the call to action of a link destination. Clicks on them
+   * don't reach the video.
    */
-  private renderProduct(product: CardProduct) {
+  private renderDestination({ product, cta }: StoryDestination) {
     const { options } = this;
+    let content;
+    if (product) {
+      content = renderExpandableProduct(product, {
+        open: this.productOpen,
+        onToggle: this.toggleProduct,
+        panelId: "player-product-panel",
+        addToCartLabel: options.addToCartLabel,
+        viewProductLabel: options.viewProductLabel,
+      });
+    } else if (cta) {
+      content = renderCta(cta);
+    } else {
+      return nothing;
+    }
 
     return html`
       <div
-        class="player-product"
+        class="player-destination"
         @click=${(event: Event) => event.stopPropagation()}
       >
-        ${renderExpandableProduct(product, {
-          open: this.productOpen,
-          onToggle: this.toggleProduct,
-          panelId: "player-product-panel",
-          addToCartLabel: options.addToCartLabel,
-          viewProductLabel: options.viewProductLabel,
-        })}
+        ${content}
       </div>
     `;
   }
@@ -1053,13 +1073,14 @@ export class PlayerController implements ReactiveController {
   }
 
   /**
-   * The video with its controls and the product. With `advances`, it plays
-   * once and moves on to the next Story when it ends; otherwise it loops.
+   * The video with its controls and the product or call to action. With
+   * `advances`, it plays once and moves on to the next Story when it ends;
+   * otherwise it loops.
    */
   private renderVideo(
     story: StoryMedia,
     advances: boolean,
-    product: CardProduct | undefined,
+    destination: StoryDestination,
   ) {
     const { video, options } = this;
 
@@ -1070,7 +1091,7 @@ export class PlayerController implements ReactiveController {
           onEnded: advances ? () => options.onStep?.(1) : undefined,
         })}
         ${hasVideo(story, video) ? this.renderVideoControls() : nothing}
-        ${product ? this.renderProduct(product) : nothing}
+        ${this.renderDestination(destination)}
       </div>
     `;
   }
@@ -1102,7 +1123,12 @@ export class PlayerController implements ReactiveController {
    */
   render(
     story: StoryMedia,
-    { navigation = false, neighbors = [], product }: PlayerRenderOptions = {},
+    {
+      navigation = false,
+      neighbors = [],
+      product,
+      cta,
+    }: PlayerRenderOptions = {},
   ) {
     if (!this.isOpen) return nothing;
 
@@ -1134,7 +1160,10 @@ export class PlayerController implements ReactiveController {
           ${this.renderWindowControls()}
           <div class="player-stage" ${ref(this.stage)}>
             ${navigation ? this.renderNavigation() : nothing}
-            ${this.renderVideo(story, navigation && expanded, product)}
+            ${this.renderVideo(story, navigation && expanded, {
+              product,
+              cta,
+            })}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>
         </div>

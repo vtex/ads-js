@@ -1,7 +1,12 @@
 import { css, html, nothing } from "lit";
 import { icon } from "../icons";
 import { hasVideo, renderMedia, type VideoController } from "../media";
-import { renderProduct, type CardProduct } from "../product";
+import {
+  renderCta,
+  renderProduct,
+  type CardCta,
+  type CardProduct,
+} from "../product";
 import type { StoryMedia } from "../../types";
 
 export const cardStyles = css`
@@ -131,6 +136,13 @@ export interface CardOptions {
   product?: CardProduct;
   /** Called by a click on the product (default onSelect). */
   onProductSelect?: () => void;
+  /** The Story's call to action, for a link destination (no product). */
+  cta?: CardCta;
+  /**
+   * Called by a click on the call to action instead of following the link
+   * (a card without the highlight). Without it, the link opens.
+   */
+  onCtaSelect?: () => void;
 }
 
 /**
@@ -156,8 +168,9 @@ function renderSoundButton(video: VideoController, options: CardOptions) {
  * A 9:16 card with the Story cover and, with a media_url, the video looping
  * muted over it (see renderMedia). A button with a play icon in the middle
  * covers the card, and a sound button shows while the video plays. With a
- * product, its pill sits at the bottom (see renderProduct). The sound and
- * product buttons are beside the card's button, not inside it: a button
+ * product, its pill sits at the bottom (see renderProduct); with a link
+ * destination, the call to action does (see renderCta). The sound, product
+ * and call to action are beside the card's button, not inside it: a button
  * can't contain another.
  */
 export function renderCard(
@@ -187,6 +200,7 @@ export function renderCard(
             options.onProductSelect ?? options.onSelect,
           )
         : nothing}
+      ${options.cta ? renderCta(options.cta, options.onCtaSelect) : nothing}
     </div>
   `;
 }

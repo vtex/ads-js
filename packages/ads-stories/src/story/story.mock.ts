@@ -84,6 +84,7 @@ export const mockStories: StoryAdDetail[] = [
     // A link destination: no product.
     destination_url: "https://www.example.com/campaign",
     product: null,
+    call_to_action: "Ver oferta",
   },
 ];
 
