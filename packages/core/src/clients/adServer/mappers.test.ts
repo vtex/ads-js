@@ -1,6 +1,7 @@
 import {
   getSponsoredProductArray,
   getStoryArray,
+  getStoryOffer,
   AdsByPlacement,
 } from "./mappers";
 import {
@@ -224,5 +225,52 @@ describe.concurrent("getSponsoredProductArray with Stories", () => {
     expect(getSponsoredProductArray(adResponse)).toEqual([
       ["search_top_product", [sampleProductAd]],
     ]);
+  });
+});
+
+describe.concurrent("getStoryOffer", () => {
+  it("returns undefined for a link Story", () => {
+    expect(getStoryOffer({ ...mockStory, product: null })).toBeUndefined();
+  });
+
+  it("uses the product's SKU and seller, with an empty product ID", () => {
+    const story = {
+      ...mockStory,
+      seller_id: "9",
+      product: { ...mockStory.product!, product_sku: "37", seller_id: "2" },
+    };
+
+    expect(getStoryOffer(story)).toEqual({
+      skuId: "37",
+      sellerId: "2",
+      productId: "",
+    });
+  });
+
+  it("falls back to the Story's seller, then to seller 1", () => {
+    const product = { ...mockStory.product!, seller_id: undefined };
+
+    expect(
+      getStoryOffer({ ...mockStory, seller_id: "9", product })?.sellerId,
+    ).toBe("9");
+    expect(
+      getStoryOffer({ ...mockStory, seller_id: undefined, product })?.sellerId,
+    ).toBe("1");
+  });
+
+  it("reads the product ID the catalog indexed", () => {
+    const product = {
+      ...mockStory.product!,
+      product_metadata: { productId: "p1" },
+    };
+    expect(getStoryOffer({ ...mockStory, product })?.productId).toBe("p1");
+  });
+
+  it("ignores a product ID that isn't a string", () => {
+    const product = {
+      ...mockStory.product!,
+      product_metadata: { productId: 123 },
+    };
+    expect(getStoryOffer({ ...mockStory, product })?.productId).toBe("");
   });
 });

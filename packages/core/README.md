@@ -88,6 +88,36 @@ const hydratedAds = await getHydratedAds(
 console.log("Hydrated ads:", hydratedAds.sponsoredProducts);
 ```
 
+Both hydrate the sponsored products and the Story ads' products in one fetcher call, and wait for it. Each Story found gets `hydratedProduct`.
+
+### Hydrating ads already fetched
+
+To show the ads first and their products when they arrive, call `getRawAds()` and then `hydrateAds()`, with the same fetcher and matcher:
+
+```javascript
+import {
+  getRawAds,
+  hydrateAds,
+  intelligentSearchFetcher,
+  intelligentSearchMatcher,
+} from "@vtex/ads-core";
+
+const rawAds = await getRawAds(adRequest);
+// Show rawAds.stories here.
+
+try {
+  const { stories, sponsoredProducts } = await hydrateAds(
+    rawAds,
+    intelligentSearchFetcher,
+    intelligentSearchMatcher,
+    adRequest.identity,
+    { signal: AbortSignal.timeout(5000) },
+  );
+} catch {
+  // The product request failed: keep showing the raw ads.
+}
+```
+
 ## Key Concepts
 
 - **Raw Ads**: Basic ad data from the Ad Server without product enrichment

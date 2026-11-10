@@ -1,5 +1,9 @@
-import { Placement, SponsoredProductDetail } from "../clients/adServer";
-import { Identity, StoriesByPlacements } from "../types";
+import {
+  Placement,
+  SponsoredProductDetail,
+  StoryAdDetail,
+} from "../clients/adServer";
+import { Identity, RawAdsResponse } from "../types";
 
 /**
  * Type alias for SKU identifier
@@ -99,15 +103,49 @@ export interface HydratedSponsoredProduct<T> {
 }
 
 /**
+ * Story ad with the product the fetcher found for it. `hydratedProduct` is
+ * missing when the Story has no product (its destination is a link) or the
+ * fetcher didn't find it: the Story then shows what the ad server sent.
+ * @public
+ */
+export type HydratedStory<T> = StoryAdDetail & { hydratedProduct?: T };
+
+/**
+ * Record of hydrated Story ads grouped by placement
+ * @public
+ */
+export type HydratedStoriesByPlacements<T> = Record<
+  Placement,
+  HydratedStory<T>[]
+>;
+
+/**
+ * Ads to hydrate, as `getRawAds` returns them. Both are optional: pass only
+ * the ad types to hydrate.
+ * @public
+ */
+export type AdsToHydrate = Partial<
+  Pick<RawAdsResponse, "sponsoredProducts" | "stories">
+>;
+
+/**
+ * Ads enriched by `hydrateAds`
+ * @public
+ */
+export interface HydratedAds<T> {
+  /** As in `getHydratedAds`: products not found go to `failed`. */
+  sponsoredProducts: HydratedProductsResult<T>;
+  /** Every Story given, in the same order, found or not. */
+  stories: HydratedStoriesByPlacements<T>;
+}
+
+/**
  * Response object containing hydrated advertisements data
  * @public
  */
 export interface HydratedAdsResponse<T> {
   sponsoredProducts: HydratedProductsResult<T>;
-  /**
-   * Story ads as returned by the ad server. Their products are not hydrated.
-   */
-  stories: StoriesByPlacements;
+  stories: HydratedStoriesByPlacements<T>;
   // TODO: implement other ad responses.
   banners: void;
   sponsoredBrands: void;

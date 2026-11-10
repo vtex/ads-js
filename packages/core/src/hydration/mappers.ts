@@ -1,6 +1,5 @@
-import { SponsoredProductDetail } from "../clients/adServer";
-import { AdsByPlacement, getOffer } from "../clients/adServer/mappers";
-import { HydratedSponsoredProduct, Offer } from "./types";
+import { Placement, SponsoredProductDetail } from "../clients/adServer";
+import { HydratedSponsoredProduct, Offer, ProductMatchesOffer } from "./types";
 
 export const buildHydratedProduct = <T extends object>(
   product: T,
@@ -19,5 +18,25 @@ export const buildHydratedProduct = <T extends object>(
   },
 });
 
-export const buildOffers = (ads: AdsByPlacement[]): Offer[] =>
-  ads.flatMap(([_, ad]) => ad).map((ad) => getOffer(ad));
+/**
+ * The offers of the ads of any type, in order. Ads without one (as link
+ * Stories) are skipped.
+ */
+export const offersOf = <Ad>(
+  ads: Record<Placement, Ad[]>,
+  toOffer: (ad: Ad) => Offer | undefined,
+): Offer[] =>
+  Object.values(ads)
+    .flatMap((placementAds) => placementAds.map((ad) => toOffer(ad)))
+    .filter((offer) => offer !== undefined);
+
+/**
+ * Finds an offer's product among the fetched ones. Undefined without an
+ * offer or without a match.
+ */
+export type ProductFinder<T> = (offer: Offer | undefined) => T | undefined;
+
+export const productFinder =
+  <T>(products: T[], matcher: ProductMatchesOffer<T>): ProductFinder<T> =>
+  (offer) =>
+    offer && products.find((product) => matcher(product, offer));

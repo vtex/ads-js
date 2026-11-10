@@ -2,10 +2,9 @@ import { getAds, GetAdsOptions } from "./clients/adServer";
 import {
   getSponsoredProductArray,
   getStoryArray,
-  StoriesByPlacement,
 } from "./clients/adServer/mappers";
 import { Product } from "./clients/search";
-import { mergeAdsWithProducts } from "./hydration/mergeAdsWithProducts";
+import { hydrateAds } from "./hydration/hydrateAds";
 import {
   intelligentSearchFetcher,
   intelligentSearchMatcher,
@@ -15,24 +14,9 @@ import {
   ProductFetcher,
   ProductMatchesOffer,
 } from "./hydration/types";
-import {
-  GetAdsArgs,
-  RawAdsByPlacements,
-  RawAdsResponse,
-  StoriesByPlacements,
-} from "./types";
+import { GetAdsArgs, RawAdsResponse } from "./types";
+import { fromPlacementEntries } from "./utils/byPlacement";
 import { toAdServerArgs } from "./utils/toAdServerArgs";
-import { buildOffers } from "./hydration/mappers";
-
-const toStoriesByPlacements = (
-  stories: StoriesByPlacement[],
-): StoriesByPlacements => {
-  const byPlacements = {} as StoriesByPlacements;
-  for (const [placement, placementStories] of stories) {
-    byPlacements[placement] = placementStories;
-  }
-  return byPlacements;
-};
 
 /**
  * Fetches raw advertisement data without enriching it with product details.
@@ -53,20 +37,11 @@ export const getRawAds: (
     adServerArgs,
     options,
   );
-  const adsArray = getSponsoredProductArray(adResponse);
-
-  const adsByPlacements = {} as RawAdsByPlacements;
-
-  adsArray.forEach(([placement, ads]) => {
-    ads.forEach((ad) => {
-      adsByPlacements[placement] ??= [];
-      adsByPlacements[placement].push(ad);
-    });
-  });
-
   const response: RawAdsResponse = {
-    sponsoredProducts: adsByPlacements,
-    stories: toStoriesByPlacements(getStoryArray(adResponse)),
+    sponsoredProducts: fromPlacementEntries(
+      getSponsoredProductArray(adResponse),
+    ),
+    stories: fromPlacementEntries(getStoryArray(adResponse)),
     banners: undefined,
     sponsoredBrands: undefined,
   };
@@ -77,8 +52,11 @@ export const getRawAds: (
 /**
  * Fetches and enriches ad offers with corresponding product details.
  *
- * This function retrieves ads, fetches product information to enrich these ads
- * and then return the search result with the advertisement data.
+ * This function retrieves ads, fetches the products of the sponsored products
+ * and of the Story ads in one fetcher call, as `hydrateAds`, and then returns
+ * them with the advertisement data. It waits for the products: a fetcher
+ * failure rejects, Stories included. To show the ads before their products,
+ * call `getRawAds` and then `hydrateAds`.
  *
  * @param args - Targeting arguments to fetch ads.
  * @param fetcher - Function to fetch product details from given offers.
@@ -95,32 +73,21 @@ export const getHydratedAds = async <T extends object>(
   matcher: ProductMatchesOffer<T>,
   options?: GetAdsOptions,
 ): Promise<HydratedAdsResponse<T>> => {
-  const adServerArgs = toAdServerArgs(args);
-  const adResponse = await getAds(
-    args.identity.publisherId,
-    adServerArgs,
-    options,
+  const rawAds = await getRawAds(args, options);
+  const { sponsoredProducts, stories } = await hydrateAds<T>(
+    rawAds,
+    fetcher,
+    matcher,
+    args.identity,
+    { signal: options?.signal },
   );
-  const ads = getSponsoredProductArray(adResponse);
 
-  // Nothing to hydrate (no sponsored products, as with Stories only): no
-  // product request, so its failure can't lose the Stories.
-  const offers = buildOffers(ads);
-  const products =
-    offers.length > 0
-      ? await fetcher(offers, args.identity, { signal: options?.signal })
-      : [];
-
-  const mergedResult = mergeAdsWithProducts<T>(products, ads, matcher);
-
-  const response: HydratedAdsResponse<T> = {
-    sponsoredProducts: mergedResult,
-    stories: toStoriesByPlacements(getStoryArray(adResponse)),
+  return {
+    sponsoredProducts,
+    stories,
     banners: undefined,
     sponsoredBrands: undefined,
   };
-
-  return response;
 };
 
 /**

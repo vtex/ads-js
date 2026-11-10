@@ -1,4 +1,5 @@
 export { getRawAds, getHydratedAds, getHydratedAdsByIS } from "./facade";
+export { hydrateAds } from "./hydration/hydrateAds";
 export {
   intelligentSearchFetcher,
   intelligentSearchMatcher,
@@ -20,6 +21,10 @@ export type {
   HydratedAdsResponse,
   HydratedProductsResult,
   HydratedProductsByPlacements,
+  HydratedStory,
+  HydratedStoriesByPlacements,
+  HydratedAds,
+  AdsToHydrate,
   Offer,
 } from "./hydration/types";
 export type {
