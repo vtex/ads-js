@@ -1,4 +1,4 @@
-import { httpClient } from "../httpClient";
+import { httpClient, RequestOptions } from "../httpClient";
 import { SearchResponse } from "./types";
 
 export const getSearchBaseUrl = (accountName: string) =>
@@ -9,11 +9,12 @@ export const productSearchUrl = "product_search";
 export const getProductsByIds = async (
   accountName: string,
   productIds: string[],
+  options?: RequestOptions,
 ): Promise<SearchResponse> => {
   const baseUrl = getSearchBaseUrl(accountName);
 
   const q = `product:${productIds.join(";")}`;
   const path = `${productSearchUrl}?q=${q}`;
 
-  return httpClient.get(baseUrl, path);
+  return httpClient.get(baseUrl, path, options);
 };

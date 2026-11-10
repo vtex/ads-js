@@ -341,6 +341,7 @@ describe("facade", () => {
       expect(mockedIntelligentSearchFetcher).toHaveBeenCalledWith(
         mockOffers,
         mockGetAdsArgs.identity,
+        { signal: undefined },
       );
 
       expect(
@@ -570,6 +571,28 @@ describe("facade", () => {
         mockGetAdsArgs.identity.publisherId,
         mockGetAdsArgs,
         options,
+      );
+    });
+
+    it("passes the signal to the fetcher in getHydratedAds", async () => {
+      mockedGetAds.mockResolvedValue({});
+      mockedGetSponsoredProductArray.mockReturnValue([]);
+      const offers = [{ skuId: "sku1", sellerId: "1", productId: "p1" }];
+      mockedBuildOffers.mockReturnValue(offers);
+      mockedIntelligentSearchFetcher.mockResolvedValue([]);
+      const { signal } = new AbortController();
+
+      await getHydratedAds(
+        mockGetAdsArgs,
+        intelligentSearchFetcher,
+        intelligentSearchMatcher,
+        { signal },
+      );
+
+      expect(mockedIntelligentSearchFetcher).toHaveBeenCalledWith(
+        offers,
+        mockGetAdsArgs.identity,
+        { signal },
       );
     });
   });

@@ -83,8 +83,8 @@ export const getRawAds: (
  * @param args - Targeting arguments to fetch ads.
  * @param fetcher - Function to fetch product details from given offers.
  * @param matcher - Function to match products with offers.
- * @param options - Request options for the ad server, such as a signal to
- * cancel it.
+ * @param options - Request options, such as a signal to cancel them. The
+ * signal cancels the ad server request and the fetcher's product request.
  * @returns hydratedAds The sponsored search result consisting of products that
  * are sponsored by the ad server.
  * @public
@@ -107,7 +107,9 @@ export const getHydratedAds = async <T extends object>(
   // product request, so its failure can't lose the Stories.
   const offers = buildOffers(ads);
   const products =
-    offers.length > 0 ? await fetcher(offers, args.identity) : [];
+    offers.length > 0
+      ? await fetcher(offers, args.identity, { signal: options?.signal })
+      : [];
 
   const mergedResult = mergeAdsWithProducts<T>(products, ads, matcher);
 
@@ -128,8 +130,8 @@ export const getHydratedAds = async <T extends object>(
  * Prefer using `getHydratedAds` with a custom fetcher when possible.
  *
  * @param args - Targeting arguments to fetch ads.
- * @param options - Request options for the ad server, such as a signal to
- * cancel it.
+ * @param options - Request options, such as a signal to cancel the ad server
+ * and Intelligent Search requests.
  * @returns Promise resolving to hydrated ads response using Intelligent Search
  * @public
  */

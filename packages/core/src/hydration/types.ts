@@ -39,12 +39,25 @@ export type ProductMatchesOffer<TProduct> = (
 ) => boolean;
 
 /**
+ * Options for a product request made by a `ProductFetcher`.
+ * @public
+ */
+export interface ProductFetcherOptions {
+  /**
+   * Cancels the product request. A fetcher that doesn't support it may
+   * ignore it; the caller then ignores its result.
+   */
+  signal?: AbortSignal;
+}
+
+/**
  * Function type for fetching products based on offers
  * @public
  */
 export type ProductFetcher<TProduct extends object> = (
   offers: Offer[],
   identity: Identity,
+  options?: ProductFetcherOptions,
 ) => Promise<TProduct[]>;
 
 /**

@@ -14,6 +14,7 @@ export type {
 } from "./types";
 export type {
   ProductFetcher,
+  ProductFetcherOptions,
   ProductMatchesOffer,
   HydratedSponsoredProduct,
   HydratedAdsResponse,

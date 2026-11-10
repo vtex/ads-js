@@ -75,6 +75,7 @@ describe("getProductsByIds", () => {
     expect(httpClient.get).toHaveBeenCalledWith(
       getSearchBaseUrl(account),
       `${productSearchPath}?q=product:product1;product2`,
+      undefined,
     );
 
     expect(result).toEqual(expectedResponse);
@@ -107,6 +108,7 @@ describe("getProductsByIds", () => {
     expect(httpClient.get).toHaveBeenCalledWith(
       getSearchBaseUrl(account),
       `${productSearchPath}?q=product:product123`,
+      undefined,
     );
   });
 
@@ -129,6 +131,20 @@ describe("getProductsByIds", () => {
     expect(httpClient.get).toHaveBeenCalledWith(
       getSearchBaseUrl(account),
       `${productSearchPath}?q=product:`,
+      undefined,
+    );
+  });
+
+  it("passes the signal to httpClient.get", async () => {
+    mockedHttpClient.get.mockResolvedValue({ products: [] });
+    const { signal } = new AbortController();
+
+    await getProductsByIds("acme", ["product1"], { signal });
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl("acme"),
+      `${productSearchPath}?q=product:product1`,
+      { signal },
     );
   });
 });
