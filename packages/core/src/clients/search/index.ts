@@ -1,3 +1,3 @@
-export { getProductsByIds } from "./search";
+export { getProductsByIds, getProductsBySkuIds } from "./search";
 
 export * from "./types";

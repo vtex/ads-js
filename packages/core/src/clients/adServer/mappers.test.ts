@@ -1,7 +1,6 @@
 import {
   getSponsoredProductArray,
   getStoryArray,
-  getProductIds,
   AdsByPlacement,
 } from "./mappers";
 import {
@@ -11,7 +10,6 @@ import {
   StoryAdDetail,
 } from "./types";
 import { mockStory } from "./story.mock";
-import { Offer } from "../../hydration/types";
 import { expect, it, describe } from "vitest";
 
 describe.concurrent("getSponsoredProductArray", () => {
@@ -226,86 +224,5 @@ describe.concurrent("getSponsoredProductArray with Stories", () => {
     expect(getSponsoredProductArray(adResponse)).toEqual([
       ["search_top_product", [sampleProductAd]],
     ]);
-  });
-});
-
-describe.concurrent("getProductIds", () => {
-  it("should return an empty array when given an empty offers array", () => {
-    const offers: Offer[] = [];
-    const result = getProductIds(offers);
-    expect(result).toEqual([]);
-  });
-
-  it("should extract product ID from a single offer", () => {
-    const offers: Offer[] = [
-      {
-        productId: "product123",
-        skuId: "sku123",
-        sellerId: "seller1",
-      },
-    ];
-    const result = getProductIds(offers);
-    expect(result).toEqual(["product123"]);
-  });
-
-  it("should extract product IDs from multiple offers", () => {
-    const offers: Offer[] = [
-      {
-        productId: "product123",
-        skuId: "sku123",
-        sellerId: "seller1",
-      },
-      {
-        productId: "product456",
-        skuId: "sku456",
-        sellerId: "seller2",
-      },
-      {
-        productId: "product789",
-        skuId: "sku789",
-        sellerId: "seller3",
-      },
-    ];
-    const result = getProductIds(offers);
-    expect(result).toEqual(["product123", "product456", "product789"]);
-  });
-
-  it("should handle duplicate product IDs", () => {
-    const offers: Offer[] = [
-      {
-        productId: "product123",
-        skuId: "sku123",
-        sellerId: "seller1",
-      },
-      {
-        productId: "product123",
-        skuId: "sku456",
-        sellerId: "seller2",
-      },
-      {
-        productId: "product789",
-        skuId: "sku789",
-        sellerId: "seller3",
-      },
-    ];
-    const result = getProductIds(offers);
-    expect(result).toEqual(["product123", "product123", "product789"]);
-  });
-
-  it("should handle empty product IDs", () => {
-    const offers: Offer[] = [
-      {
-        productId: "",
-        skuId: "sku123",
-        sellerId: "seller1",
-      },
-      {
-        productId: "product456",
-        skuId: "sku456",
-        sellerId: "seller2",
-      },
-    ];
-    const result = getProductIds(offers);
-    expect(result).toEqual(["", "product456"]);
   });
 });

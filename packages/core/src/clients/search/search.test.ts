@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   getProductsByIds,
+  getProductsBySkuIds,
   getSearchBaseUrl,
   productSearchUrl as productSearchPath,
 } from "./search"; // adjust path
@@ -144,6 +145,47 @@ describe("getProductsByIds", () => {
     expect(httpClient.get).toHaveBeenCalledWith(
       getSearchBaseUrl("acme"),
       `${productSearchPath}?q=product:product1`,
+      { signal },
+    );
+  });
+});
+
+describe("getProductsBySkuIds", () => {
+  const mockedHttpClient = vi.mocked(httpClient, true);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedHttpClient.get.mockResolvedValue({ products: [] });
+  });
+
+  it("searches the SKUs in one request", async () => {
+    await getProductsBySkuIds("acme", ["37", "21"]);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl("acme"),
+      `${productSearchPath}?q=sku:37;21`,
+      undefined,
+    );
+  });
+
+  it("encodes each SKU, so one can't break the query", async () => {
+    await getProductsBySkuIds("acme", ["a;b", "c&d"]);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl("acme"),
+      `${productSearchPath}?q=sku:a%3Bb;c%26d`,
+      undefined,
+    );
+  });
+
+  it("passes the signal to httpClient.get", async () => {
+    const { signal } = new AbortController();
+
+    await getProductsBySkuIds("acme", ["37"], { signal });
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl("acme"),
+      `${productSearchPath}?q=sku:37`,
       { signal },
     );
   });

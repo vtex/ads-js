@@ -81,7 +81,3 @@ export const getOffer = (ad: SponsoredProductDetail): Offer => ({
   sellerId: ad.seller_id ?? "1",
   productId: ad.product_metadata.productId,
 });
-
-export const getProductIds = (offers: Offer[]): string[] => {
-  return offers.map((offer) => offer.productId);
-};
