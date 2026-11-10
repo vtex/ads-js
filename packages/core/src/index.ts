@@ -3,6 +3,7 @@ export { hydrateAds } from "./hydration/hydrateAds";
 export {
   intelligentSearchFetcher,
   intelligentSearchMatcher,
+  intelligentSearchPrice,
 } from "./hydration/intelligentSearch";
 
 export type {
@@ -16,6 +17,8 @@ export type {
 export type {
   ProductFetcher,
   ProductFetcherOptions,
+  ProductPrice,
+  ProductPriceReader,
   ProductMatchesOffer,
   HydratedSponsoredProduct,
   HydratedAdsResponse,

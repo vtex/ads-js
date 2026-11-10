@@ -55,6 +55,26 @@ export interface ProductFetcherOptions {
 }
 
 /**
+ * A product's price, as plain numbers. `listPrice` is the "from" price, only
+ * present when it is above `price` (the product is on sale).
+ * @public
+ */
+export interface ProductPrice {
+  price: number;
+  listPrice?: number;
+}
+
+/**
+ * Function type for reading an offer's price from a fetched product.
+ * Undefined when the product has no price for that offer.
+ * @public
+ */
+export type ProductPriceReader<TProduct> = (
+  product: TProduct,
+  offer: Offer,
+) => ProductPrice | undefined;
+
+/**
  * Function type for fetching products based on offers
  * @public
  */
