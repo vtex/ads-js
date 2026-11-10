@@ -104,7 +104,11 @@ export async function fetchStories(
     // failure, HTTP or validation error) is logged, so a failing request can
     // be told apart from a placement with no Story.
     if (!limit.signal.aborted) {
-      console.error("[vtex-ads-story] Story request failed", error);
+      console.error("[vtex-ads-story] Story request failed", {
+        placement,
+        publisherId,
+        error,
+      });
     }
     return [];
   } finally {
