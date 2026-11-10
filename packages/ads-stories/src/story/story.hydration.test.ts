@@ -316,10 +316,10 @@ describe("vtex-ads-story product hydration", () => {
 
   it("falls back after hydration-timeout, without a log", async () => {
     hangUntilAborted();
-    const el = await mount({ ...WITH_ACCOUNT, "hydration-timeout": "20" });
+    const el = await mount({ ...WITH_ACCOUNT, "hydration-timeout": "300" });
     expect(skeletonOf(el)).not.toBeNull();
 
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await new Promise((resolve) => setTimeout(resolve, 350));
     await flush(el);
 
     expect(skeletonOf(el)).toBeNull();

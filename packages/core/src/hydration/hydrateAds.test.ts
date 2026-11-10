@@ -227,6 +227,25 @@ describe("hydrateAds", () => {
     });
   });
 
+  it("rejects when the signal aborts, even if the fetcher ignores it", async () => {
+    const fetcher = vi.fn<ProductFetcher<TestProduct>>(
+      () => new Promise(() => {}),
+    );
+    const controller = new AbortController();
+    const reason = new DOMException("Timed out", "TimeoutError");
+
+    const result = hydrateAds(
+      { stories: { home_stories: [story("s1", "20")] } },
+      fetcher,
+      matcher,
+      identity,
+      { signal: controller.signal },
+    );
+    controller.abort(reason);
+
+    await expect(result).rejects.toBe(reason);
+  });
+
   it("rejects when the fetcher fails", async () => {
     const error = new Error("Search failed");
     const fetcher = vi.fn<ProductFetcher<TestProduct>>(async () => {

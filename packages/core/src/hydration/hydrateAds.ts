@@ -1,6 +1,7 @@
 import { getOffer, getStoryOffer } from "../clients/adServer/mappers";
 import { Identity } from "../types";
 import { mapByPlacement } from "../utils/byPlacement";
+import { untilAborted } from "../utils/untilAborted";
 import { buildHydratedStory, offersOf, productFinder } from "./mappers";
 import { mergeAdsWithProducts } from "./mergeAdsWithProducts";
 import {
@@ -22,8 +23,9 @@ import {
  * Stories included) come without `product`.
  *
  * Calls the fetcher only when there is a product to find. A fetcher
- * failure, or a cancelled request, rejects: the caller decides what to show
- * without the products, for example the ads as `getRawAds` returned them.
+ * failure rejects, and so does the signal aborting, even when the fetcher
+ * ignores it: the caller decides what to show without the products, for
+ * example the ads as `getRawAds` returned them.
  *
  * @param ads - Ads to hydrate, as `getRawAds` returns them.
  * @param fetcher - Function to fetch product details from given offers.
@@ -48,7 +50,10 @@ export const hydrateAds = async <T extends object>(
 
   const products =
     offers.length > 0
-      ? await fetcher(offers, identity, { signal: options?.signal })
+      ? await untilAborted(
+          fetcher(offers, identity, { signal: options?.signal }),
+          options?.signal,
+        )
       : [];
   const findProduct = productFinder(products, matcher);
 

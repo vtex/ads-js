@@ -136,6 +136,18 @@ describe("getProductsByIds", () => {
     );
   });
 
+  it("encodes each product ID, so one can't break the query", async () => {
+    mockedHttpClient.get.mockResolvedValue({ products: [] });
+
+    await getProductsByIds("acme", ["a;b", "c&d"]);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      getSearchBaseUrl("acme"),
+      `${productSearchPath}?q=product:a%3Bb;c%26d`,
+      undefined,
+    );
+  });
+
   it("passes the signal to httpClient.get", async () => {
     mockedHttpClient.get.mockResolvedValue({ products: [] });
     const { signal } = new AbortController();

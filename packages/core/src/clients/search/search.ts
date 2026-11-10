@@ -13,7 +13,7 @@ export const getProductsByIds = async (
 ): Promise<SearchResponse> => {
   const baseUrl = getSearchBaseUrl(accountName);
 
-  const q = `product:${productIds.join(";")}`;
+  const q = `product:${productIds.map(encodeURIComponent).join(";")}`;
   const path = `${productSearchUrl}?q=${q}`;
 
   return httpClient.get(baseUrl, path, options);
