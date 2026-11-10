@@ -11,6 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
+import { renderExpandableProduct, type CardProduct } from "../product";
 import type { StoryMedia } from "../../types";
 
 /**
@@ -128,6 +129,26 @@ export const playerStyles = css`
   .player-sound .icon {
     width: 20px;
     height: 20px;
+  }
+
+  /* The product pill, larger than on the carousel card (as in the
+     prototype). Its wrapper only stops clicks: the pill places itself. */
+  .player-product {
+    display: contents;
+  }
+
+  .player .product-info {
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  .player .product-image {
+    width: 72px;
+    height: 72px;
+  }
+
+  .player .product-price {
+    color: rgba(255, 255, 255, 0.7);
   }
 
   /* Above the card: on narrow screens the expanded card can cover them. */
@@ -316,6 +337,18 @@ export const playerStyles = css`
       height: 391px;
     }
 
+    .player:not([data-expanded]) .product-image {
+      width: 56px;
+      height: 56px;
+    }
+
+    /* "Adicionar ao carrinho" fits on one line in the narrow mini player. */
+    .player:not([data-expanded]) .product-action {
+      height: 40px;
+      padding: 0 8px;
+      font-size: 12px;
+    }
+
     .player[data-expanded] {
       background: #000;
     }
@@ -391,6 +424,9 @@ export interface PlayerOptions {
   nextLabel: string;
   /** Accessible name of another Story's cover in the expanded view. */
   neighborLabel: string;
+  /** The product panel's buttons. */
+  addToCartLabel: string;
+  viewProductLabel: string;
   /**
    * Called by the previous (-1) and next (1) buttons, by another Story's
    * cover in the expanded view (its offset) and, in the expanded view, when
@@ -425,6 +461,8 @@ export interface PlayerRenderOptions {
   navigation?: boolean;
   /** The other Stories beside the expanded video (see neighborOffsets). */
   neighbors?: readonly PlayerNeighbor[];
+  /** The Story's product, shown at the bottom of the video. */
+  product?: CardProduct;
 }
 
 /**
@@ -597,6 +635,9 @@ export class PlayerController implements ReactiveController {
   /** Rendered and, once the host has updated, shown. */
   isOpen = false;
   private expanded = false;
+
+  /** The product panel is open. Closed again on a step and on opening. */
+  private productOpen = false;
   /** Switched modes at least once: only the first opening fades in. */
   private switched = false;
   /** The dialog is showing, in the mode `expanded` says. */
@@ -637,13 +678,18 @@ export class PlayerController implements ReactiveController {
     this.close();
   }
 
-  /** Opens the mini player, plays the video and focuses the close button. */
-  async open() {
+  /**
+   * Opens the mini player, plays the video and focuses the close button.
+   * With `productOpen`, the product panel shows open (the shopper chose the
+   * product).
+   */
+  async open({ productOpen = false }: { productOpen?: boolean } = {}) {
     if (this.isOpen) return;
 
     document.addEventListener("keydown", this.onKeyDown);
     this.isOpen = true;
     this.expanded = false;
+    this.productOpen = productOpen;
     this.switched = false;
     this.rendered = undefined;
     this.beforeStep = undefined;
@@ -685,6 +731,8 @@ export class PlayerController implements ReactiveController {
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
     this.video.failed = false;
+    // Another Story, another product: its panel starts closed.
+    this.productOpen = false;
     this.host.requestUpdate();
     await this.host.updateComplete;
     if (!this.isOpen) return;
@@ -845,6 +893,43 @@ export class PlayerController implements ReactiveController {
    * They follow the video's own events, so a blocked autoplay shows as
    * paused.
    */
+  private readonly toggleProduct = () => {
+    this.productOpen = !this.productOpen;
+    this.host.requestUpdate();
+  };
+
+  /**
+   * A click on the video: closes the product panel when it is open, plays or
+   * pauses the video otherwise.
+   */
+  private readonly onVideoClick = () => {
+    if (this.productOpen) this.toggleProduct();
+    else this.video.togglePlayback();
+  };
+
+  /**
+   * The product pill at the bottom of the video, which opens the panel with
+   * its actions. Clicks on it don't reach the video.
+   */
+  private renderProduct(product: CardProduct) {
+    const { options } = this;
+
+    return html`
+      <div
+        class="player-product"
+        @click=${(event: Event) => event.stopPropagation()}
+      >
+        ${renderExpandableProduct(product, {
+          open: this.productOpen,
+          onToggle: this.toggleProduct,
+          panelId: "player-product-panel",
+          addToCartLabel: options.addToCartLabel,
+          viewProductLabel: options.viewProductLabel,
+        })}
+      </div>
+    `;
+  }
+
   private renderVideoControls() {
     const { video, options } = this;
 
@@ -939,6 +1024,74 @@ export class PlayerController implements ReactiveController {
     );
   }
 
+  /** Expand or collapse, and close: above the video, or at the top right. */
+  private renderWindowControls() {
+    const { options, expanded } = this;
+
+    return html`
+      <div class="player-controls">
+        <button
+          type="button"
+          class="player-button player-expand"
+          aria-label=${expanded ? options.collapseLabel : options.expandLabel}
+          ${ref(this.expandButton)}
+          @click=${this.toggleExpanded}
+        >
+          ${icon(expanded ? "collapse" : "expand")}
+        </button>
+        <button
+          type="button"
+          class="player-button player-close"
+          aria-label=${options.closeLabel}
+          ${ref(this.closeButton)}
+          @click=${options.onClose}
+        >
+          ${icon("close")}
+        </button>
+      </div>
+    `;
+  }
+
+  /**
+   * The video with its controls and the product. With `advances`, it plays
+   * once and moves on to the next Story when it ends; otherwise it loops.
+   */
+  private renderVideo(
+    story: StoryMedia,
+    advances: boolean,
+    product: CardProduct | undefined,
+  ) {
+    const { video, options } = this;
+
+    return html`
+      <div class="card" @click=${this.onVideoClick}>
+        ${renderMedia(story, video, {
+          loop: !advances,
+          onEnded: advances ? () => options.onStep?.(1) : undefined,
+        })}
+        ${hasVideo(story, video) ? this.renderVideoControls() : nothing}
+        ${product ? this.renderProduct(product) : nothing}
+      </div>
+    `;
+  }
+
+  /**
+   * Keeps what this render shows, for the step animation: the covers beside
+   * the video (only in the expanded view) and the side the video moves to
+   * with two Stories. A new Story makes what was shown the animation's
+   * start.
+   */
+  private track(story: StoryMedia, neighbors: readonly PlayerNeighbor[]) {
+    const shown = this.expanded ? neighbors : [];
+    this.pairDirection = shown.length === 1 ? -Math.sign(shown[0].offset) : 0;
+
+    if (this.rendered && story !== this.rendered.story) {
+      this.beforeStep = this.rendered;
+    }
+    this.rendered = { story, neighbors: shown };
+    return shown;
+  }
+
   /**
    * The player <dialog> while it is open. Clicking the video also plays or
    * pauses it, and keeps the focus in the player (the dialog is focusable,
@@ -949,24 +1102,14 @@ export class PlayerController implements ReactiveController {
    */
   render(
     story: StoryMedia,
-    { navigation = false, neighbors = [] }: PlayerRenderOptions = {},
+    { navigation = false, neighbors = [], product }: PlayerRenderOptions = {},
   ) {
     if (!this.isOpen) return nothing;
 
     const { video, options, expanded } = this;
-    const withVideo = hasVideo(story, video);
-    const shownNeighbors = expanded ? neighbors : [];
-    this.pairDirection =
-      shownNeighbors.length === 1 ? -Math.sign(shownNeighbors[0].offset) : 0;
+    const shownNeighbors = this.track(story, neighbors);
     const pair = this.pairDirection !== 0;
     this.navigation = navigation;
-    const advances = navigation && expanded;
-
-    // A new Story: what was shown is where the next step animation starts.
-    if (this.rendered && story !== this.rendered.story) {
-      this.beforeStep = this.rendered;
-    }
-    this.rendered = { story, neighbors: shownNeighbors };
 
     return html`
       <dialog
@@ -979,7 +1122,7 @@ export class PlayerController implements ReactiveController {
           "--pair-dir": pair ? String(this.pairDirection) : undefined,
         })}
         ?data-switched=${this.switched}
-        ?data-paused=${withVideo && video.paused}
+        ?data-paused=${hasVideo(story, video) && video.paused}
         tabindex="-1"
         ${ref(this.dialog)}
         @click=${this.onDialogClick}
@@ -988,37 +1131,10 @@ export class PlayerController implements ReactiveController {
       >
         ${this.renderNeighbors(shownNeighbors)}
         <div class="player-frame">
-          <div class="player-controls">
-            <button
-              type="button"
-              class="player-button player-expand"
-              aria-label=${expanded
-                ? options.collapseLabel
-                : options.expandLabel}
-              ${ref(this.expandButton)}
-              @click=${this.toggleExpanded}
-            >
-              ${icon(expanded ? "collapse" : "expand")}
-            </button>
-            <button
-              type="button"
-              class="player-button player-close"
-              aria-label=${options.closeLabel}
-              ${ref(this.closeButton)}
-              @click=${options.onClose}
-            >
-              ${icon("close")}
-            </button>
-          </div>
+          ${this.renderWindowControls()}
           <div class="player-stage" ${ref(this.stage)}>
             ${navigation ? this.renderNavigation() : nothing}
-            <div class="card" @click=${() => video.togglePlayback()}>
-              ${renderMedia(story, video, {
-                loop: !advances,
-                onEnded: advances ? () => options.onStep?.(1) : undefined,
-              })}
-              ${withVideo ? this.renderVideoControls() : nothing}
-            </div>
+            ${this.renderVideo(story, navigation && expanded, product)}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>
         </div>

@@ -86,6 +86,147 @@ describe("vtex-ads-story", () => {
     expect(() => defineVtexAdsStories()).not.toThrow();
   });
 
+  describe("product", () => {
+    const productOf = (el: VtexAdsStoryElement) =>
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product");
+    const text = (node: Element | null | undefined) =>
+      node?.textContent?.replace(/\s/g, " ").trim();
+
+    it("shows the product with its price in pt-BR and BRL by default", async () => {
+      const el = await mount();
+      const product = productOf(el);
+
+      expect(text(product?.querySelector(".product-name"))).toBe(
+        mockStory.product?.product_name,
+      );
+      expect(text(product?.querySelector(".product-price > span"))).toBe(
+        "R$ 129,90",
+      );
+      expect(text(product?.querySelector(".product-list-price"))).toBe(
+        "R$ 159,90",
+      );
+      expect(product?.getAttribute("aria-label")?.replace(/\s/g, " ")).toBe(
+        `${mockStory.product?.product_name}, de R$ 159,90 por R$ 129,90`,
+      );
+    });
+
+    it("formats the price in the element's own lang and currency", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        lang: "en-US",
+        currency: "USD",
+      });
+
+      expect(text(productOf(el)?.querySelector(".product-price > span"))).toBe(
+        "$129.90",
+      );
+    });
+
+    describe("with the page's lang", () => {
+      afterEach(() => {
+        document.documentElement.lang = "";
+      });
+
+      it("uses it when the element has none", async () => {
+        document.documentElement.lang = "en-US";
+        const el = await mount({ ...REQUIRED_ATTRIBUTES, currency: "USD" });
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("$129.90");
+      });
+
+      it("skips an empty lang on the way up", async () => {
+        document.documentElement.lang = "en-US";
+        const section = document.createElement("section");
+        section.setAttribute("lang", "");
+        document.body.append(section);
+        const el = document.createElement(TAG_NAME);
+        for (const [name, value] of Object.entries(REQUIRED_ATTRIBUTES)) {
+          el.setAttribute(name, value);
+        }
+        el.setAttribute("currency", "USD");
+        section.append(el);
+        await flushRequest(el);
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("$129.90");
+      });
+
+      it("falls back to pt-BR for an unknown one", async () => {
+        document.documentElement.lang = "xx";
+        const el = await mount();
+
+        expect(
+          text(productOf(el)?.querySelector(".product-price > span")),
+        ).toBe("R$ 129,90");
+      });
+    });
+
+    it("formats again when the currency changes, without a new request", async () => {
+      const el = await mount();
+      el.setAttribute("currency", "USD");
+      await flushRender(el);
+
+      expect(text(productOf(el)?.querySelector(".product-price > span"))).toBe(
+        "US$ 129,90",
+      );
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows no product when the Story has none", async () => {
+      getRawAdsMock.mockResolvedValue(
+        rawAdsWith([{ ...mockStory, product: null }]),
+      );
+      const el = await mount();
+
+      expect(el.shadowRoot?.querySelector(".card")).not.toBeNull();
+      expect(productOf(el)).toBeNull();
+    });
+
+    it("shows the highlighted Story's product in the player", async () => {
+      const el = await mount();
+      productOf(el)?.click();
+      await flushRender(el);
+
+      const pill = el.shadowRoot?.querySelector(".player .card-product");
+      expect(text(pill?.querySelector(".product-name"))).toBe(
+        mockStory.product?.product_name,
+      );
+      expect(text(pill?.querySelector(".product-price > span"))).toBe(
+        "R$ 129,90",
+      );
+    });
+
+    it("opens the player with the product panel open from the card's product", async () => {
+      const el = await mount();
+
+      productOf(el)?.click();
+      await flushRender(el);
+
+      expect(el.shadowRoot?.querySelectorAll(".player")).toHaveLength(1);
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .card-product")
+          ?.hasAttribute("data-open"),
+      ).toBe(true);
+    });
+
+    it("opens the player with the panel closed from the card", async () => {
+      const el = await mount();
+
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-open")?.click();
+      await flushRender(el);
+
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .card-product")
+          ?.hasAttribute("data-open"),
+      ).toBe(false);
+    });
+  });
+
   it("renders one card", async () => {
     const el = await mount();
     expect(el.shadowRoot?.querySelectorAll(".card")).toHaveLength(1);
@@ -436,7 +577,7 @@ describe("vtex-ads-story", () => {
       getCard(el)?.click();
       await flushRender(el);
 
-      expect(getPlayers(el)).toHaveLength(1);
+      expect(el.shadowRoot?.querySelectorAll(".player")).toHaveLength(1);
     });
 
     it("focuses the close button when the player opens", async () => {
