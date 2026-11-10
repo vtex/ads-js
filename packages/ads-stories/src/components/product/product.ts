@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { icon } from "../icons";
 import { httpUrl } from "../media";
 import type { StoryAd } from "../../types";
+import type { StoryProductDetails } from "../../utils/hydrate-products";
 import { readProductPrice } from "./price";
 
 /** What the card shows of the Story's product, with the prices formatted. */
@@ -15,7 +16,19 @@ export interface CardProduct {
   url?: string;
   /** Accessible name of the product button: name and prices. */
   label: string;
+  /**
+   * The product's details are being fetched: placeholders show in their
+   * place (for now, the price's).
+   */
+  isLoading?: boolean;
 }
+
+/**
+ * The Story's product as fetched: `"loading"` while the request runs, its
+ * details once found, or undefined without them (no request, not found,
+ * failed). Without a fetched price, the ad server's shows.
+ */
+export type FetchedProduct = StoryProductDetails | "loading" | undefined;
 
 /** Builds the product button's accessible name from its texts. */
 export type ProductLabel = (
@@ -27,17 +40,24 @@ export type ProductLabel = (
 /**
  * The card's view of a Story's product, or undefined when the Story has none
  * (its destination is a link) or the product has no name.
+ *
+ * The price is the fetched one when there is one; while the product loads,
+ * none; and otherwise the ad server's, from `product_metadata`.
  */
 export function toCardProduct(
   story: Pick<StoryAd, "product" | "destination_url">,
   format: (amount: number) => string,
   label: ProductLabel,
+  fetched?: FetchedProduct,
 ): CardProduct | undefined {
   const product = story.product;
   const name = product?.product_name?.trim();
   if (!product || !name) return undefined;
 
-  const amounts = readProductPrice(product.product_metadata);
+  const loading = fetched === "loading";
+  const amounts = loading
+    ? undefined
+    : (fetched?.price ?? readProductPrice(product.product_metadata));
   const price = amounts && format(amounts.price);
   const listPrice =
     amounts?.listPrice === undefined ? undefined : format(amounts.listPrice);
@@ -49,11 +69,20 @@ export function toCardProduct(
     listPrice,
     url: httpUrl(story.destination_url) ?? undefined,
     label: label(name, price, listPrice),
+    ...(loading && { isLoading: true }),
   };
 }
 
-// The price and, on sale, the "from" price struck through beside it.
-function renderPrice(price: string, listPrice?: string) {
+const priceSkeleton = html`
+  <span class="product-price product-price-loading" aria-hidden="true"></span>
+`;
+
+// The price and, on sale, the "from" price struck through beside it. While
+// the product loads, its placeholder; without a price, nothing.
+function renderPrice({ isLoading, price, listPrice }: CardProduct) {
+  if (isLoading) return priceSkeleton;
+  if (!price) return nothing;
+
   return html`
     <span class="product-price">
       <span>${price}</span>
@@ -72,7 +101,7 @@ function renderSummary(product: CardProduct) {
       : nothing}
     <span class="product-info">
       <span class="product-name">${product.name}</span>
-      ${product.price ? renderPrice(product.price, product.listPrice) : nothing}
+      ${renderPrice(product)}
     </span>
   `;
 }
@@ -109,9 +138,9 @@ export interface ExpandableProductOptions {
 
 /**
  * The product pill in the player. The pill is a button that opens a panel
- * below it, as in the prototype, with "Adicionar ao carrinho" and "Ver
- * produto" (the product page, in a new tab; only with a URL). Open, the pill
- * turns white.
+ * below it, as in the prototype, with "Adicionar ao carrinho" (not while the
+ * product loads) and "Ver produto" (the product page, in a new tab; only
+ * with a URL). Open, the pill turns white.
  *
  * Adding to the cart does nothing yet: it will emit an event for the store
  * to handle.
@@ -137,9 +166,16 @@ export function renderExpandableProduct(
       </button>
       <div id=${options.panelId} class="product-panel" ?inert=${!open}>
         <div class="product-actions">
-          <button type="button" class="product-action product-add-to-cart">
-            ${options.addToCartLabel}
-          </button>
+          ${product.isLoading
+            ? nothing
+            : html`
+                <button
+                  type="button"
+                  class="product-action product-add-to-cart"
+                >
+                  ${options.addToCartLabel}
+                </button>
+              `}
           ${product.url
             ? html`
                 <a

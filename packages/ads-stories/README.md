@@ -126,18 +126,20 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
 | `placement`         | Yes      | The Story placement configured for the publisher                                                                                                                                        |
 | `user-id`           | No       | The shopper's id, when known                                                                                                                                                            |
-| `account-name`      | No       | The VTEX account name                                                                                                                                                                   |
+| `account-name`      | No       | The VTEX account name. Also turns on the product hydration from Intelligent Search (see [Product hydration](#product-hydration))                                                        |
 | `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
 | `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
 | `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
 | `currency`          | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
 | `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
+| `hydration`         | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
+| `hydration-timeout` | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout`, `inactive-autoplay` and `currency`, requests the Stories again; a new
-`timeout` applies to the next request.
+`timeout`, `hydration-timeout`, `inactive-autoplay` and `currency`, requests
+the Stories again; a new time limit applies to the next request.
 
 ## Customization
 
@@ -196,10 +198,42 @@ Adding to the cart does nothing yet.
 Prices are formatted in the language of the closest element with a `lang`
 attribute, the element itself included (usually `<html lang>`, or
 `<vtex-ads-story lang="es-AR">` for the widget alone), and in `currency`.
-Without a `lang`, or with one the browser doesn't know, they use `pt-BR`. The
-ad API doesn't send prices yet: the card reads them from the product's
-`product_metadata` (`price`, and `promotional_price` when on sale) and shows
-only the name without them.
+Without a `lang`, or with one the browser doesn't know, they use `pt-BR`.
+
+#### Product hydration
+
+The ad API sends only part of a product's details: no price yet. Once the
+carousel shows, the element fetches its products in one request, with a
+hydration strategy from [`@vtex/ads-core`](../core), and shows the details it
+reads from them over the ad API's. For now, the price is the only one.
+
+- **`hydration` property**: a strategy `{ fetcher, matcher, price }`, as an
+  object. `fetcher` and `matcher` are a `ProductFetcher` and a
+  `ProductMatchesOffer`; `price` reads an offer's price from a fetched product
+  (a `ProductPriceReader`). Set it before the element is on the page, or the
+  Stories are requested again.
+- **`hydration="none"`**: no product request.
+- **Neither, with `account-name`**: Intelligent Search, from
+  `{account-name}.vtexcommercestable.com.br`.
+- **Neither, without `account-name`**: no product request.
+
+```js
+const story = document.querySelector("vtex-ads-story");
+story.hydration = {
+  fetcher: async (offers, identity, { signal }) =>
+    fetchMyProducts(offers, signal),
+  matcher: (product, offer) => product.sku === offer.skuId,
+  price: (product) => ({ price: product.price, listPrice: product.listPrice }),
+};
+```
+
+While the request runs, the price shows a placeholder and the panel only the
+view product link. Then the fetched price shows, as the strategy returns it,
+and so does add to cart. Without one (no strategy, a request that fails or
+takes longer than `hydration-timeout`, a product not found or without a
+price), the card shows the price from the product's `product_metadata`
+(`price`, and `promotional_price` when on sale), or only the name without
+one.
 
 ### Call to action
 

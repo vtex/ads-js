@@ -8,13 +8,19 @@ import {
   afterEach,
   vi,
 } from "vitest";
-import { getRawAds, type RawAdsResponse } from "@vtex/ads-core";
+import { getRawAds, hydrateAds, type RawAdsResponse } from "@vtex/ads-core";
 import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { mockStory, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
 
-vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
+vi.mock("@vtex/ads-core", () => ({
+  getRawAds: vi.fn(),
+  hydrateAds: vi.fn(),
+  intelligentSearchFetcher: vi.fn(),
+  intelligentSearchMatcher: vi.fn(),
+  intelligentSearchPrice: vi.fn(),
+}));
 
 const getRawAdsMock = vi.mocked(getRawAds);
 
@@ -63,6 +69,11 @@ describe("vtex-ads-story", () => {
   beforeEach(() => {
     getRawAdsMock.mockReset();
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
+    // With account-name, the element also asks for the prices: none found.
+    vi.mocked(hydrateAds).mockResolvedValue({
+      sponsoredProducts: { byPlacement: {}, failed: [] },
+      stories: {},
+    });
   });
 
   afterEach(() => {

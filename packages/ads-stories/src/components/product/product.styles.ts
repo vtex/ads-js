@@ -319,4 +319,27 @@ export const productStyles = css`
     font-weight: 400;
     opacity: 0.5;
   }
+
+  /* The price's placeholder: a line its height (the info's line height),
+     pulsing gently. */
+  .product-price-loading {
+    width: 64px;
+    height: 16px;
+    border-radius: 4px;
+    background: currentColor;
+    opacity: 0.25;
+    animation: product-price-pulse 1.2s ease-in-out infinite alternate;
+  }
+
+  @keyframes product-price-pulse {
+    to {
+      opacity: 0.1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-price-loading {
+      animation: none;
+    }
+  }
 `;

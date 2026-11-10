@@ -9,6 +9,7 @@ export { productStyles } from "./product.styles";
 export type {
   CardProduct,
   ExpandableProductOptions,
+  FetchedProduct,
   ProductLabel,
 } from "./product";
 export {

@@ -46,6 +46,48 @@ describe("toCardProduct", () => {
     });
   });
 
+  it("uses the fetched price over the metadata's", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20, promotional_price: 15 } }),
+      format,
+      label,
+      { price: { price: 12, listPrice: 18 } },
+    );
+
+    expect(product).toMatchObject({
+      price: "$12.00",
+      listPrice: "$18.00",
+      label: "Shoe | $18.00 | $12.00",
+    });
+    expect(product?.isLoading).toBeUndefined();
+  });
+
+  it("has no price while it loads", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      label,
+      "loading",
+    );
+
+    expect(product).toMatchObject({ label: "Shoe", isLoading: true });
+    expect(product?.price).toBeUndefined();
+  });
+
+  it("falls back to the metadata's price without a fetched one", () => {
+    for (const fetched of [undefined, {}]) {
+      const product = toCardProduct(
+        storyWith({ product_metadata: { price: 20 } }),
+        format,
+        label,
+        fetched,
+      );
+
+      expect(product?.price).toBe("$20.00");
+      expect(product?.isLoading).toBeUndefined();
+    }
+  });
+
   it("has no price when the metadata has none", () => {
     const product = toCardProduct(storyWith({}), format, label);
 
@@ -176,5 +218,23 @@ describe("renderExpandableProduct", () => {
 
     expect(container.querySelector(".product-add-to-cart")).not.toBeNull();
     expect(container.querySelector(".product-view")).toBeNull();
+  });
+
+  it("has no add to cart while the product loads", () => {
+    const { container } = mount({ ...product, isLoading: true }, true);
+
+    expect(container.querySelector(".product-add-to-cart")).toBeNull();
+    expect(container.querySelector(".product-view")).not.toBeNull();
+  });
+
+  it("shows a placeholder while the price loads", () => {
+    const { container } = mount(
+      { ...product, price: undefined, isLoading: true },
+      false,
+    );
+
+    const skeleton = container.querySelector(".product-price-loading");
+    expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
+    expect(skeleton?.textContent?.trim()).toBe("");
   });
 });
