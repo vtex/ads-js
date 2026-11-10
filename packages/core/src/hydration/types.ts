@@ -144,6 +144,12 @@ export interface HydratedStory<T> {
    * `story.product` then has what the ad server sent.
    */
   product?: T;
+  /**
+   * The offer of the Story's product, as the fetcher and the matcher got it:
+   * pass it with `product` to a `ProductPriceReader`. Missing for a link
+   * Story.
+   */
+  offer?: Offer;
   advertisement: Advertisement;
 }
 

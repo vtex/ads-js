@@ -92,6 +92,13 @@ describe("hydrateAds", () => {
       "s3",
     ]);
     expect(found.product).toEqual({ sku: "20", seller: "1" });
+    expect(found.offer).toEqual({ skuId: "20", sellerId: "1", productId: "" });
+    expect(missing.offer).toEqual({
+      skuId: "21",
+      sellerId: "1",
+      productId: "",
+    });
+    expect(link.offer).toBeUndefined();
     expect(missing.story).toBe(missingStory);
     expect(missing.product).toBeUndefined();
     expect(link.story).toBe(linkStory);

@@ -40,8 +40,8 @@ export const buildHydratedProduct = <T extends object>(
 });
 
 /**
- * A Story with its advertisement data and, when found, its product. The
- * seller is its product's offer's, or the Story's for a link Story.
+ * A Story with its advertisement data, its product's offer and, when found,
+ * its product. The seller is the offer's, or the Story's for a link Story.
  */
 export const buildHydratedStory = <T extends object>(
   story: StoryAdDetail,
@@ -51,6 +51,7 @@ export const buildHydratedStory = <T extends object>(
   return {
     story,
     product: findProduct(offer),
+    offer,
     advertisement: buildAdvertisement(
       story,
       offer?.sellerId ?? story.seller_id,

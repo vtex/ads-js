@@ -538,6 +538,7 @@ describe("facade", () => {
           {
             story: mockStory,
             product: storyProduct,
+            offer: storyOffer,
             advertisement: {
               eventUrls: {
                 click: mockStory.click_url,
