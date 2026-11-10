@@ -75,6 +75,16 @@ export type ProductPriceReader<TProduct> = (
 ) => ProductPrice | undefined;
 
 /**
+ * Function type for reading whether an offer can be bought from a fetched
+ * product. Undefined when the product doesn't say.
+ * @public
+ */
+export type ProductAvailabilityReader<TProduct> = (
+  product: TProduct,
+  offer: Offer,
+) => boolean | undefined;
+
+/**
  * Function type for fetching products based on offers
  * @public
  */
@@ -146,7 +156,8 @@ export interface HydratedStory<T> {
   product?: T;
   /**
    * The offer of the Story's product, as the fetcher and the matcher got it:
-   * pass it with `product` to a `ProductPriceReader`. Missing for a link
+   * pass it with `product` to a `ProductPriceReader` or a
+   * `ProductAvailabilityReader`. Missing for a link
    * Story.
    */
   offer?: Offer;

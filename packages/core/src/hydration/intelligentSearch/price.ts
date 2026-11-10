@@ -1,5 +1,6 @@
 import { Product } from "../../clients/search";
 import { ProductPriceReader } from "../types";
+import { findCommercialOffer } from "./helpers/commercialOffer";
 
 const toAmount = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -20,11 +21,9 @@ const toAmount = (value: unknown) =>
  */
 export const intelligentSearchPrice: ProductPriceReader<Product> = (
   product,
-  { skuId, sellerId },
+  sponsoredOffer,
 ) => {
-  const offer = product.items
-    .find((item) => item.itemId === skuId)
-    ?.sellers.find((seller) => seller.sellerId === sellerId)?.commertialOffer;
+  const offer = findCommercialOffer(product, sponsoredOffer);
 
   const price = toAmount(offer?.Price);
   if (price === undefined) return undefined;
