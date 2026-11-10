@@ -150,7 +150,11 @@ describe("fetchStories", () => {
     await expect(fetchStories(REQUEST)).resolves.toEqual([]);
     expect(consoleError).toHaveBeenCalledWith(
       "[vtex-ads-story] Story request failed",
-      error,
+      {
+        placement: REQUEST.placement,
+        publisherId: REQUEST.publisherId,
+        error,
+      },
     );
   });
 
