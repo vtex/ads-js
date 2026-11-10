@@ -22,6 +22,7 @@ export type {
   HydratedProductsResult,
   HydratedProductsByPlacements,
   HydratedStory,
+  Advertisement,
   HydratedStoriesByPlacements,
   HydratedAds,
   AdsToHydrate,

@@ -1,5 +1,34 @@
-import { Placement, SponsoredProductDetail } from "../clients/adServer";
-import { HydratedSponsoredProduct, Offer, ProductMatchesOffer } from "./types";
+import {
+  Placement,
+  SponsoredProductDetail,
+  StoryAdDetail,
+} from "../clients/adServer";
+import { getStoryOffer } from "../clients/adServer/mappers";
+import {
+  Advertisement,
+  HydratedSponsoredProduct,
+  HydratedStory,
+  Offer,
+  ProductMatchesOffer,
+} from "./types";
+
+type TrackedAd = Pick<
+  SponsoredProductDetail,
+  "click_url" | "impression_url" | "view_url"
+>;
+
+export const buildAdvertisement = (
+  ad: TrackedAd,
+  sellerId?: string,
+): Advertisement => ({
+  eventUrls: {
+    click: ad.click_url,
+    impression: ad.impression_url,
+    view: ad.view_url,
+  },
+  eventParameters: btoa(ad.impression_url),
+  sponsoredBySellerId: sellerId,
+});
 
 export const buildHydratedProduct = <T extends object>(
   product: T,
@@ -7,16 +36,27 @@ export const buildHydratedProduct = <T extends object>(
   sponsoredOffer: Offer,
 ): HydratedSponsoredProduct<T> => ({
   product,
-  advertisement: {
-    eventUrls: {
-      click: ad.click_url,
-      impression: ad.impression_url,
-      view: ad.view_url,
-    },
-    eventParameters: btoa(ad.impression_url),
-    sponsoredBySellerId: sponsoredOffer.sellerId,
-  },
+  advertisement: buildAdvertisement(ad, sponsoredOffer.sellerId),
 });
+
+/**
+ * A Story with its advertisement data and, when found, its product. The
+ * seller is its product's offer's, or the Story's for a link Story.
+ */
+export const buildHydratedStory = <T extends object>(
+  story: StoryAdDetail,
+  findProduct: ProductFinder<T>,
+): HydratedStory<T> => {
+  const offer = getStoryOffer(story);
+  return {
+    story,
+    product: findProduct(offer),
+    advertisement: buildAdvertisement(
+      story,
+      offer?.sellerId ?? story.seller_id,
+    ),
+  };
+};
 
 /**
  * The offers of the ads of any type, in order. Ads without one (as link

@@ -88,7 +88,7 @@ const hydratedAds = await getHydratedAds(
 console.log("Hydrated ads:", hydratedAds.sponsoredProducts);
 ```
 
-Both hydrate the sponsored products and the Story ads' products in one fetcher call, and wait for it. Each Story found gets `hydratedProduct`.
+Both hydrate the sponsored products and the Story ads' products in one fetcher call, and wait for it. Each one comes with the same `advertisement` (event URLs and parameters) and, when found, `product`. A Story also keeps `story`, the ad as the ad server sent it (video, cover, destination), and comes without `product` when it has none or it wasn't found.
 
 ### Hydrating ads already fetched
 

@@ -1,12 +1,11 @@
 import { getOffer, getStoryOffer } from "../clients/adServer/mappers";
 import { Identity } from "../types";
 import { mapByPlacement } from "../utils/byPlacement";
-import { offersOf, productFinder } from "./mappers";
+import { buildHydratedStory, offersOf, productFinder } from "./mappers";
 import { mergeAdsWithProducts } from "./mergeAdsWithProducts";
 import {
   AdsToHydrate,
   HydratedAds,
-  HydratedStory,
   ProductFetcher,
   ProductFetcherOptions,
   ProductMatchesOffer,
@@ -16,10 +15,11 @@ import {
  * Enriches ads already fetched, as by `getRawAds`, with their products:
  * the sponsored products and the Stories' products, in one fetcher call.
  *
- * Sponsored products the fetcher doesn't find go to `failed`, as in
- * `getHydratedAds`. Stories are all kept, in their order: each one found
- * gets `hydratedProduct`, and the others (link Stories included) stay as
- * the ad server sent them.
+ * Both come with the same `advertisement` (event URLs and parameters) and,
+ * when found, `product`. Sponsored products the fetcher doesn't find go to
+ * `failed`, as in `getHydratedAds`. Stories are all kept, in their order,
+ * each under `story` as the ad server sent it: those not found (link
+ * Stories included) come without `product`.
  *
  * Calls the fetcher only when there is a product to find. A fetcher
  * failure, or a cancelled request, rejects: the caller decides what to show
@@ -54,9 +54,8 @@ export const hydrateAds = async <T extends object>(
 
   return {
     sponsoredProducts: mergeAdsWithProducts(sponsoredProducts, findProduct),
-    stories: mapByPlacement(stories, (story): HydratedStory<T> => {
-      const product = findProduct(getStoryOffer(story));
-      return product ? { ...story, hydratedProduct: product } : story;
-    }),
+    stories: mapByPlacement(stories, (story) =>
+      buildHydratedStory(story, findProduct),
+    ),
   };
 };

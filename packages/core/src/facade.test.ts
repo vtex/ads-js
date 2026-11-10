@@ -534,7 +534,21 @@ describe("facade", () => {
         { signal: undefined },
       );
       expect(result.stories).toEqual({
-        home_stories: [{ ...mockStory, hydratedProduct: storyProduct }],
+        home_stories: [
+          {
+            story: mockStory,
+            product: storyProduct,
+            advertisement: {
+              eventUrls: {
+                click: mockStory.click_url,
+                impression: mockStory.impression_url,
+                view: mockStory.view_url,
+              },
+              eventParameters: btoa(mockStory.impression_url),
+              sponsoredBySellerId: "1",
+            },
+          },
+        ],
       });
     });
 

@@ -54,9 +54,9 @@ export const getRawAds: (
  *
  * This function retrieves ads, fetches the products of the sponsored products
  * and of the Story ads in one fetcher call, as `hydrateAds`, and then returns
- * them with the advertisement data. It waits for the products: a fetcher
- * failure rejects, Stories included. To show the ads before their products,
- * call `getRawAds` and then `hydrateAds`.
+ * them with the advertisement data, the same for both. It waits for the
+ * products: a fetcher failure rejects, Stories included. To show the ads
+ * before their products, call `getRawAds` and then `hydrateAds`.
  *
  * @param args - Targeting arguments to fetch ads.
  * @param fetcher - Function to fetch product details from given offers.

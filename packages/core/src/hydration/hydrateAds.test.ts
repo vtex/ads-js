@@ -85,17 +85,58 @@ describe("hydrateAds", () => {
       identity,
     );
 
-    expect(stories.home_stories.map((s) => s.ad_id)).toEqual([
+    const [found, missing, link] = stories.home_stories;
+    expect([found, missing, link].map((s) => s.story.ad_id)).toEqual([
       "s1",
       "s2",
       "s3",
     ]);
-    expect(stories.home_stories[0].hydratedProduct).toEqual({
-      sku: "20",
-      seller: "1",
+    expect(found.product).toEqual({ sku: "20", seller: "1" });
+    expect(missing.story).toBe(missingStory);
+    expect(missing.product).toBeUndefined();
+    expect(link.story).toBe(linkStory);
+    expect(link.product).toBeUndefined();
+  });
+
+  it("gives Stories the same advertisement data as sponsored products", async () => {
+    const ad = sponsored("10");
+    const storyAd = { ...story("s1", "20"), ...ad, seller_id: "9" };
+
+    const { sponsoredProducts, stories } = await hydrateAds(
+      {
+        sponsoredProducts: { search_top: [ad] },
+        stories: { home_stories: [storyAd] },
+      },
+      fetcherFinding(),
+      matcher,
+      identity,
+    );
+
+    const sponsoredAdvertisement =
+      sponsoredProducts.byPlacement.search_top[0].advertisement;
+    expect(stories.home_stories[0].advertisement).toEqual(
+      sponsoredAdvertisement,
+    );
+    expect(sponsoredAdvertisement).toEqual({
+      eventUrls: {
+        click: ad.click_url,
+        impression: ad.impression_url,
+        view: ad.view_url,
+      },
+      eventParameters: btoa(ad.impression_url),
+      sponsoredBySellerId: "1",
     });
-    expect(stories.home_stories[1]).toBe(missingStory);
-    expect(stories.home_stories[2]).toBe(linkStory);
+  });
+
+  it("takes a link Story's seller from the Story", async () => {
+    const { stories } = await hydrateAds(
+      { stories: { home_stories: [{ ...story("s1"), seller_id: "9" }] } },
+      fetcherFinding(),
+      matcher,
+      identity,
+    );
+
+    expect(stories.home_stories[0].advertisement.sponsoredBySellerId).toBe("9");
   });
 
   it("hydrates the sponsored products as getHydratedAds does", async () => {
@@ -131,7 +172,22 @@ describe("hydrateAds", () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(result).toEqual({
       sponsoredProducts: { byPlacement: {}, failed: [] },
-      stories: { home_stories: [linkStory] },
+      stories: {
+        home_stories: [
+          {
+            story: linkStory,
+            advertisement: {
+              eventUrls: {
+                click: linkStory.click_url,
+                impression: linkStory.impression_url,
+                view: linkStory.view_url,
+              },
+              eventParameters: btoa(linkStory.impression_url),
+              sponsoredBySellerId: linkStory.seller_id,
+            },
+          },
+        ],
+      },
     });
   });
 

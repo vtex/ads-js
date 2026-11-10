@@ -84,31 +84,48 @@ export type HydratedProductsByPlacements<T> = Record<
 >;
 
 /**
+ * Tracking data of a hydrated ad, the same for every ad type
+ * @public
+ */
+export interface Advertisement {
+  eventUrls: {
+    click: string;
+    impression: string;
+    view: string;
+  };
+  // Base64 encoded string containing event parameters, used by
+  // Activity Flow tracking.
+  eventParameters: string;
+  sponsoredBySellerId?: string;
+}
+
+/**
  * Sponsored product enriched with advertisement data
  * @public
  */
 export interface HydratedSponsoredProduct<T> {
   product: T;
-  advertisement: {
-    eventUrls: {
-      click: string;
-      impression: string;
-      view: string;
-    };
-    // Base64 encoded string containing event parameters, used by
-    // Activity Flow tracking.
-    eventParameters: string;
-    sponsoredBySellerId?: string;
-  };
+  advertisement: Advertisement;
 }
 
 /**
- * Story ad with the product the fetcher found for it. `hydratedProduct` is
- * missing when the Story has no product (its destination is a link) or the
- * fetcher didn't find it: the Story then shows what the ad server sent.
+ * Story ad enriched with advertisement data and, when found, its product
  * @public
  */
-export type HydratedStory<T> = StoryAdDetail & { hydratedProduct?: T };
+export interface HydratedStory<T> {
+  /**
+   * The Story as the ad server sent it: the video, cover, destination and
+   * call to action exist only here.
+   */
+  story: StoryAdDetail;
+  /**
+   * The product the fetcher found for the Story. Missing when the Story has
+   * no product (its destination is a link) or the fetcher didn't find it:
+   * `story.product` then has what the ad server sent.
+   */
+  product?: T;
+  advertisement: Advertisement;
+}
 
 /**
  * Record of hydrated Story ads grouped by placement
