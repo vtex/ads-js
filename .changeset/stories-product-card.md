@@ -10,4 +10,4 @@ Prices are formatted in the language of the closest element with a `lang` attrib
 
 New attribute, also in the React JSX types: `currency`, the currency of the prices as an ISO 4217 code (`BRL`). Default `BRL`, also for a code the browser doesn't know.
 
-New CSS variable: `--vtex-ads-story-accent` colors the product panel's buttons (default `#1b75a8`).
+New CSS variables for the open product panel: `--vtex-ads-story-color-accent` colors its buttons (default `#1b75a8`) and `--vtex-ads-story-color-accent-contrast` the text on the add to cart button (default `#fff`); `--vtex-ads-story-color-surface` is its background and the view product button's (default `#fff`); `--vtex-ads-story-color-muted` is the "from" price and the disabled add to cart (default `#6b6b6b`); `--vtex-ads-story-color-text` now also colors its text (default `#242424` there).

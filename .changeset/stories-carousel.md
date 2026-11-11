@@ -15,4 +15,4 @@ New attributes, also in the React JSX types:
 - `quantity`: how many Stories to request, the carousel positions (default `8`). A value below `1` or not a number uses the default. Changing it requests the Stories again.
 - `inactive-autoplay` (off by default): off, only the highlighted card plays its video and the others show their cover. On, the visible cards without the highlight also play, muted.
 
-New CSS variable: `--vtex-ads-story-solo-background` sets the background behind a single Story (default `#fafafa`). `--vtex-ads-story-radius` now rounds that background's corners as well as the card's.
+New CSS variable: `--vtex-ads-story-color-surface` sets the background behind a single Story (default `#fafafa`). `--vtex-ads-story-radius` now rounds that background's corners as well as the card's.

@@ -173,7 +173,7 @@ export const productStyles = css`
     box-sizing: border-box;
     height: 48px;
     padding: 0 16px;
-    border: 1px solid var(--vtex-ads-story-accent, #1b75a8);
+    border: 1px solid var(--vtex-ads-story-color-accent, #1b75a8);
     border-radius: 50px;
     font: inherit;
     font-size: 14px;
@@ -184,19 +184,19 @@ export const productStyles = css`
   }
 
   .product-action:focus-visible {
-    outline: 2px solid var(--vtex-ads-story-accent, #1b75a8);
+    outline: 2px solid var(--vtex-ads-story-color-accent, #1b75a8);
     outline-offset: 2px;
   }
 
   .product-add-to-cart {
-    background: var(--vtex-ads-story-accent, #1b75a8);
-    color: #fff;
+    background: var(--vtex-ads-story-color-accent, #1b75a8);
+    color: var(--vtex-ads-story-color-accent-contrast, #fff);
   }
 
   .product-add-to-cart:hover {
     background: color-mix(
       in srgb,
-      var(--vtex-ads-story-accent, #1b75a8) 85%,
+      var(--vtex-ads-story-color-accent, #1b75a8) 85%,
       #000
     );
   }
@@ -205,28 +205,28 @@ export const productStyles = css`
   .product-unavailable {
     border-color: transparent;
     background: rgba(0, 0, 0, 0.06);
-    color: rgba(0, 0, 0, 0.45);
+    color: var(--vtex-ads-story-color-muted, #6b6b6b);
     cursor: not-allowed;
   }
 
   .product-view {
-    background: #fff;
-    color: var(--vtex-ads-story-accent, #1b75a8);
+    background: var(--vtex-ads-story-color-surface, #fff);
+    color: var(--vtex-ads-story-color-accent, #1b75a8);
   }
 
   /* A light tint of the accent. */
   .product-view:hover {
     background: color-mix(
       in srgb,
-      var(--vtex-ads-story-accent, #1b75a8) 8%,
-      #fff
+      var(--vtex-ads-story-color-accent, #1b75a8) 8%,
+      var(--vtex-ads-story-color-surface, #fff)
     );
   }
 
-  /* Open: a white card, without the glass. */
+  /* Open: a solid card (white by default), without the glass. */
   .product-expandable[data-open] {
-    background: #fff;
-    color: #242424;
+    background: var(--vtex-ads-story-color-surface, #fff);
+    color: var(--vtex-ads-story-color-text, #242424);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
 
@@ -239,7 +239,7 @@ export const productStyles = css`
   }
 
   .product-expandable[data-open] .product-list-price {
-    color: #6b6b6b;
+    color: var(--vtex-ads-story-color-muted, #6b6b6b);
     opacity: 1;
   }
 

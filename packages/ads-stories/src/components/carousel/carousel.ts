@@ -44,8 +44,7 @@ export type CarouselLayout = "solo" | "pair" | "rolling";
  * The carousel stage: a band as tall as the card, as wide as the element's
  * parent. The store sets the width on its own container.
  *
- * Solo: the card sits centered over a solid background
- * (--vtex-ads-story-solo-background, default #fafafa), with room around it:
+ * Solo: the card sits centered over a solid background with room around it:
  * the card shrinks to fit the padding and gets a soft shadow. On narrow
  * screens (576px or less) there is no room for it: the card shows alone at
  * full height.
@@ -67,7 +66,7 @@ export const carouselStyles = css`
   .carousel[data-layout="solo"] {
     padding: ${SOLO_PADDING};
     border-radius: var(--vtex-ads-story-radius, 20px);
-    background: var(--vtex-ads-story-solo-background, #fafafa);
+    background: var(--vtex-ads-story-color-surface, #fafafa);
     --card-height: calc(${STAGE_HEIGHT} - 2 * ${SOLO_PADDING});
   }
 
