@@ -11,6 +11,7 @@ vi.mock("@vtex/ads-core", () => ({
   intelligentSearchFetcher: vi.fn(),
   intelligentSearchMatcher: vi.fn(),
   intelligentSearchPrice: vi.fn(),
+  intelligentSearchAvailability: vi.fn(),
 }));
 
 // Separate file: the element must not be defined yet when the test starts,

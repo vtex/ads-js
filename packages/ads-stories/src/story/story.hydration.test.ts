@@ -10,6 +10,7 @@ import {
 import {
   getRawAds,
   hydrateAds,
+  intelligentSearchAvailability,
   intelligentSearchFetcher,
   intelligentSearchPrice,
   type HydratedAds,
@@ -32,11 +33,15 @@ vi.mock("@vtex/ads-core", () => ({
   intelligentSearchFetcher: vi.fn(),
   intelligentSearchMatcher: vi.fn(),
   intelligentSearchPrice: vi.fn(),
+  intelligentSearchAvailability: vi.fn(),
 }));
 
 const getRawAdsMock = vi.mocked(getRawAds);
 const hydrateAdsMock = vi.mocked(hydrateAds);
 const intelligentSearchPriceMock = vi.mocked(intelligentSearchPrice);
+const intelligentSearchAvailabilityMock = vi.mocked(
+  intelligentSearchAvailability,
+);
 
 const WITH_ACCOUNT = { ...REQUIRED_ATTRIBUTES, "account-name": "store" };
 
@@ -138,6 +143,8 @@ describe("vtex-ads-story product hydration", () => {
     findEveryProduct();
     intelligentSearchPriceMock.mockReset();
     intelligentSearchPriceMock.mockReturnValue({ price: 99.9 });
+    intelligentSearchAvailabilityMock.mockReset();
+    intelligentSearchAvailabilityMock.mockReturnValue(true);
     consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -250,6 +257,50 @@ describe("vtex-ads-story product hydration", () => {
       "[vtex-ads-story] Product request failed",
       expect.any(Error),
     );
+  });
+
+  it("shows a sold out product as Esgotado, with a disabled button", async () => {
+    intelligentSearchAvailabilityMock.mockReturnValue(false);
+
+    const el = await mount(WITH_ACCOUNT);
+
+    expect(intelligentSearchAvailabilityMock).toHaveBeenCalledWith(
+      { sku: "sku-1" },
+      { skuId: "sku-1", sellerId: "1", productId: "" },
+    );
+    expect(
+      pill(el)?.querySelector(".product-sold-out")?.textContent?.trim(),
+    ).toBe("Esgotado");
+    expect(priceOf(el)).toBeUndefined();
+    expect(pill(el)?.getAttribute("aria-label")).toBe(
+      `${mockStory.product?.product_name}, Esgotado`,
+    );
+
+    const panel = await openPanel(el);
+    const unavailable = panel?.querySelector<HTMLButtonElement>(
+      ".product-unavailable",
+    );
+    expect(unavailable?.disabled).toBe(true);
+    expect(unavailable?.textContent?.trim()).toBe("Produto indisponível");
+    expect(panel?.querySelector(".product-add-to-cart")).toBeNull();
+    expect(panel?.querySelector(".product-view")).not.toBeNull();
+  });
+
+  it("doesn't check availability with a strategy that can't tell", async () => {
+    const strategy: StoryHydration = {
+      fetcher: vi.fn(),
+      matcher: vi.fn(),
+      price: () => ({ price: 50 }),
+    };
+
+    const el = await mount(REQUIRED_ATTRIBUTES, (element) => {
+      element.hydration = strategy;
+    });
+
+    expect(priceOf(el)).toBe("R$ 50,00");
+    expect(
+      (await openPanel(el))?.querySelector(".product-add-to-cart"),
+    ).not.toBeNull();
   });
 
   it("shows a price of 0 as the strategy returns it", async () => {

@@ -1,5 +1,6 @@
 import {
   hydrateAds,
+  intelligentSearchAvailability,
   intelligentSearchFetcher,
   intelligentSearchMatcher,
   intelligentSearchPrice,
@@ -22,16 +23,21 @@ export interface StoryHydration<TProduct extends object = object> {
   fetcher: ProductFetcher<TProduct>;
   matcher(product: TProduct, offer: Offer): boolean;
   price(product: TProduct, offer: Offer): ProductPrice | undefined;
+  /** Whether the product can be bought. Without it, it isn't checked. */
+  available?(product: TProduct, offer: Offer): boolean | undefined;
 }
 
 export const intelligentSearchHydration: StoryHydration<Product> = {
   fetcher: intelligentSearchFetcher,
   matcher: intelligentSearchMatcher,
   price: intelligentSearchPrice,
+  available: intelligentSearchAvailability,
 };
 
 export interface StoryProductDetails {
   price?: ProductPrice;
+  /** Missing when the strategy doesn't say. */
+  available?: boolean;
 }
 
 export interface HydrateProductsOptions {
@@ -61,7 +67,11 @@ export async function hydrateStoryProducts(
     for (const { story, product, offer } of hydrated.stories[placement] ?? []) {
       if (!product || !offer) continue;
       const price = hydration.price(product, offer);
-      products.set(story.ad_id, price ? { price } : {});
+      const available = hydration.available?.(product, offer);
+      products.set(story.ad_id, {
+        ...(price && { price }),
+        ...(available !== undefined && { available }),
+      });
     }
   } catch (error) {
     // As for the Story request: a cancelled or timed out request needs no

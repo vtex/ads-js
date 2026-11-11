@@ -10,6 +10,7 @@ import {
 const format = (amount: number) => `$${amount.toFixed(2)}`;
 const label = (name: string, price?: string, listPrice?: string) =>
   [name, listPrice, price].filter(Boolean).join(" | ");
+const labels = { product: label, soldOut: "Sold out" };
 
 const storyWith = (product: Record<string, unknown> | null) =>
   ({
@@ -33,7 +34,7 @@ describe("toCardProduct", () => {
     const product = toCardProduct(
       storyWith({ product_metadata: { price: 20, promotional_price: 15 } }),
       format,
-      label,
+      labels,
     );
 
     expect(product).toEqual({
@@ -50,7 +51,7 @@ describe("toCardProduct", () => {
     const product = toCardProduct(
       storyWith({ product_metadata: { price: 20, promotional_price: 15 } }),
       format,
-      label,
+      labels,
       { price: { price: 12, listPrice: 18 } },
     );
 
@@ -66,7 +67,7 @@ describe("toCardProduct", () => {
     const product = toCardProduct(
       storyWith({ product_metadata: { price: 20 } }),
       format,
-      label,
+      labels,
       "loading",
     );
 
@@ -79,7 +80,7 @@ describe("toCardProduct", () => {
       const product = toCardProduct(
         storyWith({ product_metadata: { price: 20 } }),
         format,
-        label,
+        labels,
         fetched,
       );
 
@@ -88,8 +89,34 @@ describe("toCardProduct", () => {
     }
   });
 
+  it("shows the sold out text, not a price, when the product can't be bought", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 12 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      soldOut: "Sold out",
+      label: "Shoe | Sold out",
+    });
+    expect(product?.price).toBeUndefined();
+    expect(product?.listPrice).toBeUndefined();
+  });
+
+  it("shows the price when the product can be bought", () => {
+    const product = toCardProduct(storyWith({}), format, labels, {
+      price: { price: 12 },
+      available: true,
+    });
+
+    expect(product?.price).toBe("$12.00");
+    expect(product?.soldOut).toBeUndefined();
+  });
+
   it("has no price when the metadata has none", () => {
-    const product = toCardProduct(storyWith({}), format, label);
+    const product = toCardProduct(storyWith({}), format, labels);
 
     expect(product?.price).toBeUndefined();
     expect(product?.listPrice).toBeUndefined();
@@ -100,14 +127,14 @@ describe("toCardProduct", () => {
     const product = toCardProduct(
       storyWith({ image_url: "javascript:alert(1)" }),
       format,
-      label,
+      labels,
     );
 
     expect(product?.imageUrl).toBeUndefined();
   });
 
   it("takes the Story's destination as the URL, not the product's", () => {
-    const product = toCardProduct(storyWith({}), format, label);
+    const product = toCardProduct(storyWith({}), format, labels);
 
     expect(product?.url).toBe("https://example.com/destination/p");
   });
@@ -116,16 +143,16 @@ describe("toCardProduct", () => {
     const product = toCardProduct(
       { ...storyWith({}), destination_url: "javascript:alert(1)" },
       format,
-      label,
+      labels,
     );
 
     expect(product?.url).toBeUndefined();
   });
 
   it("is undefined without a product or a name", () => {
-    expect(toCardProduct(storyWith(null), format, label)).toBeUndefined();
+    expect(toCardProduct(storyWith(null), format, labels)).toBeUndefined();
     expect(
-      toCardProduct(storyWith({ product_name: "  " }), format, label),
+      toCardProduct(storyWith({ product_name: "  " }), format, labels),
     ).toBeUndefined();
   });
 });
@@ -172,6 +199,19 @@ describe("renderProduct", () => {
     expect(button?.querySelector(".product-price")).toBeNull();
   });
 
+  it("shows the sold out text in place of the price", () => {
+    const { button } = mount({
+      name: "Shoe",
+      soldOut: "Sold out",
+      label: "Shoe | Sold out",
+    });
+
+    expect(button?.querySelector(".product-sold-out")?.textContent).toBe(
+      "Sold out",
+    );
+    expect(button?.querySelector(".product-list-price")).toBeNull();
+  });
+
   it("calls onSelect when clicked", () => {
     const { button, onSelect } = mount({ name: "Shoe", label: "Shoe" });
 
@@ -191,6 +231,7 @@ describe("renderExpandableProduct", () => {
   const options = {
     panelId: "panel",
     addToCartLabel: "Add to cart",
+    unavailableLabel: "Unavailable",
     viewProductLabel: "View product",
   };
 
@@ -218,6 +259,18 @@ describe("renderExpandableProduct", () => {
 
     expect(container.querySelector(".product-add-to-cart")).not.toBeNull();
     expect(container.querySelector(".product-view")).toBeNull();
+  });
+
+  it("has a disabled unavailable button in place of add to cart when sold out", () => {
+    const { container } = mount({ ...product, soldOut: "Sold out" }, true);
+
+    const unavailable = container.querySelector<HTMLButtonElement>(
+      ".product-unavailable",
+    );
+    expect(unavailable?.disabled).toBe(true);
+    expect(unavailable?.textContent?.trim()).toBe("Unavailable");
+    expect(container.querySelector(".product-add-to-cart")).toBeNull();
+    expect(container.querySelector(".product-view")).not.toBeNull();
   });
 
   it("has a placeholder in place of add to cart while the product loads", () => {

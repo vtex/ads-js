@@ -431,6 +431,7 @@ export interface PlayerOptions {
   neighborLabel: string;
   /** The product panel's buttons. */
   addToCartLabel: string;
+  unavailableLabel: string;
   viewProductLabel: string;
   /**
    * Called by the previous (-1) and next (1) buttons, by another Story's
@@ -931,6 +932,7 @@ export class PlayerController implements ReactiveController {
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",
         addToCartLabel: options.addToCartLabel,
+        unavailableLabel: options.unavailableLabel,
         viewProductLabel: options.viewProductLabel,
       });
     } else if (cta) {
