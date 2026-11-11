@@ -40,7 +40,7 @@ const meta: Meta<Args> = {
     const element: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(args)) {
       if (!isVariable(name)) element[name] = value;
-      else if (value) theme[name] = String(value);
+      else if (typeof value === "string" && value) theme[name] = value;
     }
     return renderElement({ ...(element as ElementArgs), theme }, context);
   },

@@ -32,7 +32,7 @@ import { fetchStories } from "../utils/fetch-story";
 import { labelsFor, type StoryLabels } from "../locales";
 import { TAG_NAME } from "../tag-name";
 
-export { TAG_NAME };
+export { TAG_NAME } from "../tag-name";
 
 // The properties that make up the ad and product requests: a change to any of
 // them fetches the Story again.

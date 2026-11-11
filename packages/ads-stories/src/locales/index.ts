@@ -3,8 +3,10 @@ import { es } from "./es";
 import { pt } from "./pt";
 import type { StoryLabels } from "./types";
 
-export type { StoryLabels };
-export { en, es, pt };
+export type { StoryLabels } from "./types";
+export { en } from "./en";
+export { es } from "./es";
+export { pt } from "./pt";
 
 export interface StoryLabelOverrides {
   addToCart?: string;
