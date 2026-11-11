@@ -66,7 +66,7 @@ export const renderElement = (
     <div style=${styleMap(theme ?? {})}>
       ${keyed(
         JSON.stringify(args),
-        html`<vtex-ads-story
+        html`<vtex-ads-story-carousel
           publisher-id="playground-publisher"
           session-id="playground-session"
           placement=${args.placement}
@@ -79,7 +79,7 @@ export const renderElement = (
           label-view-product=${ifDefined(args.labelViewProduct)}
           ?inactive-autoplay=${args.inactiveAutoplay}
           .hydration=${args.hydration}
-        ></vtex-ads-story>`,
+        ></vtex-ads-story-carousel>`,
       )}
     </div>
   </div>

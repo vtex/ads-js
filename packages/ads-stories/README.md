@@ -16,21 +16,21 @@ npm install @vtex/ads-stories
 Register the element once, on the client:
 
 ```javascript
-import { defineVtexAdsStories } from "@vtex/ads-stories";
+import { defineVtexAdsStoryCarousel } from "@vtex/ads-stories";
 
-defineVtexAdsStories();
+defineVtexAdsStoryCarousel();
 ```
 
 ```html
-<vtex-ads-story
+<vtex-ads-story-carousel
   publisher-id="your-publisher-id"
   session-id="the-store-session-id"
   placement="home_stories"
-></vtex-ads-story>
+></vtex-ads-story-carousel>
 ```
 
 Importing the package registers nothing: the element is only registered when
-`defineVtexAdsStories()` is called. Both ESM (`import`) and CommonJS
+`defineVtexAdsStoryCarousel()` is called. Both ESM (`import`) and CommonJS
 (`require`) builds are published, with type declarations.
 
 The package can be imported during server-side rendering (for example in
@@ -38,25 +38,25 @@ FastStore, which is Next.js). The element is built with
 [Lit](https://lit.dev), and in Node Lit installs a minimal DOM shim, so after
 the import `globalThis.customElements` is defined on the server too. Don't use
 `typeof customElements` to tell the server from the browser; use
-`typeof window` instead. Calling `defineVtexAdsStories()` on the server is
+`typeof window` instead. Calling `defineVtexAdsStoryCarousel()` on the server is
 safe: it registers the element in Lit's server-side registry and renders
 nothing.
 
 ### TypeScript and React
 
-`document.createElement("vtex-ads-story")` and
-`document.querySelector("vtex-ads-story")` are typed as `VtexAdsStoryElement`
-out of the box.
+`document.createElement("vtex-ads-story-carousel")` and
+`document.querySelector("vtex-ads-story-carousel")` are typed as
+`VtexAdsStoryCarouselElement` out of the box.
 
-To use `<vtex-ads-story>` in `.tsx` files, enable its JSX types once in your
-project (requires `@types/react` 18.2.6 or newer, including 19):
+To use `<vtex-ads-story-carousel>` in `.tsx` files, enable its JSX types once
+in your project (requires `@types/react` 18.2.6 or newer, including 19):
 
 ```tsx
 // e.g. in your app's entry file or a .d.ts file
 import type {} from "@vtex/ads-stories/react";
 
 export const Ad = () => (
-  <vtex-ads-story
+  <vtex-ads-story-carousel
     publisher-id="your-publisher-id"
     session-id="the-store-session-id"
     placement="home_stories"
@@ -70,15 +70,15 @@ and `placement` are required, as in HTML, and `channel` only accepts `site` or
 
 Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in
 `tsconfig.json`. Without it, TypeScript reports
-`Property 'vtex-ads-story' does not exist on type 'JSX.IntrinsicElements'`.
+`Property 'vtex-ads-story-carousel' does not exist on type 'JSX.IntrinsicElements'`.
 The types are opt-in so projects without React don't need `@types/react`.
 
 ## CDN
 
 The same build is available as a standalone script from
 [unpkg](https://unpkg.com) and [jsDelivr](https://www.jsdelivr.com). It
-registers `<vtex-ads-story>` when it loads, so no JavaScript is needed in the
-page. Always pin an exact version: a pinned URL never changes.
+registers `<vtex-ads-story-carousel>` when it loads, so no JavaScript is
+needed in the page. Always pin an exact version: a pinned URL never changes.
 
 ```html
 <script
@@ -87,11 +87,11 @@ page. Always pin an exact version: a pinned URL never changes.
   crossorigin="anonymous"
 ></script>
 
-<vtex-ads-story
+<vtex-ads-story-carousel
   publisher-id="your-publisher-id"
   session-id="the-store-session-id"
   placement="home_stories"
-></vtex-ads-story>
+></vtex-ads-story-carousel>
 ```
 
 - The full file URL works too:
@@ -141,14 +141,15 @@ The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
 `timeout`, `hydration-timeout`, `inactive-autoplay`, `currency`,
-`label-add-to-cart` and `label-view-product`, requests the Stories again; a new time limit applies to the next request.
+`label-add-to-cart` and `label-view-product`, requests the Stories again; a
+new time limit applies to the next request.
 
 ## Language
 
 The element's texts (buttons, "Esgotado", and the names screen readers read
 out) and its prices follow the language of the closest element with a `lang`
 attribute, the element itself included: usually `<html lang>`, or
-`<vtex-ads-story lang="es-AR">` for the widget alone. The texts come in
+`<vtex-ads-story-carousel lang="es-AR">` for the widget alone. The texts come in
 Portuguese, Spanish and English, picked by the language alone (`es-AR` and
 `es-MX` both get Spanish). Without a `lang`, or with another language, they
 are in Portuguese and prices use `pt-BR`.
@@ -157,12 +158,12 @@ are in Portuguese and prices use `pt-BR`.
 texts in any language:
 
 ```html
-<vtex-ads-story
+<vtex-ads-story-carousel
   lang="es-AR"
   label-add-to-cart="Comprar"
   label-view-product="Ver detalles"
   ...
-></vtex-ads-story>
+></vtex-ads-story-carousel>
 ```
 
 The call to action's text comes from the campaign.
@@ -170,7 +171,7 @@ The call to action's text comes from the campaign.
 ## Customization
 
 ```css
-vtex-ads-story {
+vtex-ads-story-carousel {
   --vtex-ads-story-font-family: "Inter", sans-serif;
   --vtex-ads-story-color-text: #1f1f1f;
   --vtex-ads-story-color-muted: #6b6b6b;
@@ -248,7 +249,7 @@ reads from them over the ad API's. For now, the price is the only one.
 - **Neither, without `account-name`**: no product request.
 
 ```js
-const story = document.querySelector("vtex-ads-story");
+const story = document.querySelector("vtex-ads-story-carousel");
 story.hydration = {
   fetcher: async (offers, identity, { signal }) =>
     fetchMyProducts(offers, signal),

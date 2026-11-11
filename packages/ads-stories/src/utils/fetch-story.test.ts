@@ -6,6 +6,7 @@ import {
   fetchStories,
 } from "./fetch-story";
 import { mockStory, rawAdsWith } from "../story/story.mock";
+import { TAG_NAME } from "../tag-name";
 
 vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
 
@@ -149,7 +150,7 @@ describe("fetchStories", () => {
 
     await expect(fetchStories(REQUEST)).resolves.toEqual([]);
     expect(consoleError).toHaveBeenCalledWith(
-      "[vtex-ads-story] Story request failed",
+      `[${TAG_NAME}] Story request failed`,
       {
         placement: REQUEST.placement,
         publisherId: REQUEST.publisherId,

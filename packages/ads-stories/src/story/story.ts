@@ -30,8 +30,9 @@ import {
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
 import { labelsFor, type StoryLabels } from "../locales";
+import { TAG_NAME } from "../tag-name";
 
-export const TAG_NAME = "vtex-ads-story";
+export { TAG_NAME };
 
 // The properties that make up the ad and product requests: a change to any of
 // them fetches the Story again.
@@ -77,7 +78,7 @@ const hydrationConverter = {
 
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
-export class VtexAdsStoryElement extends LitElement {
+export class VtexAdsStoryCarouselElement extends LitElement {
   static readonly properties = {
     publisherId: { attribute: "publisher-id" },
     sessionId: { attribute: "session-id" },
@@ -532,17 +533,18 @@ export class VtexAdsStoryElement extends LitElement {
   }
 }
 
-// Types `document.createElement("vtex-ads-story")` and `querySelector` results
-// as VtexAdsStoryElement in any TypeScript project, no framework needed.
+// Types `document.createElement("vtex-ads-story-carousel")` and
+// `querySelector` results as VtexAdsStoryCarouselElement in any TypeScript
+// project, no framework needed.
 declare global {
   interface HTMLElementTagNameMap {
-    "vtex-ads-story": VtexAdsStoryElement;
+    [TAG_NAME]: VtexAdsStoryCarouselElement;
   }
 }
 
-export function defineVtexAdsStories() {
+export function defineVtexAdsStoryCarousel() {
   if (typeof customElements === "undefined") return;
   if (customElements.get(TAG_NAME)) return;
 
-  customElements.define(TAG_NAME, VtexAdsStoryElement);
+  customElements.define(TAG_NAME, VtexAdsStoryCarouselElement);
 }

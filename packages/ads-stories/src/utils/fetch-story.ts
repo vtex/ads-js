@@ -1,4 +1,5 @@
 import { getRawAds, type Channel } from "@vtex/ads-core";
+import { TAG_NAME } from "../tag-name";
 import type { StoryAd } from "../types";
 import { withTimeout } from "./with-timeout";
 
@@ -99,7 +100,7 @@ export async function fetchStories(
     // failure, HTTP or validation error) is logged, so a failing request can
     // be told apart from a placement with no Story.
     if (!limit.signal.aborted) {
-      console.error("[vtex-ads-story] Story request failed", {
+      console.error(`[${TAG_NAME}] Story request failed`, {
         placement,
         publisherId,
         error,

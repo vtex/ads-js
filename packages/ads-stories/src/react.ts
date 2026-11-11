@@ -1,5 +1,6 @@
 /**
- * React JSX types for <vtex-ads-story>. Types only: the JS output is empty.
+ * React JSX types for <vtex-ads-story-carousel>. Types only: the JS output
+ * is empty.
  *
  * Opt in once per project, so non-React projects never need @types/react:
  *
@@ -9,13 +10,13 @@
  */
 import type { DetailedHTMLProps, HTMLAttributes } from "react";
 import type { Channel } from "@vtex/ads-core";
-import type { VtexAdsStoryElement } from "./story";
+import type { TAG_NAME, VtexAdsStoryCarouselElement } from "./story";
 
 /**
  * The element's own attributes. The required ones match the README: without
  * them, the element requests nothing and renders nothing.
  */
-export interface VtexAdsStoryAttributes {
+export interface VtexAdsStoryCarouselAttributes {
   /** The publisher the ads are requested for. */
   "publisher-id": string;
   /** The store's session, also used to deduplicate events. */
@@ -50,17 +51,17 @@ export interface VtexAdsStoryAttributes {
   "inactive-autoplay"?: boolean;
 }
 
-export type VtexAdsStoryProps = DetailedHTMLProps<
-  HTMLAttributes<VtexAdsStoryElement>,
-  VtexAdsStoryElement
+export type VtexAdsStoryCarouselProps = DetailedHTMLProps<
+  HTMLAttributes<VtexAdsStoryCarouselElement>,
+  VtexAdsStoryCarouselElement
 > &
-  VtexAdsStoryAttributes;
+  VtexAdsStoryCarouselAttributes;
 
 declare module "react" {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      "vtex-ads-story": VtexAdsStoryProps;
+      [TAG_NAME]: VtexAdsStoryCarouselProps;
     }
   }
 }

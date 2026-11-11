@@ -1,1 +1,5 @@
-export { VtexAdsStoryElement, defineVtexAdsStories, TAG_NAME } from "./story";
+export {
+  VtexAdsStoryCarouselElement,
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+} from "./story";

@@ -9,7 +9,11 @@ import {
   vi,
 } from "vitest";
 import { getRawAds, hydrateAds, type RawAdsResponse } from "@vtex/ads-core";
-import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import {
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+  VtexAdsStoryCarouselElement,
+} from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { mockStory, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
@@ -30,7 +34,7 @@ const VIDEO = mockStory.media_url;
 
 // Lets the ad request resolve and the element render its result. Use it after
 // anything that requests a Story (mounting, changing a request attribute).
-async function flushRequest(el: VtexAdsStoryElement) {
+async function flushRequest(el: VtexAdsStoryCarouselElement) {
   await el.updateComplete;
   await new Promise((resolve) => setTimeout(resolve));
   await el.updateComplete;
@@ -55,16 +59,16 @@ function deferred() {
 
 // Lets the element render, and the player show after it renders. Does not wait
 // for an ad request: use flushRequest for that.
-async function flushRender(el: VtexAdsStoryElement) {
+async function flushRender(el: VtexAdsStoryCarouselElement) {
   await el.updateComplete;
   await el.updateComplete;
 }
 
-describe("vtex-ads-story", () => {
+describe(TAG_NAME, () => {
   beforeAll(() => {
     installDialogMocks();
     installMediaMocks();
-    defineVtexAdsStories();
+    defineVtexAdsStoryCarousel();
   });
 
   beforeEach(() => {
@@ -81,25 +85,29 @@ describe("vtex-ads-story", () => {
     document.body.replaceChildren();
   });
 
-  it("registers the custom element", () => {
-    expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryElement);
+  it("is named vtex-ads-story-carousel, the tag stores write", () => {
+    expect(TAG_NAME).toBe("vtex-ads-story-carousel");
   });
 
-  it("types the tag as VtexAdsStoryElement in the DOM", () => {
-    const el = document.createElement("vtex-ads-story");
-    expect(el).toBeInstanceOf(VtexAdsStoryElement);
-    expectTypeOf(el).toEqualTypeOf<VtexAdsStoryElement>();
+  it("registers the custom element", () => {
+    expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryCarouselElement);
+  });
+
+  it("types the tag as VtexAdsStoryCarouselElement in the DOM", () => {
+    const el = document.createElement(TAG_NAME);
+    expect(el).toBeInstanceOf(VtexAdsStoryCarouselElement);
+    expectTypeOf(el).toEqualTypeOf<VtexAdsStoryCarouselElement>();
     expectTypeOf(
-      document.querySelector("vtex-ads-story"),
-    ).toEqualTypeOf<VtexAdsStoryElement | null>();
+      document.querySelector(TAG_NAME),
+    ).toEqualTypeOf<VtexAdsStoryCarouselElement | null>();
   });
 
   it("does not throw when defined twice", () => {
-    expect(() => defineVtexAdsStories()).not.toThrow();
+    expect(() => defineVtexAdsStoryCarousel()).not.toThrow();
   });
 
   describe("product", () => {
-    const productOf = (el: VtexAdsStoryElement) =>
+    const productOf = (el: VtexAdsStoryCarouselElement) =>
       el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product");
     const text = (node: Element | null | undefined) =>
       node?.textContent?.replace(/\s/g, " ").trim();
@@ -324,7 +332,7 @@ describe("vtex-ads-story", () => {
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
       // fetchStories reads it; the element only forwards the property.
       expect(
-        document.querySelector<VtexAdsStoryElement>(TAG_NAME)?.timeout,
+        document.querySelector<VtexAdsStoryCarouselElement>(TAG_NAME)?.timeout,
       ).toBe(5000);
     });
 
@@ -715,7 +723,7 @@ describe("vtex-ads-story", () => {
 
   describe("labels", () => {
     // Opens the player with the product panel open, from the card's product.
-    async function openPanel(el: VtexAdsStoryElement) {
+    async function openPanel(el: VtexAdsStoryCarouselElement) {
       el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product")?.click();
       await flushRender(el);
       const panel = el.shadowRoot?.querySelector(".player .product-panel");
