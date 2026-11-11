@@ -5,9 +5,8 @@ import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import type { StoryHydration } from "../src";
 import { mockStories } from "../src/story/story.mock";
-import { wait } from "./mock-fetch";
 
-// The placements and accounts the mock in mock-fetch.ts answers.
+// The placements and accounts the mock in handlers.ts answers.
 const PLACEMENTS = [
   "home_stories",
   "two_stories",
@@ -186,6 +185,18 @@ export const ProductHydrationFailing: Story = {
     server's prices show, and the console logs the failure.`,
   },
 };
+
+// Waits like the network, and rejects when the request is cancelled, as
+// fetch does.
+const wait = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted();
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    });
+  });
 
 // A store's own strategy: a fake catalog answering in 1.5 s, with every
 // product R$ 10,00 below its ad server price.

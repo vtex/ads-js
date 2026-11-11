@@ -26,6 +26,9 @@ const toAliasList = (alias?: ViteAlias) =>
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.ts"],
   framework: "@storybook/web-components-vite",
+  addons: ["msw-storybook-addon"],
+  // The MSW worker (mockServiceWorker.js), served at the root.
+  staticDirs: ["./public"],
   core: { disableTelemetry: true },
   viteFinal: (vite) => ({
     ...vite,
