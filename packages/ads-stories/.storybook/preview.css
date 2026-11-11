@@ -1,0 +1,43 @@
+/*
+ * The page around the stories. The element inherits its font and text color
+ * from here, as it does from a store's page.
+ */
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+  color: #1f1f1f;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.story-container {
+  max-width: 1200px;
+  padding: 24px 0;
+  margin: 0 auto;
+}
+
+.note {
+  margin-bottom: 24px;
+  color: #5c5c5c;
+  font-size: 14px;
+}
+
+.note code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f2f2f2;
+  color: #1f1f1f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
