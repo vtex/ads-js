@@ -10,6 +10,7 @@ import {
   type ProductFetcher,
   type ProductPrice,
 } from "@vtex/ads-core";
+import { TAG_NAME } from "../tag-name";
 import type { StoryAd } from "../types";
 import { withTimeout } from "./with-timeout";
 
@@ -77,7 +78,7 @@ export async function hydrateStoryProducts(
     // As for the Story request: a cancelled or timed out request needs no
     // log, any other failure does.
     if (!limit.signal.aborted) {
-      console.error("[vtex-ads-story] Product request failed", error);
+      console.error(`[${TAG_NAME}] Product request failed`, error);
     }
   } finally {
     limit.clear();

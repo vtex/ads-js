@@ -6,11 +6,12 @@ import {
   toCardProduct,
   type CardProduct,
 } from "./product";
+import { en } from "../../locales";
 
 const format = (amount: number) => `$${amount.toFixed(2)}`;
 const label = (name: string, price?: string, listPrice?: string) =>
   [name, listPrice, price].filter(Boolean).join(" | ");
-const labels = { product: label, soldOut: "Sold out" };
+const labels = { ...en, product: label };
 
 const storyWith = (product: Record<string, unknown> | null) =>
   ({
@@ -230,9 +231,7 @@ describe("renderExpandableProduct", () => {
   };
   const options = {
     panelId: "panel",
-    addToCartLabel: "Add to cart",
-    unavailableLabel: "Unavailable",
-    viewProductLabel: "View product",
+    labels: en,
   };
 
   function mount(item: CardProduct, open: boolean) {
@@ -268,7 +267,7 @@ describe("renderExpandableProduct", () => {
       ".product-unavailable",
     );
     expect(unavailable?.disabled).toBe(true);
-    expect(unavailable?.textContent?.trim()).toBe("Unavailable");
+    expect(unavailable?.textContent?.trim()).toBe("Product unavailable");
     expect(container.querySelector(".product-add-to-cart")).toBeNull();
     expect(container.querySelector(".product-view")).not.toBeNull();
   });

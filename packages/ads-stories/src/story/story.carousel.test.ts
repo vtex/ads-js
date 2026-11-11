@@ -9,9 +9,9 @@ import {
 } from "vitest";
 import { getRawAds } from "@vtex/ads-core";
 import {
-  defineVtexAdsStories,
+  defineVtexAdsStoryCarousel,
   TAG_NAME,
-  type VtexAdsStoryElement,
+  type VtexAdsStoryCarouselElement,
 } from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
@@ -54,31 +54,31 @@ async function mount(attributes: Record<string, string> = REQUIRED_ATTRIBUTES) {
 }
 
 const query = <T extends Element = HTMLElement>(
-  el: VtexAdsStoryElement,
+  el: VtexAdsStoryCarouselElement,
   selector: string,
 ) => el.shadowRoot?.querySelector<T>(selector) ?? null;
 
-const slides = (el: VtexAdsStoryElement) => [
+const slides = (el: VtexAdsStoryCarouselElement) => [
   ...(el.shadowRoot?.querySelectorAll<HTMLElement>(".slide") ?? []),
 ];
 
-const activeIndex = (el: VtexAdsStoryElement) =>
+const activeIndex = (el: VtexAdsStoryCarouselElement) =>
   slides(el).findIndex((slide) => slide.hasAttribute("data-active"));
 
-const slideVideo = (el: VtexAdsStoryElement, index: number) =>
+const slideVideo = (el: VtexAdsStoryCarouselElement, index: number) =>
   slides(el)[index]?.querySelector("video") ?? null;
 
-async function click(el: VtexAdsStoryElement, selector: string) {
+async function click(el: VtexAdsStoryCarouselElement, selector: string) {
   query(el, selector)?.click();
   await el.updateComplete;
   await el.updateComplete;
 }
 
-describe("vtex-ads-story carousel", () => {
+describe(`${TAG_NAME} carousel`, () => {
   beforeAll(() => {
     installDialogMocks();
     installMediaMocks();
-    defineVtexAdsStories();
+    defineVtexAdsStoryCarousel();
   });
 
   beforeEach(() => {
@@ -397,14 +397,14 @@ describe("vtex-ads-story carousel", () => {
 
   describe("sound", () => {
     // Lets the step render and the new card's video start.
-    async function settle(el: VtexAdsStoryElement) {
+    async function settle(el: VtexAdsStoryCarouselElement) {
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve));
       await el.updateComplete;
     }
 
     // As if the shopper turned the highlighted card's sound on.
-    async function turnSoundOn(el: VtexAdsStoryElement, index = 0) {
+    async function turnSoundOn(el: VtexAdsStoryCarouselElement, index = 0) {
       const video = slideVideo(el, index);
       video?.play();
       if (video) video.muted = false;
@@ -505,10 +505,10 @@ describe("vtex-ads-story carousel", () => {
   });
 
   describe("player navigation", () => {
-    const highlightedCard = (el: VtexAdsStoryElement) =>
+    const highlightedCard = (el: VtexAdsStoryCarouselElement) =>
       query(el, ".slide[data-active]");
 
-    async function openPlayer(el: VtexAdsStoryElement) {
+    async function openPlayer(el: VtexAdsStoryCarouselElement) {
       await click(el, ".slide[data-active] .card-open");
     }
 
@@ -563,14 +563,14 @@ describe("vtex-ads-story carousel", () => {
       pause.mockRestore();
     });
 
-    async function expandPlayer(el: VtexAdsStoryElement) {
+    async function expandPlayer(el: VtexAdsStoryCarouselElement) {
       query(el, ".player-expand")?.click();
       await vi.waitFor(() =>
         expect(query(el, ".player")?.hasAttribute("data-expanded")).toBe(true),
       );
     }
 
-    const neighborCovers = (el: VtexAdsStoryElement) =>
+    const neighborCovers = (el: VtexAdsStoryCarouselElement) =>
       [...(el.shadowRoot?.querySelectorAll(".player-neighbor img") ?? [])].map(
         (img) => img.getAttribute("src"),
       );
@@ -768,11 +768,11 @@ describe("vtex-ads-story carousel", () => {
         position: index,
       }));
 
-    const visible = (el: VtexAdsStoryElement) =>
+    const visible = (el: VtexAdsStoryCarouselElement) =>
       slides(el).filter((slide) => !slide.hasAttribute("data-hidden"));
 
     // The Story index of each visible card, left to right.
-    const visibleIndexes = (el: VtexAdsStoryElement) =>
+    const visibleIndexes = (el: VtexAdsStoryCarouselElement) =>
       visible(el)
         .sort(
           (a, b) =>
@@ -781,10 +781,10 @@ describe("vtex-ads-story carousel", () => {
         )
         .map((slide) => Number(slide.dataset.index));
 
-    const highlighted = (el: VtexAdsStoryElement) =>
+    const highlighted = (el: VtexAdsStoryCarouselElement) =>
       query(el, ".slide[data-active]");
 
-    const atPlace = (el: VtexAdsStoryElement, place: number) =>
+    const atPlace = (el: VtexAdsStoryCarouselElement, place: number) =>
       visible(el).find(
         (slide) => slide.style.getPropertyValue("--place") === String(place),
       );
@@ -939,7 +939,7 @@ describe("vtex-ads-story carousel", () => {
     });
 
     // As if the screen got wide (or narrow, with `matches`).
-    async function resize(el: VtexAdsStoryElement, matches = false) {
+    async function resize(el: VtexAdsStoryCarouselElement, matches = false) {
       narrow = matches;
       for (const listener of listeners) {
         listener({ matches } as MediaQueryListEvent);

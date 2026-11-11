@@ -4,12 +4,9 @@ import { installMediaMocks } from "../media/media.mock";
 import { VideoController } from "../media";
 import { renderCard } from "./card";
 import type { StoryMedia } from "../../types";
+import { pt } from "../../locales";
 
-const options = {
-  label: "Assistir vídeo",
-  soundOnLabel: "Ativar som",
-  soundOffLabel: "Desativar som",
-};
+const options = { label: "Assistir vídeo", labels: pt };
 
 function mount(story: StoryMedia) {
   const onSelect = vi.fn();

@@ -9,7 +9,11 @@ import {
   vi,
 } from "vitest";
 import { getRawAds, hydrateAds, type RawAdsResponse } from "@vtex/ads-core";
-import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import {
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+  VtexAdsStoryCarouselElement,
+} from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { mockStory, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
@@ -30,7 +34,7 @@ const VIDEO = mockStory.media_url;
 
 // Lets the ad request resolve and the element render its result. Use it after
 // anything that requests a Story (mounting, changing a request attribute).
-async function flushRequest(el: VtexAdsStoryElement) {
+async function flushRequest(el: VtexAdsStoryCarouselElement) {
   await el.updateComplete;
   await new Promise((resolve) => setTimeout(resolve));
   await el.updateComplete;
@@ -55,16 +59,16 @@ function deferred() {
 
 // Lets the element render, and the player show after it renders. Does not wait
 // for an ad request: use flushRequest for that.
-async function flushRender(el: VtexAdsStoryElement) {
+async function flushRender(el: VtexAdsStoryCarouselElement) {
   await el.updateComplete;
   await el.updateComplete;
 }
 
-describe("vtex-ads-story", () => {
+describe(TAG_NAME, () => {
   beforeAll(() => {
     installDialogMocks();
     installMediaMocks();
-    defineVtexAdsStories();
+    defineVtexAdsStoryCarousel();
   });
 
   beforeEach(() => {
@@ -81,25 +85,29 @@ describe("vtex-ads-story", () => {
     document.body.replaceChildren();
   });
 
-  it("registers the custom element", () => {
-    expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryElement);
+  it("is named vtex-ads-story-carousel, the tag stores write", () => {
+    expect(TAG_NAME).toBe("vtex-ads-story-carousel");
   });
 
-  it("types the tag as VtexAdsStoryElement in the DOM", () => {
-    const el = document.createElement("vtex-ads-story");
-    expect(el).toBeInstanceOf(VtexAdsStoryElement);
-    expectTypeOf(el).toEqualTypeOf<VtexAdsStoryElement>();
+  it("registers the custom element", () => {
+    expect(customElements.get(TAG_NAME)).toBe(VtexAdsStoryCarouselElement);
+  });
+
+  it("types the tag as VtexAdsStoryCarouselElement in the DOM", () => {
+    const el = document.createElement(TAG_NAME);
+    expect(el).toBeInstanceOf(VtexAdsStoryCarouselElement);
+    expectTypeOf(el).toEqualTypeOf<VtexAdsStoryCarouselElement>();
     expectTypeOf(
-      document.querySelector("vtex-ads-story"),
-    ).toEqualTypeOf<VtexAdsStoryElement | null>();
+      document.querySelector(TAG_NAME),
+    ).toEqualTypeOf<VtexAdsStoryCarouselElement | null>();
   });
 
   it("does not throw when defined twice", () => {
-    expect(() => defineVtexAdsStories()).not.toThrow();
+    expect(() => defineVtexAdsStoryCarousel()).not.toThrow();
   });
 
   describe("product", () => {
-    const productOf = (el: VtexAdsStoryElement) =>
+    const productOf = (el: VtexAdsStoryCarouselElement) =>
       el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product");
     const text = (node: Element | null | undefined) =>
       node?.textContent?.replace(/\s/g, " ").trim();
@@ -324,7 +332,7 @@ describe("vtex-ads-story", () => {
       expect(getRawAdsMock).toHaveBeenCalledTimes(1);
       // fetchStories reads it; the element only forwards the property.
       expect(
-        document.querySelector<VtexAdsStoryElement>(TAG_NAME)?.timeout,
+        document.querySelector<VtexAdsStoryCarouselElement>(TAG_NAME)?.timeout,
       ).toBe(5000);
     });
 
@@ -710,6 +718,99 @@ describe("vtex-ads-story", () => {
       await flushRender(el);
 
       expect(getPlayers(el)).toHaveLength(0);
+    });
+  });
+
+  describe("labels", () => {
+    // Opens the player with the product panel open, from the card's product.
+    async function openPanel(el: VtexAdsStoryCarouselElement) {
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product")?.click();
+      await flushRender(el);
+      const panel = el.shadowRoot?.querySelector(".player .product-panel");
+      return {
+        addToCart: panel
+          ?.querySelector(".product-add-to-cart")
+          ?.textContent?.trim(),
+        viewProduct: panel?.querySelector(".product-view")?.textContent?.trim(),
+      };
+    }
+
+    afterEach(() => {
+      document.documentElement.lang = "";
+    });
+
+    it("shows the texts in Portuguese by default", async () => {
+      const el = await mount();
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Adicionar ao carrinho",
+        viewProduct: "Ver produto",
+      });
+      expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
+        "Fechar vídeo",
+      );
+    });
+
+    it("shows the texts in the element's language", async () => {
+      const el = await mount({ ...REQUIRED_ATTRIBUTES, lang: "es-AR" });
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Agregar al carrito",
+        viewProduct: "Ver producto",
+      });
+      expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
+        "Cerrar video",
+      );
+      expect(
+        el.shadowRoot?.querySelector(".card-open")?.getAttribute("aria-label"),
+      ).toBe("Ver video");
+    });
+
+    it("shows the texts in the page's language", async () => {
+      document.documentElement.lang = "en-US";
+      const el = await mount();
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Add to cart",
+        viewProduct: "View product",
+      });
+    });
+
+    it("uses the store's texts over the language's", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        lang: "es-AR",
+        "label-add-to-cart": "Comprar",
+        "label-view-product": "Detalles",
+      });
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Comprar",
+        viewProduct: "Detalles",
+      });
+    });
+
+    it("keeps the default for a blank text", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "label-add-to-cart": "  ",
+      });
+
+      expect((await openPanel(el)).addToCart).toBe("Adicionar ao carrinho");
+    });
+
+    it("shows a changed text without a new request", async () => {
+      const el = await mount();
+      await openPanel(el);
+      el.setAttribute("label-add-to-cart", "Comprar");
+      await flushRender(el);
+
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .product-add-to-cart")
+          ?.textContent?.trim(),
+      ).toBe("Comprar");
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
     });
   });
 });

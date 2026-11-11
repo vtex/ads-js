@@ -5,6 +5,7 @@ import {
   type ReactiveControllerHost,
   type TemplateResult,
 } from "lit";
+import type { StoryLabels } from "../../locales";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
@@ -44,8 +45,7 @@ export type CarouselLayout = "solo" | "pair" | "rolling";
  * The carousel stage: a band as tall as the card, as wide as the element's
  * parent. The store sets the width on its own container.
  *
- * Solo: the card sits centered over a solid background
- * (--vtex-ads-story-solo-background, default #fafafa), with room around it:
+ * Solo: the card sits centered over a solid background with room around it:
  * the card shrinks to fit the padding and gets a soft shadow. On narrow
  * screens (576px or less) there is no room for it: the card shows alone at
  * full height.
@@ -67,7 +67,7 @@ export const carouselStyles = css`
   .carousel[data-layout="solo"] {
     padding: ${SOLO_PADDING};
     border-radius: var(--vtex-ads-story-radius, 20px);
-    background: var(--vtex-ads-story-solo-background, #fafafa);
+    background: var(--vtex-ads-story-color-surface, #fafafa);
     --card-height: calc(${STAGE_HEIGHT} - 2 * ${SOLO_PADDING});
   }
 
@@ -210,17 +210,7 @@ export const carouselStyles = css`
   }
 `;
 
-export interface CarouselLabels {
-  /** Accessible name of the carousel. */
-  carousel: string;
-  /** What the carousel is, read instead of "region". */
-  carouselRole: string;
-  previous: string;
-  next: string;
-}
-
 export interface CarouselOptions {
-  labels: CarouselLabels;
   /**
    * Called when the highlight moves, before the host renders it, with the
    * keys (see Slide) of the slide that loses it and the one that gets it.
@@ -546,7 +536,11 @@ export class CarouselController implements ReactiveController {
    * One item: the card centered over the background. More: the cards in the
    * pair or rolling layout, with the arrows.
    */
-  render<T>(items: readonly T[], renderSlide: RenderSlide<T>) {
+  render<T>(
+    items: readonly T[],
+    renderSlide: RenderSlide<T>,
+    labels: StoryLabels,
+  ) {
     if (this.layout === "solo") {
       return html`
         <div class="carousel" data-layout="solo">
@@ -561,7 +555,6 @@ export class CarouselController implements ReactiveController {
       `;
     }
 
-    const { labels } = this.options;
     const locked = this.options.locked?.() ?? false;
 
     return html`

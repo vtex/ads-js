@@ -1,5 +1,9 @@
-import { defineVtexAdsStories } from "./story";
+import { defineVtexAdsStoryCarousel } from "./story";
 
-defineVtexAdsStories();
+defineVtexAdsStoryCarousel();
 
-export { VtexAdsStoryElement, defineVtexAdsStories, TAG_NAME } from "./story";
+export {
+  VtexAdsStoryCarouselElement,
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+} from "./story";

@@ -1,4 +1,5 @@
 import { css, html, nothing } from "lit";
+import type { StoryLabels } from "../../locales";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { createRef, ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -415,24 +416,6 @@ export const playerStyles = css`
 `;
 
 export interface PlayerOptions {
-  /** Accessible name of the player. */
-  label: string;
-  /** Accessible names of the buttons. */
-  expandLabel: string;
-  collapseLabel: string;
-  closeLabel: string;
-  playLabel: string;
-  pauseLabel: string;
-  soundOnLabel: string;
-  soundOffLabel: string;
-  previousLabel: string;
-  nextLabel: string;
-  /** Accessible name of another Story's cover in the expanded view. */
-  neighborLabel: string;
-  /** The product panel's buttons. */
-  addToCartLabel: string;
-  unavailableLabel: string;
-  viewProductLabel: string;
   /**
    * Called by the previous (-1) and next (1) buttons, by another Story's
    * cover in the expanded view (its offset) and, in the expanded view, when
@@ -454,12 +437,13 @@ export interface PlayerNeighbor {
   story: StoryMedia;
   /**
    * Accessible name of its cover, telling it apart from the others (default
-   * `neighborLabel`).
+   * the `show` text).
    */
   label?: string;
 }
 
 export interface PlayerRenderOptions {
+  labels: StoryLabels;
   /**
    * More than one Story: previous and next buttons and, in the expanded
    * view, the video moves on to the next Story when it ends.
@@ -474,7 +458,7 @@ export interface PlayerRenderOptions {
 }
 
 // What shows at the bottom of the video: one or the other.
-type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta">;
+type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta" | "labels">;
 
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
@@ -923,17 +907,14 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({ product, cta }: StoryDestination) {
-    const { options } = this;
+  private renderDestination({ product, cta, labels }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
         open: this.productOpen,
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",
-        addToCartLabel: options.addToCartLabel,
-        unavailableLabel: options.unavailableLabel,
-        viewProductLabel: options.viewProductLabel,
+        labels,
       });
     } else if (cta) {
       content = renderCta(cta);
@@ -951,8 +932,8 @@ export class PlayerController implements ReactiveController {
     `;
   }
 
-  private renderVideoControls() {
-    const { video, options } = this;
+  private renderVideoControls(labels: StoryLabels) {
+    const { video } = this;
 
     // Not a .player-button: it keeps the card's larger glass look.
     const onToggle = (event: Event) => {
@@ -968,7 +949,7 @@ export class PlayerController implements ReactiveController {
       <button
         type="button"
         class="play player-toggle"
-        aria-label=${video.paused ? options.playLabel : options.pauseLabel}
+        aria-label=${video.paused ? labels.play : labels.pause}
         @click=${onToggle}
       >
         ${icon(video.paused ? "play" : "pause")}
@@ -976,7 +957,7 @@ export class PlayerController implements ReactiveController {
       <button
         type="button"
         class="player-button player-sound"
-        aria-label=${video.muted ? options.soundOnLabel : options.soundOffLabel}
+        aria-label=${video.muted ? labels.soundOn : labels.soundOff}
         @click=${onSound}
       >
         ${icon(video.muted ? "soundOff" : "soundOn")}
@@ -988,7 +969,7 @@ export class PlayerController implements ReactiveController {
    * Previous and next Story: above the mini player's top left, beside the
    * expanded video.
    */
-  private renderNavigation() {
+  private renderNavigation(labels: StoryLabels) {
     const { options } = this;
     const step = (delta: number) => () => options.onStep?.(delta);
 
@@ -997,7 +978,7 @@ export class PlayerController implements ReactiveController {
         <button
           type="button"
           class="player-button player-previous"
-          aria-label=${options.previousLabel}
+          aria-label=${labels.previous}
           @click=${step(-1)}
         >
           ${icon("previous")}
@@ -1005,7 +986,7 @@ export class PlayerController implements ReactiveController {
         <button
           type="button"
           class="player-button player-next"
-          aria-label=${options.nextLabel}
+          aria-label=${labels.next}
           @click=${step(1)}
         >
           ${icon("next")}
@@ -1015,7 +996,10 @@ export class PlayerController implements ReactiveController {
   }
 
   /** The other Stories' covers beside the expanded video. */
-  private renderNeighbors(neighbors: readonly PlayerNeighbor[]) {
+  private renderNeighbors(
+    neighbors: readonly PlayerNeighbor[],
+    labels: StoryLabels,
+  ) {
     const { options } = this;
 
     // With two Stories, the single cover's offset flips between 1 and -1 on
@@ -1030,7 +1014,7 @@ export class PlayerController implements ReactiveController {
           <button
             type="button"
             class="player-neighbor"
-            aria-label=${label ?? options.neighborLabel}
+            aria-label=${label ?? labels.show}
             style=${styleMap({
               "--side": String(side),
               "--beyond": String(offset - side),
@@ -1046,7 +1030,7 @@ export class PlayerController implements ReactiveController {
   }
 
   /** Expand or collapse, and close: above the video, or at the top right. */
-  private renderWindowControls() {
+  private renderWindowControls(labels: StoryLabels) {
     const { options, expanded } = this;
 
     return html`
@@ -1054,7 +1038,7 @@ export class PlayerController implements ReactiveController {
         <button
           type="button"
           class="player-button player-expand"
-          aria-label=${expanded ? options.collapseLabel : options.expandLabel}
+          aria-label=${expanded ? labels.collapse : labels.expand}
           ${ref(this.expandButton)}
           @click=${this.toggleExpanded}
         >
@@ -1063,7 +1047,7 @@ export class PlayerController implements ReactiveController {
         <button
           type="button"
           class="player-button player-close"
-          aria-label=${options.closeLabel}
+          aria-label=${labels.close}
           ${ref(this.closeButton)}
           @click=${options.onClose}
         >
@@ -1091,7 +1075,9 @@ export class PlayerController implements ReactiveController {
           loop: !advances,
           onEnded: advances ? () => options.onStep?.(1) : undefined,
         })}
-        ${hasVideo(story, video) ? this.renderVideoControls() : nothing}
+        ${hasVideo(story, video)
+          ? this.renderVideoControls(destination.labels)
+          : nothing}
         ${this.renderDestination(destination)}
       </div>
     `;
@@ -1125,15 +1111,16 @@ export class PlayerController implements ReactiveController {
   render(
     story: StoryMedia,
     {
+      labels,
       navigation = false,
       neighbors = [],
       product,
       cta,
-    }: PlayerRenderOptions = {},
+    }: PlayerRenderOptions,
   ) {
     if (!this.isOpen) return nothing;
 
-    const { video, options, expanded } = this;
+    const { video, expanded } = this;
     const shownNeighbors = this.track(story, neighbors);
     const pair = this.pairDirection !== 0;
     this.navigation = navigation;
@@ -1142,7 +1129,7 @@ export class PlayerController implements ReactiveController {
       <dialog
         class="player"
         popover="manual"
-        aria-label=${options.label}
+        aria-label=${labels.player}
         ?data-expanded=${expanded}
         ?data-pair=${pair}
         style=${styleMap({
@@ -1156,14 +1143,15 @@ export class PlayerController implements ReactiveController {
         @cancel=${this.onCancel}
         @keydown=${this.onPlayerKeyDown}
       >
-        ${this.renderNeighbors(shownNeighbors)}
+        ${this.renderNeighbors(shownNeighbors, labels)}
         <div class="player-frame">
-          ${this.renderWindowControls()}
+          ${this.renderWindowControls(labels)}
           <div class="player-stage" ${ref(this.stage)}>
-            ${navigation ? this.renderNavigation() : nothing}
+            ${navigation ? this.renderNavigation(labels) : nothing}
             ${this.renderVideo(story, navigation && expanded, {
               product,
               cta,
+              labels,
             })}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>

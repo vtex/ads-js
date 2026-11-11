@@ -19,25 +19,13 @@ import {
   type PlayerRenderOptions,
 } from "./player";
 import type { StoryMedia } from "../../types";
+import { pt as labels } from "../../locales";
+
+// What the tests pass to render(): the texts are always the Portuguese ones.
+type RenderOptions = Omit<PlayerRenderOptions, "labels">;
 
 describe("PlayerController", () => {
   const story = { poster_url: "https://example.com/cover.jpg" };
-  const labels = {
-    label: "Vídeo",
-    expandLabel: "Expandir vídeo",
-    collapseLabel: "Reduzir vídeo",
-    closeLabel: "Fechar vídeo",
-    playLabel: "Reproduzir vídeo",
-    pauseLabel: "Pausar vídeo",
-    soundOnLabel: "Ativar som",
-    soundOffLabel: "Desativar som",
-    previousLabel: "Vídeo anterior",
-    nextLabel: "Próximo vídeo",
-    neighborLabel: "Mostrar vídeo",
-    addToCartLabel: "Adicionar ao carrinho",
-    unavailableLabel: "Produto indisponível",
-    viewProductLabel: "Ver produto",
-  };
 
   beforeAll(() => {
     installDialogMocks();
@@ -56,13 +44,13 @@ describe("PlayerController", () => {
   // Rendered and opened as the element does it. onClose closes the player.
   async function setup(
     storyToPlay: StoryMedia = story,
-    renderOptions?: PlayerRenderOptions,
+    renderOptions?: RenderOptions,
     openOptions?: Parameters<PlayerController["open"]>[0],
   ) {
     const onClose = vi.fn(() => controller.close());
     const { host, container, controller } = mountHost(
-      (host) => new PlayerController(host, { ...labels, onClose }),
-      (player) => player.render(storyToPlay, renderOptions),
+      (host) => new PlayerController(host, { onClose }),
+      (player) => player.render(storyToPlay, { ...renderOptions, labels }),
     );
     opened.push(controller);
     await controller.open(openOptions);
@@ -90,8 +78,8 @@ describe("PlayerController", () => {
 
   it("renders nothing until opened", () => {
     const { container } = mountHost(
-      (host) => new PlayerController(host, { ...labels, onClose: vi.fn() }),
-      (player) => player.render(story),
+      (host) => new PlayerController(host, { onClose: vi.fn() }),
+      (player) => player.render(story, { labels }),
     );
 
     expect(container.querySelector("dialog")).toBeNull();
@@ -503,13 +491,13 @@ describe("PlayerController", () => {
     // Story.
     async function setupWithNavigation(
       navigation = true,
-      renderOptions: PlayerRenderOptions = {},
+      renderOptions: RenderOptions = {},
     ) {
       const onStep = vi.fn();
       const { container, controller } = mountHost(
-        (host) =>
-          new PlayerController(host, { ...labels, onClose: vi.fn(), onStep }),
-        (player) => player.render(videoStory, { navigation, ...renderOptions }),
+        (host) => new PlayerController(host, { onClose: vi.fn(), onStep }),
+        (player) =>
+          player.render(videoStory, { navigation, ...renderOptions, labels }),
       );
       opened.push(controller);
       await controller.open();
@@ -603,8 +591,9 @@ describe("PlayerController", () => {
     it("keeps the single cover's button across steps with two", async () => {
       let neighbors = [neighbor(1)];
       const { container, controller } = mountHost(
-        (host) => new PlayerController(host, { ...labels, onClose: vi.fn() }),
-        (player) => player.render(videoStory, { navigation: true, neighbors }),
+        (host) => new PlayerController(host, { onClose: vi.fn() }),
+        (player) =>
+          player.render(videoStory, { navigation: true, neighbors, labels }),
       );
       opened.push(controller);
       await controller.open();
@@ -752,8 +741,8 @@ describe("PlayerController", () => {
       it("still closes on Escape pressed anywhere on the page", async () => {
         const onClose = vi.fn();
         const { container, controller } = mountHost(
-          (host) => new PlayerController(host, { ...labels, onClose }),
-          (player) => player.render(videoStory, { navigation: true }),
+          (host) => new PlayerController(host, { onClose }),
+          (player) => player.render(videoStory, { navigation: true, labels }),
         );
         opened.push(controller);
         await controller.open();
@@ -864,9 +853,10 @@ describe("PlayerController", () => {
           ],
         };
         const { container, controller } = mountHost(
-          (host) => new PlayerController(host, { ...labels, onClose: vi.fn() }),
+          (host) => new PlayerController(host, { onClose: vi.fn() }),
           (player) =>
             player.render(shown.story, {
+              labels,
               navigation: true,
               neighbors: shown.neighbors,
             }),

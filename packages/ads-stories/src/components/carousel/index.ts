@@ -8,7 +8,6 @@ export {
   VISIBLE_SIDE,
 } from "./carousel";
 export type {
-  CarouselLabels,
   CarouselLayout,
   CarouselOptions,
   RenderSlide,

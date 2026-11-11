@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
 import { httpUrl } from "../media";
 import type { StoryAd } from "../../types";
@@ -35,21 +36,6 @@ export interface CardProduct {
  */
 export type FetchedProduct = StoryProductDetails | "loading" | undefined;
 
-/** Builds the product button's accessible name from its texts. */
-export type ProductLabel = (
-  name: string,
-  price?: string,
-  listPrice?: string,
-) => string;
-
-/** The texts of the product, set by the element. */
-export interface ProductLabels {
-  /** The product button's accessible name. */
-  product: ProductLabel;
-  /** Shown in place of the price for a product that can't be bought. */
-  soldOut: string;
-}
-
 /**
  * The card's view of a Story's product, or undefined when the Story has none
  * (its destination is a link) or the product has no name.
@@ -61,7 +47,7 @@ export interface ProductLabels {
 export function toCardProduct(
   story: Pick<StoryAd, "product" | "destination_url">,
   format: (amount: number) => string,
-  labels: ProductLabels,
+  labels: StoryLabels,
   fetched?: FetchedProduct,
 ): CardProduct | undefined {
   const product = story.product;
@@ -173,29 +159,27 @@ export interface ExpandableProductOptions {
   onToggle: () => void;
   /** Id of the panel, for the button's aria-controls. */
   panelId: string;
-  addToCartLabel: string;
-  /** The disabled button in place of add to cart, when sold out. */
-  unavailableLabel: string;
-  viewProductLabel: string;
+  /** The texts: add to cart, its disabled "unavailable" and view product. */
+  labels: StoryLabels;
 }
 
 // Add to cart: its placeholder while the product loads, and a disabled
 // button when sold out.
 function renderAddToCart(
   { isLoading, soldOut }: CardProduct,
-  { addToCartLabel, unavailableLabel }: ExpandableProductOptions,
+  { labels }: ExpandableProductOptions,
 ) {
   if (isLoading) return addToCartSkeleton;
   if (soldOut) {
     return html`
       <button type="button" class="product-action product-unavailable" disabled>
-        ${unavailableLabel}
+        ${labels.unavailable}
       </button>
     `;
   }
   return html`
     <button type="button" class="product-action product-add-to-cart">
-      ${addToCartLabel}
+      ${labels.addToCart}
     </button>
   `;
 }
@@ -240,7 +224,7 @@ export function renderExpandableProduct(
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  ${options.viewProductLabel}
+                  ${options.labels.viewProduct}
                 </a>
               `
             : nothing}

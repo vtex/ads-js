@@ -29,8 +29,10 @@ import {
   type StoryProductDetails,
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
+import { labelsFor, type StoryLabels } from "../locales";
+import { TAG_NAME } from "../tag-name";
 
-export const TAG_NAME = "vtex-ads-story";
+export { TAG_NAME } from "../tag-name";
 
 // The properties that make up the ad and product requests: a change to any of
 // them fetches the Story again.
@@ -74,39 +76,9 @@ const hydrationConverter = {
     value === "none" ? ("none" as const) : undefined,
 };
 
-// Temporary: fixed texts until the store can set them by attribute.
-const LABELS = {
-  watch: "Assistir vídeo",
-  show: "Mostrar vídeo",
-  carousel: "Vídeos",
-  carouselRole: "carrossel",
-  previous: "Vídeo anterior",
-  next: "Próximo vídeo",
-  player: "Vídeo",
-  expand: "Expandir vídeo",
-  collapse: "Reduzir vídeo",
-  close: "Fechar vídeo",
-  play: "Reproduzir vídeo",
-  pause: "Pausar vídeo",
-  soundOn: "Ativar som",
-  soundOff: "Desativar som",
-  addToCart: "Adicionar ao carrinho",
-  unavailable: "Produto indisponível",
-  soldOut: "Esgotado",
-  viewProduct: "Ver produto",
-  /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
-  product: (name: string, price?: string, listPrice?: string) => {
-    if (price && listPrice) return `${name}, de ${listPrice} por ${price}`;
-    return price ? `${name}, ${price}` : name;
-  },
-  /** Tells the cards apart: "Mostrar vídeo 2 de 4". */
-  position: (label: string, index: number, count: number) =>
-    count > 1 ? `${label} ${index + 1} de ${count}` : label,
-};
-
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
-export class VtexAdsStoryElement extends LitElement {
+export class VtexAdsStoryCarouselElement extends LitElement {
   static readonly properties = {
     publisherId: { attribute: "publisher-id" },
     sessionId: { attribute: "session-id" },
@@ -117,6 +89,8 @@ export class VtexAdsStoryElement extends LitElement {
     timeout: { type: Number },
     quantity: { type: Number },
     currency: {},
+    labelAddToCart: { attribute: "label-add-to-cart" },
+    labelViewProduct: { attribute: "label-view-product" },
     hydration: { converter: hydrationConverter },
     hydrationTimeout: { type: Number, attribute: "hydration-timeout" },
     inactiveAutoplay: {
@@ -154,6 +128,16 @@ export class VtexAdsStoryElement extends LitElement {
    * invalid: BRL.
    */
   declare currency?: string;
+  /**
+   * The add to cart button's text. Missing or blank: the default in the
+   * element's language ("Adicionar ao carrinho").
+   */
+  declare labelAddToCart?: string;
+  /**
+   * The view product button's text. Missing or blank: the default in the
+   * element's language ("Ver produto").
+   */
+  declare labelViewProduct?: string;
   /**
    * Where the products' details (for now, their prices) come from. A
    * strategy (fetcher, matcher and price reader) is set as a property; the
@@ -220,7 +204,6 @@ export class VtexAdsStoryElement extends LitElement {
   private afterRender?: () => void;
 
   private readonly carousel = new CarouselController(this, {
-    labels: LABELS,
     onStep: (from, to) => this.leaveHighlight(from, to),
     // Every card is new: so are their videos. Behind an open player, the
     // new highlighted card stays on its cover, as after a step.
@@ -235,20 +218,6 @@ export class VtexAdsStoryElement extends LitElement {
   });
 
   private readonly player = new PlayerController(this, {
-    label: LABELS.player,
-    expandLabel: LABELS.expand,
-    collapseLabel: LABELS.collapse,
-    closeLabel: LABELS.close,
-    playLabel: LABELS.play,
-    pauseLabel: LABELS.pause,
-    soundOnLabel: LABELS.soundOn,
-    soundOffLabel: LABELS.soundOff,
-    previousLabel: LABELS.previous,
-    nextLabel: LABELS.next,
-    neighborLabel: LABELS.show,
-    addToCartLabel: LABELS.addToCart,
-    unavailableLabel: LABELS.unavailable,
-    viewProductLabel: LABELS.viewProduct,
     onStep: (delta) => this.stepInPlayer(delta),
     onClose: () => this.closePlayer(),
   });
@@ -453,14 +422,37 @@ export class VtexAdsStoryElement extends LitElement {
     format: (amount: number) => string;
   };
 
-  // The prices follow the language of the closest element with a `lang`,
-  // the element itself included, so a store can set one for the widget
-  // alone. An empty `lang` (unknown) is skipped; none, or an unknown one,
-  // falls back to pt-BR.
+  // Prices and texts follow the language of the closest element with a
+  // `lang`, the element itself included, so a store can set one for the
+  // widget alone. An empty `lang` (unknown) is skipped; none, or an unknown
+  // one, falls back to pt-BR.
+  private get locale() {
+    return (
+      this.closest<HTMLElement>('[lang]:not([lang=""])')?.lang ?? DEFAULT_LOCALE
+    );
+  }
+
+  // The texts for the current language and label attributes, made again
+  // only when any of them changes.
+  private labelSet?: { key: string; labels: StoryLabels };
+
+  private get labels() {
+    const { locale, labelAddToCart = "", labelViewProduct = "" } = this;
+    const key = JSON.stringify([locale, labelAddToCart, labelViewProduct]);
+    if (this.labelSet?.key !== key) {
+      this.labelSet = {
+        key,
+        labels: labelsFor(locale, {
+          addToCart: labelAddToCart,
+          viewProduct: labelViewProduct,
+        }),
+      };
+    }
+    return this.labelSet.labels;
+  }
+
   private get formatPrice() {
-    const locale =
-      this.closest<HTMLElement>('[lang]:not([lang=""])')?.lang ??
-      DEFAULT_LOCALE;
+    const { locale } = this;
     const key = `${locale}|${this.currency ?? ""}`;
     if (this.formatter?.key !== key) {
       this.formatter = { key, format: priceFormatter(locale, this.currency) };
@@ -478,7 +470,7 @@ export class VtexAdsStoryElement extends LitElement {
     return toCardProduct(
       story,
       this.formatPrice,
-      LABELS,
+      this.labels,
       this.fetchedProductOf(story),
     );
   }
@@ -490,13 +482,12 @@ export class VtexAdsStoryElement extends LitElement {
     { key, index, offset, active, hidden }: Slide,
   ) =>
     renderCard(story, this.videoFor(key), {
-      label: LABELS.position(
-        active ? LABELS.watch : LABELS.show,
+      label: this.labels.position(
+        active ? this.labels.watch : this.labels.show,
         index,
         this.stories.length,
       ),
-      soundOnLabel: LABELS.soundOn,
-      soundOffLabel: LABELS.soundOff,
+      labels: this.labels,
       withVideo: active || (this.inactiveAutoplay && !hidden),
       product: this.productOf(story),
       onSelect: active
@@ -523,13 +514,16 @@ export class VtexAdsStoryElement extends LitElement {
       return {
         offset,
         story: stories[neighbor],
-        label: LABELS.position(LABELS.show, neighbor, stories.length),
+        label: this.labels.position(this.labels.show, neighbor, stories.length),
       };
     });
 
     return html`
-      <div class="root">${this.carousel.render(stories, this.renderSlide)}</div>
+      <div class="root">
+        ${this.carousel.render(stories, this.renderSlide, this.labels)}
+      </div>
       ${this.player.render(active, {
+        labels: this.labels,
         navigation: stories.length > 1,
         neighbors,
         product: this.productOf(active),
@@ -539,17 +533,18 @@ export class VtexAdsStoryElement extends LitElement {
   }
 }
 
-// Types `document.createElement("vtex-ads-story")` and `querySelector` results
-// as VtexAdsStoryElement in any TypeScript project, no framework needed.
+// Types `document.createElement("vtex-ads-story-carousel")` and
+// `querySelector` results as VtexAdsStoryCarouselElement in any TypeScript
+// project, no framework needed.
 declare global {
   interface HTMLElementTagNameMap {
-    "vtex-ads-story": VtexAdsStoryElement;
+    [TAG_NAME]: VtexAdsStoryCarouselElement;
   }
 }
 
-export function defineVtexAdsStories() {
+export function defineVtexAdsStoryCarousel() {
   if (typeof customElements === "undefined") return;
   if (customElements.get(TAG_NAME)) return;
 
-  customElements.define(TAG_NAME, VtexAdsStoryElement);
+  customElements.define(TAG_NAME, VtexAdsStoryCarouselElement);
 }

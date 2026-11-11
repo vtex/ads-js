@@ -16,21 +16,21 @@ npm install @vtex/ads-stories
 Register the element once, on the client:
 
 ```javascript
-import { defineVtexAdsStories } from "@vtex/ads-stories";
+import { defineVtexAdsStoryCarousel } from "@vtex/ads-stories";
 
-defineVtexAdsStories();
+defineVtexAdsStoryCarousel();
 ```
 
 ```html
-<vtex-ads-story
+<vtex-ads-story-carousel
   publisher-id="your-publisher-id"
   session-id="the-store-session-id"
   placement="home_stories"
-></vtex-ads-story>
+></vtex-ads-story-carousel>
 ```
 
 Importing the package registers nothing: the element is only registered when
-`defineVtexAdsStories()` is called. Both ESM (`import`) and CommonJS
+`defineVtexAdsStoryCarousel()` is called. Both ESM (`import`) and CommonJS
 (`require`) builds are published, with type declarations.
 
 The package can be imported during server-side rendering (for example in
@@ -38,25 +38,25 @@ FastStore, which is Next.js). The element is built with
 [Lit](https://lit.dev), and in Node Lit installs a minimal DOM shim, so after
 the import `globalThis.customElements` is defined on the server too. Don't use
 `typeof customElements` to tell the server from the browser; use
-`typeof window` instead. Calling `defineVtexAdsStories()` on the server is
+`typeof window` instead. Calling `defineVtexAdsStoryCarousel()` on the server is
 safe: it registers the element in Lit's server-side registry and renders
 nothing.
 
 ### TypeScript and React
 
-`document.createElement("vtex-ads-story")` and
-`document.querySelector("vtex-ads-story")` are typed as `VtexAdsStoryElement`
-out of the box.
+`document.createElement("vtex-ads-story-carousel")` and
+`document.querySelector("vtex-ads-story-carousel")` are typed as
+`VtexAdsStoryCarouselElement` out of the box.
 
-To use `<vtex-ads-story>` in `.tsx` files, enable its JSX types once in your
-project (requires `@types/react` 18.2.6 or newer, including 19):
+To use `<vtex-ads-story-carousel>` in `.tsx` files, enable its JSX types once
+in your project (requires `@types/react` 18.2.6 or newer, including 19):
 
 ```tsx
 // e.g. in your app's entry file or a .d.ts file
 import type {} from "@vtex/ads-stories/react";
 
 export const Ad = () => (
-  <vtex-ads-story
+  <vtex-ads-story-carousel
     publisher-id="your-publisher-id"
     session-id="the-store-session-id"
     placement="home_stories"
@@ -70,15 +70,15 @@ and `placement` are required, as in HTML, and `channel` only accepts `site` or
 
 Or add `"@vtex/ads-stories/react"` to `compilerOptions.types` in
 `tsconfig.json`. Without it, TypeScript reports
-`Property 'vtex-ads-story' does not exist on type 'JSX.IntrinsicElements'`.
+`Property 'vtex-ads-story-carousel' does not exist on type 'JSX.IntrinsicElements'`.
 The types are opt-in so projects without React don't need `@types/react`.
 
 ## CDN
 
 The same build is available as a standalone script from
 [unpkg](https://unpkg.com) and [jsDelivr](https://www.jsdelivr.com). It
-registers `<vtex-ads-story>` when it loads, so no JavaScript is needed in the
-page. Always pin an exact version: a pinned URL never changes.
+registers `<vtex-ads-story-carousel>` when it loads, so no JavaScript is
+needed in the page. Always pin an exact version: a pinned URL never changes.
 
 ```html
 <script
@@ -87,11 +87,11 @@ page. Always pin an exact version: a pinned URL never changes.
   crossorigin="anonymous"
 ></script>
 
-<vtex-ads-story
+<vtex-ads-story-carousel
   publisher-id="your-publisher-id"
   session-id="the-store-session-id"
   placement="home_stories"
-></vtex-ads-story>
+></vtex-ads-story-carousel>
 ```
 
 - The full file URL works too:
@@ -120,46 +120,79 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 [`@vtex/ads-core`](../core) and shows them in a carousel (see
 [Layout](#layout)).
 
-| Attribute           | Required | Description                                                                                                                                                                             |
-| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                                                                                                 |
-| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
-| `placement`         | Yes      | The Story placement configured for the publisher                                                                                                                                        |
-| `user-id`           | No       | The shopper's id, when known                                                                                                                                                            |
-| `account-name`      | No       | The VTEX account name. Also turns on the product hydration from Intelligent Search (see [Product hydration](#product-hydration))                                                        |
-| `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
-| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
-| `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
-| `currency`          | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
-| `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
-| `hydration`         | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
-| `hydration-timeout` | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
+| Attribute            | Required | Description                                                                                                                                                                             |
+| -------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `publisher-id`       | Yes      | The publisher the ads are requested for                                                                                                                                                 |
+| `session-id`         | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
+| `placement`          | Yes      | The Story placement configured for the publisher                                                                                                                                        |
+| `user-id`            | No       | The shopper's id, when known                                                                                                                                                            |
+| `account-name`       | No       | The VTEX account name. Also turns on the product hydration from Intelligent Search (see [Product hydration](#product-hydration))                                                        |
+| `channel`            | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
+| `timeout`            | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
+| `quantity`           | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
+| `currency`           | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
+| `label-add-to-cart`  | No       | The add to cart button's text. Missing or blank: the default in the element's language (see [Language](#language))                                                                      |
+| `label-view-product` | No       | The view product button's text. Missing or blank: the default in the element's language                                                                                                 |
+| `inactive-autoplay`  | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
+| `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
+| `hydration-timeout`  | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout`, `hydration-timeout`, `inactive-autoplay` and `currency`, requests
-the Stories again; a new time limit applies to the next request.
+`timeout`, `hydration-timeout`, `inactive-autoplay`, `currency`,
+`label-add-to-cart` and `label-view-product`, requests the Stories again; a
+new time limit applies to the next request.
+
+## Language
+
+The element's texts (buttons, "Esgotado", and the names screen readers read
+out) and its prices follow the language of the closest element with a `lang`
+attribute, the element itself included: usually `<html lang>`, or
+`<vtex-ads-story-carousel lang="es-AR">` for the widget alone. The texts come in
+Portuguese, Spanish and English, picked by the language alone (`es-AR` and
+`es-MX` both get Spanish). Without a `lang`, or with another language, they
+are in Portuguese and prices use `pt-BR`.
+
+`label-add-to-cart` and `label-view-product` replace those two buttons'
+texts in any language:
+
+```html
+<vtex-ads-story-carousel
+  lang="es-AR"
+  label-add-to-cart="Comprar"
+  label-view-product="Ver detalles"
+  ...
+></vtex-ads-story-carousel>
+```
+
+The call to action's text comes from the campaign.
 
 ## Customization
 
 ```css
-vtex-ads-story {
+vtex-ads-story-carousel {
   --vtex-ads-story-font-family: "Inter", sans-serif;
   --vtex-ads-story-color-text: #1f1f1f;
+  --vtex-ads-story-color-muted: #6b6b6b;
+  --vtex-ads-story-color-surface: #fff;
+  --vtex-ads-story-color-accent: #1b75a8;
+  --vtex-ads-story-color-accent-contrast: #fff;
   --vtex-ads-story-radius: 20px;
-  --vtex-ads-story-solo-background: #fafafa;
-  --vtex-ads-story-accent: #1b75a8;
 }
 ```
 
-| Variable                           | Default   | Used for                                   |
-| ---------------------------------- | --------- | ------------------------------------------ |
-| `--vtex-ads-story-font-family`     | inherited | All text                                   |
-| `--vtex-ads-story-color-text`      | inherited | All text                                   |
-| `--vtex-ads-story-radius`          | `20px`    | Card and background corners                |
-| `--vtex-ads-story-solo-background` | `#fafafa` | Background behind the card, with one Story |
-| `--vtex-ads-story-accent`          | `#1b75a8` | The product panel's buttons                |
+| Variable                                 | Default                            | Used for                                                                                  |
+| ---------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| `--vtex-ads-story-font-family`           | inherited                          | All text                                                                                  |
+| `--vtex-ads-story-color-text`            | inherited (`#242424` in the panel) | All text off the video, such as the open product panel's                                  |
+| `--vtex-ads-story-color-muted`           | `#6b6b6b`                          | The panel's "from" price and its disabled add to cart                                     |
+| `--vtex-ads-story-color-surface`         | `#fff` (`#fafafa` behind the card) | The open product panel, the view product button, and the background behind a single Story |
+| `--vtex-ads-story-color-accent`          | `#1b75a8`                          | The product panel's buttons                                                               |
+| `--vtex-ads-story-color-accent-contrast` | `#fff`                             | Text on the add to cart button                                                            |
+| `--vtex-ads-story-radius`                | `20px`                             | Card and background corners                                                               |
+
+Text over the video stays white: it sits on the video, not on a store color.
 
 ## Layout
 
@@ -195,10 +228,8 @@ player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
 Adding to the cart does nothing yet.
 
-Prices are formatted in the language of the closest element with a `lang`
-attribute, the element itself included (usually `<html lang>`, or
-`<vtex-ads-story lang="es-AR">` for the widget alone), and in `currency`.
-Without a `lang`, or with one the browser doesn't know, they use `pt-BR`.
+Prices are formatted in the element's language (see [Language](#language))
+and in `currency`.
 
 #### Product hydration
 
@@ -218,7 +249,7 @@ reads from them over the ad API's. For now, the price is the only one.
 - **Neither, without `account-name`**: no product request.
 
 ```js
-const story = document.querySelector("vtex-ads-story");
+const story = document.querySelector("vtex-ads-story-carousel");
 story.hydration = {
   fetcher: async (offers, identity, { signal }) =>
     fetchMyProducts(offers, signal),

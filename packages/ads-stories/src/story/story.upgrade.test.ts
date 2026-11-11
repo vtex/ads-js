@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { getRawAds } from "@vtex/ads-core";
-import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import {
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+  VtexAdsStoryCarouselElement,
+} from "./story";
 import { mockStory, rawAdsWith } from "./story.mock";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
@@ -16,7 +20,7 @@ vi.mock("@vtex/ads-core", () => ({
 
 // Separate file: the element must not be defined yet when the test starts,
 // and a custom element can't be undefined once registered.
-describe("vtex-ads-story before definition", () => {
+describe(`${TAG_NAME} before definition`, () => {
   beforeAll(() => {
     installDialogMocks();
     installMediaMocks();
@@ -29,9 +33,9 @@ describe("vtex-ads-story before definition", () => {
     const el = document.querySelector(TAG_NAME);
     expect(el?.shadowRoot).toBeNull();
 
-    defineVtexAdsStories();
+    defineVtexAdsStoryCarousel();
 
-    expect(el).toBeInstanceOf(VtexAdsStoryElement);
+    expect(el).toBeInstanceOf(VtexAdsStoryCarouselElement);
     await el?.updateComplete;
     // Lets the ad request resolve and the element render the Story.
     await new Promise((resolve) => setTimeout(resolve));

@@ -16,7 +16,11 @@ import {
   type HydratedAds,
   type StoryAdDetail,
 } from "@vtex/ads-core";
-import { defineVtexAdsStories, TAG_NAME, VtexAdsStoryElement } from "./story";
+import {
+  defineVtexAdsStoryCarousel,
+  TAG_NAME,
+  VtexAdsStoryCarouselElement,
+} from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import {
@@ -88,7 +92,7 @@ const hangUntilAborted = () =>
   );
 
 // Lets the requests resolve and the element render their result.
-async function flush(el: VtexAdsStoryElement) {
+async function flush(el: VtexAdsStoryCarouselElement) {
   for (let i = 0; i < 3; i += 1) {
     await el.updateComplete;
     await new Promise((resolve) => setTimeout(resolve));
@@ -98,7 +102,7 @@ async function flush(el: VtexAdsStoryElement) {
 
 async function mount(
   attributes: Record<string, string>,
-  setup?: (el: VtexAdsStoryElement) => void,
+  setup?: (el: VtexAdsStoryCarouselElement) => void,
 ) {
   const el = document.createElement(TAG_NAME);
   for (const [name, value] of Object.entries(attributes)) {
@@ -110,30 +114,30 @@ async function mount(
   return el;
 }
 
-const pill = (el: VtexAdsStoryElement) =>
+const pill = (el: VtexAdsStoryCarouselElement) =>
   el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product");
-const priceOf = (el: VtexAdsStoryElement) =>
+const priceOf = (el: VtexAdsStoryCarouselElement) =>
   pill(el)
     ?.querySelector(".product-price > span")
     ?.textContent?.replace(/\s/g, " ")
     .trim();
-const skeletonOf = (el: VtexAdsStoryElement) =>
+const skeletonOf = (el: VtexAdsStoryCarouselElement) =>
   pill(el)?.querySelector(".product-price-loading");
 
-async function openPanel(el: VtexAdsStoryElement) {
+async function openPanel(el: VtexAdsStoryCarouselElement) {
   pill(el)?.click();
   await el.updateComplete;
   await el.updateComplete;
   return el.shadowRoot?.querySelector(".player .product-panel");
 }
 
-describe("vtex-ads-story product hydration", () => {
+describe(`${TAG_NAME} product hydration`, () => {
   let consoleError: ReturnType<typeof vi.spyOn>;
 
   beforeAll(() => {
     installDialogMocks();
     installMediaMocks();
-    defineVtexAdsStories();
+    defineVtexAdsStoryCarousel();
   });
 
   beforeEach(() => {
@@ -254,7 +258,7 @@ describe("vtex-ads-story product hydration", () => {
       (await openPanel(el))?.querySelector(".product-add-to-cart"),
     ).not.toBeNull();
     expect(consoleError).toHaveBeenCalledWith(
-      "[vtex-ads-story] Product request failed",
+      `[${TAG_NAME}] Product request failed`,
       expect.any(Error),
     );
   });

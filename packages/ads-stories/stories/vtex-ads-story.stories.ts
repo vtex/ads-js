@@ -1,97 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
-import { html, nothing, type TemplateResult } from "lit";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { keyed } from "lit/directives/keyed.js";
-import { styleMap } from "lit/directives/style-map.js";
+import { html } from "lit";
 import type { StoryHydration } from "../src";
 import { mockStories } from "../src/story/story.mock";
+import { elementArgTypes, renderElement, type ElementArgs } from "./template";
 
-// The placements and accounts the mock in handlers.ts answers.
-const PLACEMENTS = [
-  "home_stories",
-  "two_stories",
-  "three_stories",
-  "four_stories",
-  "slow_stories",
-  "empty_stories",
-];
-const ACCOUNTS = ["playground", "playground-slow", "playground-error"];
-
-type Args = {
-  placement: string;
-  accountName?: string;
-  timeout?: number;
-  hydrationTimeout?: number;
-  lang?: string;
-  currency?: string;
-  inactiveAutoplay: boolean;
-  hydration?: StoryHydration;
-  theme?: Record<string, string>;
-};
-
-type Parameters = { note?: TemplateResult };
-
-const meta: Meta<Args> = {
+const meta: Meta<ElementArgs> = {
   title: "Story",
   args: { placement: "home_stories", inactiveAutoplay: false },
-  argTypes: {
-    placement: { control: "select", options: PLACEMENTS },
-    accountName: {
-      name: "account-name",
-      control: "select",
-      options: [undefined, ...ACCOUNTS],
-    },
-    timeout: { control: "number" },
-    hydrationTimeout: { name: "hydration-timeout", control: "number" },
-    lang: { control: "text" },
-    currency: { control: "text" },
-    inactiveAutoplay: { name: "inactive-autoplay", control: "boolean" },
-    hydration: { control: false },
-    theme: { control: "object" },
-  },
-  // Keyed by the args: a change mounts a new element, as on a page load.
-  render: (args, { parameters }) => html`
-    <div class="story-container">
-      ${(parameters as Parameters).note
-        ? html`<p class="note">${(parameters as Parameters).note}</p>`
-        : nothing}
-      <div style=${styleMap(args.theme ?? {})}>
-        ${keyed(
-          JSON.stringify(args),
-          html`<vtex-ads-story
-            publisher-id="playground-publisher"
-            session-id="playground-session"
-            placement=${args.placement}
-            account-name=${ifDefined(args.accountName)}
-            timeout=${ifDefined(args.timeout)}
-            hydration-timeout=${ifDefined(args.hydrationTimeout)}
-            lang=${ifDefined(args.lang)}
-            currency=${ifDefined(args.currency)}
-            ?inactive-autoplay=${args.inactiveAutoplay}
-            .hydration=${args.hydration}
-          ></vtex-ads-story>`,
-        )}
-      </div>
-    </div>
-  `,
+  argTypes: { ...elementArgTypes, theme: { control: false } },
+  render: renderElement,
 };
 
 export default meta;
 
-type Story = StoryObj<Args>;
+type Story = StoryObj<ElementArgs>;
 
 export const Default: Story = {};
-
-export const Themed: Story = {
-  name: "Themed with CSS variables",
-  args: {
-    theme: {
-      "--vtex-ads-story-radius": "40px",
-      "--vtex-ads-story-solo-background": "#ffe3ec",
-      "--vtex-ads-story-accent": "#e31c57",
-    },
-  },
-};
 
 export const TwoStories: Story = {
   args: { placement: "two_stories" },
@@ -124,16 +48,6 @@ export const FourStories: Story = {
   parameters: {
     note: html`Two cards on each side: the Story opposite the highlighted one
     shows at both ends.`,
-  },
-};
-
-export const AnotherLanguageAndCurrency: Story = {
-  name: "Another language and currency",
-  args: { placement: "four_stories", lang: "es-AR", currency: "ARS" },
-  parameters: {
-    note: html`With <code>lang="es-AR"</code> and <code>currency="ARS"</code>,
-      the product prices read <code>$ 129,90</code> instead of
-      <code>R$ 129,90</code>.`,
   },
 };
 
