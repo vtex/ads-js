@@ -277,4 +277,10 @@ Run from the repository root:
 pnpm stories:dev
 ```
 
-This starts a dev server with `index.html`, reloading on save.
+This starts Storybook on port 6006, with a story for each scenario (one or
+more Stories, theming, slow or empty ad server, product hydration), reloading
+on save. The ad server and Intelligent Search are mocked in
+`stories/mock-fetch.ts`.
+
+To run the same stories against the built standalone script, the file the CDN
+serves, run `pnpm preview:cdn` in this package.
