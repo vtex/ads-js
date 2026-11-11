@@ -51,25 +51,27 @@ const meta: Meta<Args> = {
   },
   // Keyed by the args: a change mounts a new element, as on a page load.
   render: (args, { parameters }) => html`
-    ${(parameters as Parameters).note
-      ? html`<p style="color: #666">${(parameters as Parameters).note}</p>`
-      : nothing}
-    <div style=${styleMap(args.theme ?? {})}>
-      ${keyed(
-        JSON.stringify(args),
-        html`<vtex-ads-story
-          publisher-id="playground-publisher"
-          session-id="playground-session"
-          placement=${args.placement}
-          account-name=${ifDefined(args.accountName)}
-          timeout=${ifDefined(args.timeout)}
-          hydration-timeout=${ifDefined(args.hydrationTimeout)}
-          lang=${ifDefined(args.lang)}
-          currency=${ifDefined(args.currency)}
-          ?inactive-autoplay=${args.inactiveAutoplay}
-          .hydration=${args.hydration}
-        ></vtex-ads-story>`,
-      )}
+    <div class="story-container">
+      ${(parameters as Parameters).note
+        ? html`<p class="note">${(parameters as Parameters).note}</p>`
+        : nothing}
+      <div style=${styleMap(args.theme ?? {})}>
+        ${keyed(
+          JSON.stringify(args),
+          html`<vtex-ads-story
+            publisher-id="playground-publisher"
+            session-id="playground-session"
+            placement=${args.placement}
+            account-name=${ifDefined(args.accountName)}
+            timeout=${ifDefined(args.timeout)}
+            hydration-timeout=${ifDefined(args.hydrationTimeout)}
+            lang=${ifDefined(args.lang)}
+            currency=${ifDefined(args.currency)}
+            ?inactive-autoplay=${args.inactiveAutoplay}
+            .hydration=${args.hydration}
+          ></vtex-ads-story>`,
+        )}
+      </div>
     </div>
   `,
 };
