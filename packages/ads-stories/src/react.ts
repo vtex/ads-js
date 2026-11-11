@@ -45,6 +45,13 @@ export interface VtexAdsStoryCarouselAttributes {
   /** Time limit for the product request, in milliseconds (default 5000). */
   "hydration-timeout"?: number;
   /**
+   * "none": no product request. To set a strategy, assign the element's
+   * `hydration` property. Missing: Intelligent Search with `account-name`.
+   */
+  hydration?: "none";
+  /** Time limit for the product request, in milliseconds (default 5000). */
+  "hydration-timeout"?: number;
+  /**
    * With more than one Story, the cards without the highlight also play
    * their video, muted. Off by default.
    */

@@ -274,6 +274,11 @@ show **Esgotado** in place of the price, add to cart becomes a disabled
 The Story keeps playing. Without `available`, or when it doesn't say, the
 product shows as before.
 
+Intelligent Search's check follows the stock it reports: a SKU with an
+`AvailableQuantity` of 0 or less is sold out. A retailer that allows backorder
+or doesn't track stock may therefore see products as **Esgotado** that it still
+sells. Pass an `available` of your own in the strategy to change that.
+
 ### Call to action
 
 When the Story's destination is a link (no product), the card and the player
