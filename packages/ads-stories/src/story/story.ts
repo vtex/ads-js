@@ -14,6 +14,7 @@ import {
   productStyles,
   toCardCta,
   toCardProduct,
+  type FetchedProduct,
 } from "../components/product";
 import {
   neighborOffsets,
@@ -21,12 +22,18 @@ import {
   playerStyles,
 } from "../components/player";
 import type { StoryAd } from "../types";
+import {
+  hydrateStoryProducts,
+  intelligentSearchHydration,
+  type StoryHydration,
+  type StoryProductDetails,
+} from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
 
 export const TAG_NAME = "vtex-ads-story";
 
-// The properties that make up the ad request: a change to any of them fetches
-// the Story again.
+// The properties that make up the ad and product requests: a change to any of
+// them fetches the Story again.
 const REQUEST_PROPERTIES = [
   "publisherId",
   "sessionId",
@@ -35,6 +42,7 @@ const REQUEST_PROPERTIES = [
   "accountName",
   "channel",
   "quantity",
+  "hydration",
 ] as const;
 
 const CHANNELS: ReadonlySet<Channel> = new Set(["site", "app"]);
@@ -57,6 +65,13 @@ const booleanConverter = {
 const channelConverter = {
   fromAttribute: (value: string | null) =>
     isChannel(value) ? value : undefined,
+};
+
+// Reads the `hydration` attribute: only "none" means something there (no
+// product request). A strategy is set as a property.
+const hydrationConverter = {
+  fromAttribute: (value: string | null) =>
+    value === "none" ? ("none" as const) : undefined,
 };
 
 // Temporary: fixed texts until the store can set them by attribute.
@@ -100,12 +115,15 @@ export class VtexAdsStoryElement extends LitElement {
     timeout: { type: Number },
     quantity: { type: Number },
     currency: {},
+    hydration: { converter: hydrationConverter },
+    hydrationTimeout: { type: Number, attribute: "hydration-timeout" },
     inactiveAutoplay: {
       type: Boolean,
       attribute: "inactive-autoplay",
       converter: booleanConverter,
     },
     stories: { state: true },
+    products: { state: true },
   };
 
   /** Required. The publisher the ads are requested for. */
@@ -135,6 +153,19 @@ export class VtexAdsStoryElement extends LitElement {
    */
   declare currency?: string;
   /**
+   * Where the products' details (for now, their prices) come from. A
+   * strategy (fetcher, matcher and price reader) is set as a property; the
+   * attribute takes only "none", for no product request. Missing:
+   * Intelligent Search when `account-name` is set, no product request
+   * otherwise.
+   */
+  declare hydration?: StoryHydration | "none";
+  /**
+   * Time limit for the product request, in milliseconds (default 5000).
+   * Without the prices by then, the cards show the ad server's.
+   */
+  declare hydrationTimeout?: number;
+  /**
    * With more than one Story, whether the cards without the highlight also
    * play their video, muted. Off by default: they show only their cover, and
    * only the highlighted card plays.
@@ -143,6 +174,12 @@ export class VtexAdsStoryElement extends LitElement {
 
   /** The Stories shown: none while loading, on error or with none. */
   declare private stories: StoryAd[];
+
+  /**
+   * The fetched products, by Story `ad_id`, or `"loading"` while the product
+   * request runs. Undefined without a product request.
+   */
+  declare private products?: Map<string, StoryProductDetails> | "loading";
 
   /**
    * Cancels the request in progress. Kept, already aborted, when leaving the
@@ -251,9 +288,17 @@ export class VtexAdsStoryElement extends LitElement {
     afterRender?.();
   }
 
+  // The strategy for the products' details, if any (see `hydration`).
+  private get activeHydration(): StoryHydration | undefined {
+    if (this.hydration === "none") return undefined;
+    if (this.hydration) return this.hydration;
+    return this.accountName ? intelligentSearchHydration : undefined;
+  }
+
   /**
-   * Requests the Story and shows it. Until it arrives, and when there is none
-   * (see fetchStories), the element renders nothing.
+   * Requests the Story and shows it, then hydrates its products. Until the
+   * Story arrives, and when there is none (see fetchStories), the element
+   * renders nothing.
    */
   private async loadStory() {
     // A request still pending no longer matches the attributes.
@@ -280,13 +325,40 @@ export class VtexAdsStoryElement extends LitElement {
     // Cancelled meanwhile, by a newer request or by leaving the page: this
     // response is not shown.
     if (request.signal.aborted) return;
+
+    const hydration = this.activeHydration;
+    if (!hydration || !stories.some((story) => story.product)) {
+      this.request = undefined;
+      this.showStories(stories);
+      return;
+    }
+
+    // The carousel shows now; the products' details replace their
+    // placeholders later.
+    this.showStories(stories, "loading");
+    const products = await hydrateStoryProducts(
+      this.placement ?? "",
+      stories,
+      hydration,
+      {
+        accountName: this.accountName ?? "",
+        publisherId: this.publisherId ?? "",
+        sessionId: this.sessionId ?? "",
+        userId: this.userId,
+        channel: this.channel,
+      },
+      { signal: request.signal, timeout: this.hydrationTimeout },
+    );
+
+    if (request.signal.aborted) return;
     this.request = undefined;
-    this.showStories(stories);
+    this.products = products;
   }
 
   // Each card's video starts fresh: a failed load of an old one doesn't hide
   // it.
-  private showStories(stories: StoryAd[]) {
+  private showStories(stories: StoryAd[], products?: "loading") {
+    this.products = products;
     this.cardVideos.clear();
     this.soundPending = false;
     this.afterRender = undefined;
@@ -393,8 +465,19 @@ export class VtexAdsStoryElement extends LitElement {
     return this.formatter.format;
   }
 
+  private fetchedProductOf(story: StoryAd): FetchedProduct {
+    return this.products === "loading"
+      ? "loading"
+      : this.products?.get(story.ad_id);
+  }
+
   private productOf(story: StoryAd) {
-    return toCardProduct(story, this.formatPrice, LABELS.product);
+    return toCardProduct(
+      story,
+      this.formatPrice,
+      LABELS.product,
+      this.fetchedProductOf(story),
+    );
   }
 
   // The highlighted card opens the player; another one takes the highlight.

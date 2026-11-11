@@ -41,11 +41,6 @@ export interface FetchStoryOptions {
   timeout?: number;
 }
 
-const toTimeout = (timeout?: number) =>
-  timeout !== undefined && Number.isFinite(timeout) && timeout > 0
-    ? timeout
-    : DEFAULT_TIMEOUT_MS;
-
 const toQuantity = (quantity?: number) =>
   quantity !== undefined && Number.isFinite(quantity) && quantity >= 1
     ? Math.floor(quantity)
@@ -76,7 +71,7 @@ export async function fetchStories(
   const onServer = globalThis.window === undefined;
   if (onServer || !publisherId || !sessionId || !placement) return [];
 
-  const limit = withTimeout(toTimeout(timeout), signal);
+  const limit = withTimeout(timeout, DEFAULT_TIMEOUT_MS, signal);
   const count = toQuantity(quantity);
 
   try {

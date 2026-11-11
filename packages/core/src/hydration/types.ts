@@ -1,5 +1,9 @@
-import { Placement, SponsoredProductDetail } from "../clients/adServer";
-import { Identity, StoriesByPlacements } from "../types";
+import {
+  Placement,
+  SponsoredProductDetail,
+  StoryAdDetail,
+} from "../clients/adServer";
+import { Identity, RawAdsResponse } from "../types";
 
 /**
  * Type alias for SKU identifier
@@ -39,12 +43,45 @@ export type ProductMatchesOffer<TProduct> = (
 ) => boolean;
 
 /**
+ * Options for a product request made by a `ProductFetcher`.
+ * @public
+ */
+export interface ProductFetcherOptions {
+  /**
+   * Cancels the product request. A fetcher that doesn't support it may
+   * ignore it; the caller then ignores its result.
+   */
+  signal?: AbortSignal;
+}
+
+/**
+ * A product's price, as plain numbers. `listPrice` is the "from" price, only
+ * present when it is above `price` (the product is on sale).
+ * @public
+ */
+export interface ProductPrice {
+  price: number;
+  listPrice?: number;
+}
+
+/**
+ * Function type for reading an offer's price from a fetched product.
+ * Undefined when the product has no price for that offer.
+ * @public
+ */
+export type ProductPriceReader<TProduct> = (
+  product: TProduct,
+  offer: Offer,
+) => ProductPrice | undefined;
+
+/**
  * Function type for fetching products based on offers
  * @public
  */
 export type ProductFetcher<TProduct extends object> = (
   offers: Offer[],
   identity: Identity,
+  options?: ProductFetcherOptions,
 ) => Promise<TProduct[]>;
 
 /**
@@ -67,22 +104,82 @@ export type HydratedProductsByPlacements<T> = Record<
 >;
 
 /**
+ * Tracking data of a hydrated ad, the same for every ad type
+ * @public
+ */
+export interface Advertisement {
+  eventUrls: {
+    click: string;
+    impression: string;
+    view: string;
+  };
+  // Base64 encoded string containing event parameters, used by
+  // Activity Flow tracking.
+  eventParameters: string;
+  sponsoredBySellerId?: string;
+}
+
+/**
  * Sponsored product enriched with advertisement data
  * @public
  */
 export interface HydratedSponsoredProduct<T> {
   product: T;
-  advertisement: {
-    eventUrls: {
-      click: string;
-      impression: string;
-      view: string;
-    };
-    // Base64 encoded string containing event parameters, used by
-    // Activity Flow tracking.
-    eventParameters: string;
-    sponsoredBySellerId?: string;
-  };
+  advertisement: Advertisement;
+}
+
+/**
+ * Story ad enriched with advertisement data and, when found, its product
+ * @public
+ */
+export interface HydratedStory<T> {
+  /**
+   * The Story as the ad server sent it: the video, cover, destination and
+   * call to action exist only here.
+   */
+  story: StoryAdDetail;
+  /**
+   * The product the fetcher found for the Story. Missing when the Story has
+   * no product (its destination is a link) or the fetcher didn't find it:
+   * `story.product` then has what the ad server sent.
+   */
+  product?: T;
+  /**
+   * The offer of the Story's product, as the fetcher and the matcher got it:
+   * pass it with `product` to a `ProductPriceReader`. Missing for a link
+   * Story.
+   */
+  offer?: Offer;
+  advertisement: Advertisement;
+}
+
+/**
+ * Record of hydrated Story ads grouped by placement
+ * @public
+ */
+export type HydratedStoriesByPlacements<T> = Record<
+  Placement,
+  HydratedStory<T>[]
+>;
+
+/**
+ * Ads to hydrate, as `getRawAds` returns them. Both are optional: pass only
+ * the ad types to hydrate.
+ * @public
+ */
+export type AdsToHydrate = Partial<
+  Pick<RawAdsResponse, "sponsoredProducts" | "stories">
+>;
+
+/**
+ * Ads enriched by `hydrateAds`
+ * @public
+ */
+export interface HydratedAds<T> {
+  /** As in `getHydratedAds`: products not found go to `failed`. */
+  sponsoredProducts: HydratedProductsResult<T>;
+  /** Every Story given, in the same order, found or not. */
+  stories: HydratedStoriesByPlacements<T>;
 }
 
 /**
@@ -91,10 +188,7 @@ export interface HydratedSponsoredProduct<T> {
  */
 export interface HydratedAdsResponse<T> {
   sponsoredProducts: HydratedProductsResult<T>;
-  /**
-   * Story ads as returned by the ad server. Their products are not hydrated.
-   */
-  stories: StoriesByPlacements;
+  stories: HydratedStoriesByPlacements<T>;
   // TODO: implement other ad responses.
   banners: void;
   sponsoredBrands: void;

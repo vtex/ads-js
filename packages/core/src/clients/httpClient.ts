@@ -47,8 +47,9 @@ const createHttpClient = () => {
   const get = async <T = unknown>(
     baseUrl: string,
     path: string,
+    options?: RequestOptions,
   ): Promise<T> => {
-    return request(baseUrl, path, "GET");
+    return request(baseUrl, path, "GET", undefined, options);
   };
 
   const post = async <T = unknown, U = unknown>(

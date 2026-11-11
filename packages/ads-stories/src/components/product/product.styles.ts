@@ -319,4 +319,37 @@ export const productStyles = css`
     font-weight: 400;
     opacity: 0.5;
   }
+
+  /* Placeholders while the product loads, pulsing gently. */
+  .product-loading {
+    background: currentColor;
+    opacity: 0.25;
+    animation: product-loading-pulse 1.2s ease-in-out infinite alternate;
+  }
+
+  @keyframes product-loading-pulse {
+    to {
+      opacity: 0.1;
+    }
+  }
+
+  /* The price's: a line its height (the info's line height). */
+  .product-price-loading {
+    width: 64px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  /* The add to cart button's: its size and shape. */
+  .product-add-to-cart-loading {
+    display: block;
+    height: 48px;
+    border-radius: 50px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-loading {
+      animation: none;
+    }
+  }
 `;

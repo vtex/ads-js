@@ -60,6 +60,15 @@ describe("httpClient", () => {
     );
   });
 
+  it("passes the signal to fetch on GET", async () => {
+    const { signal } = new AbortController();
+    await httpClient.get(baseUrl, path, { signal });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(path),
+      expect.objectContaining({ method: "GET", signal }),
+    );
+  });
+
   it("passes the signal to fetch", async () => {
     const { signal } = new AbortController();
     await httpClient.post(baseUrl, path, { foo: "bar" }, { signal });

@@ -1,15 +1,21 @@
 /**
- * A signal that aborts when the caller's signal aborts or after `ms`,
- * whichever comes first. Built by hand instead of with `AbortSignal.any` and
- * `AbortSignal.timeout`, which older browsers lack.
+ * A signal that aborts when the caller's signal aborts or after `timeout`
+ * milliseconds, whichever comes first. A `timeout` missing, zero, negative or
+ * not a number uses `fallback`. Built by hand instead of with
+ * `AbortSignal.any` and `AbortSignal.timeout`, which older browsers lack.
  *
  * Call `clear()` once the work is done, so the timer and the listener on the
  * caller's signal don't outlive it.
  */
 export const withTimeout = (
-  ms: number,
+  timeout: number | undefined,
+  fallback: number,
   signal?: AbortSignal,
 ): { signal: AbortSignal; clear: () => void } => {
+  const ms =
+    timeout !== undefined && Number.isFinite(timeout) && timeout > 0
+      ? timeout
+      : fallback;
   const controller = new AbortController();
 
   const timer = setTimeout(

@@ -28,7 +28,13 @@ import {
   REQUIRED_ATTRIBUTES,
 } from "./story.mock";
 
-vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
+vi.mock("@vtex/ads-core", () => ({
+  getRawAds: vi.fn(),
+  hydrateAds: vi.fn(),
+  intelligentSearchFetcher: vi.fn(),
+  intelligentSearchMatcher: vi.fn(),
+  intelligentSearchPrice: vi.fn(),
+}));
 
 const getRawAdsMock = vi.mocked(getRawAds);
 

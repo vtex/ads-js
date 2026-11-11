@@ -5,7 +5,13 @@ import { mockStory, rawAdsWith } from "./story.mock";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 
-vi.mock("@vtex/ads-core", () => ({ getRawAds: vi.fn() }));
+vi.mock("@vtex/ads-core", () => ({
+  getRawAds: vi.fn(),
+  hydrateAds: vi.fn(),
+  intelligentSearchFetcher: vi.fn(),
+  intelligentSearchMatcher: vi.fn(),
+  intelligentSearchPrice: vi.fn(),
+}));
 
 // Separate file: the element must not be defined yet when the test starts,
 // and a custom element can't be undefined once registered.

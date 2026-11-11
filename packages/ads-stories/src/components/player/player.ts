@@ -144,8 +144,7 @@ export const playerStyles = css`
   }
 
   .player .product-info {
-    font-size: 13px;
-    line-height: 17px;
+    font-size: 14px;
   }
 
   .player .product-image {

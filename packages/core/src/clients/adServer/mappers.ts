@@ -82,6 +82,27 @@ export const getOffer = (ad: SponsoredProductDetail): Offer => ({
   productId: ad.product_metadata.productId,
 });
 
-export const getProductIds = (offers: Offer[]): string[] => {
-  return offers.map((offer) => offer.productId);
+/**
+ * Extracts the offer of a Story's product, or undefined when the Story has
+ * none (its destination is a link).
+ *
+ * The seller is the product's, then the Story's, then `"1"`, as in
+ * `getOffer`. The ad server doesn't send the product ID: it is read from
+ * `product_metadata.productId` when the catalog indexed it, and is empty
+ * otherwise, so a fetcher has to find the product by its SKU.
+ *
+ * @param story A Story ad from the ad server response.
+ * @returns The offer of the Story's product, if it has one.
+ */
+export const getStoryOffer = (story: StoryAdDetail): Offer | undefined => {
+  const { product } = story;
+  if (!product) return undefined;
+
+  const productId = product.product_metadata?.productId;
+
+  return {
+    skuId: product.product_sku,
+    sellerId: product.seller_id ?? story.seller_id ?? "1",
+    productId: typeof productId === "string" ? productId : "",
+  };
 };

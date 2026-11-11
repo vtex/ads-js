@@ -146,6 +146,68 @@
     </section>
 
     <section>
+      <h2>Product hydration</h2>
+      <p class="note">
+        With <code>account-name</code>, the element asks Intelligent Search
+        (mocked) for the products once the cards show. For 2 s the prices show a
+        placeholder and the player's panel has no add to cart; then the fetched
+        prices replace the ad server's (the first product drops from R$ 129,90
+        to R$ 99,90, the third gets a price it didn't have).
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+        account-name="playground"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Product hydration, slow</h2>
+      <p class="note">
+        Intelligent Search takes 8 s, longer than the default 5 s
+        <code>hydration-timeout</code>: after 5 s the placeholders give way to
+        the ad server's prices.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+        account-name="playground-slow"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Product hydration, failing</h2>
+      <p class="note">
+        Intelligent Search answers with an error after 1 s: the ad server's
+        prices show, and the console logs the failure.
+      </p>
+      <vtex-ads-story
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+        account-name="playground-error"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
+      <h2>Product hydration, custom strategy</h2>
+      <p class="note">
+        The <code>hydration</code> property set to the store's own fetcher,
+        matcher and price reader (a fake catalog answering in 1.5 s): every
+        product costs R$ 10,00 less than on the ad server, and the one without a
+        price there costs R$ 50,00.
+      </p>
+      <vtex-ads-story
+        id="custom-hydration"
+        publisher-id="playground-publisher"
+        session-id="playground-session"
+        placement="three_stories"
+      ></vtex-ads-story>
+    </section>
+
+    <section>
       <h2>No Story</h2>
       <p class="note">
         The placement comes back empty, so nothing renders below.
@@ -160,9 +222,10 @@
     <!--
       The ad server is mocked: each Story placement gets the first test
       Stories (up to the requested quantity), with the delay and count set for
-      it in SCENARIOS. Installed before the
-      element loads, since the source build reads fetch when @vtex/ads-core
-      loads.
+      it in SCENARIOS. Intelligent Search is mocked too: each account in
+      SEARCH_SCENARIOS answers after its delay, or with an error, with the
+      products in SEARCH_PRODUCTS. Installed before the element loads, since
+      the source build reads fetch when @vtex/ads-core loads.
 
       Default: loads the source through Vite (reloads on save).
       ?cdn: loads the built standalone script from dist/cdn, the same file
@@ -188,6 +251,61 @@
       const scenarioFor = (placement) =>
         SCENARIOS[placement] ?? SCENARIOS.default;
 
+      // How the Intelligent Search mock answers each account-name.
+      const SEARCH_SCENARIOS = {
+        playground: { delayMs: 2000 },
+        "playground-slow": { delayMs: 8000 },
+        "playground-error": { delayMs: 1000, status: 500 },
+      };
+
+      // The catalog behind the mock, by SKU: what Intelligent Search sends
+      // for the test Stories' products, sold by seller 1.
+      const SEARCH_PRODUCTS = {
+        "sku-1": { productId: "1", Price: 99.9, ListPrice: 149.9 },
+        "sku-2": { productId: "2", Price: 79.9, ListPrice: 79.9 },
+        "sku-3": { productId: "3", Price: 49.9, ListPrice: 59.9 },
+      };
+
+      const SEARCH =
+        /^https:\/\/([^.]+)\.vtexcommercestable\.com\.br\/api\/intelligent-search\/product_search/;
+
+      // An Intelligent Search product, with only what the hydration reads.
+      const searchProduct = (skuId, { productId, Price, ListPrice }) => ({
+        productId,
+        items: [
+          {
+            itemId: skuId,
+            sellers: [
+              {
+                sellerId: "1",
+                commertialOffer: { Price, ListPrice, AvailableQuantity: 10 },
+              },
+            ],
+          },
+        ],
+      });
+
+      // Answers `q=sku:a;b` and `q=product:1;2` with the products found.
+      async function mockSearch(account, url, signal) {
+        const scenario = SEARCH_SCENARIOS[account] ?? { delayMs: 500 };
+        await wait(scenario.delayMs, signal);
+        if (scenario.status) {
+          return new Response("{}", { status: scenario.status });
+        }
+
+        const [field, ids = ""] = (url.searchParams.get("q") ?? "").split(":");
+        const wanted = new Set(ids.split(";"));
+        const products = Object.entries(SEARCH_PRODUCTS)
+          .filter(([skuId, { productId }]) =>
+            wanted.has(field === "sku" ? skuId : productId),
+          )
+          .map(([skuId, product]) => searchProduct(skuId, product));
+
+        return new Response(JSON.stringify({ products }), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+
       // Waits like the network, and rejects when the request is cancelled, as
       // fetch does.
       const wait = (ms, signal) =>
@@ -203,6 +321,8 @@
       const nativeFetch = globalThis.fetch.bind(globalThis);
       globalThis.fetch = async (input, init) => {
         const url = typeof input === "string" ? input : input.url;
+        const search = url.match(SEARCH);
+        if (search) return mockSearch(search[1], new URL(url), init?.signal);
         if (!url.startsWith(AD_SERVER)) return nativeFetch(input, init);
 
         const { placements } = JSON.parse(init.body);
@@ -226,6 +346,28 @@
         return new Response(JSON.stringify(body), {
           headers: { "content-type": "application/json" },
         });
+      };
+
+      // A store's own strategy: a fake catalog answering in 1.5 s, with every
+      // product R$ 10,00 below its ad server price. Set before the element
+      // loads, as the README asks.
+      const catalog = Object.fromEntries(
+        mockStories
+          .filter((story) => story.product)
+          .map(({ product }) => [
+            product.product_sku,
+            (product.product_metadata.promotional_price ??
+              product.product_metadata.price ??
+              60) - 10,
+          ]),
+      );
+      document.getElementById("custom-hydration").hydration = {
+        fetcher: async (offers, _identity, { signal } = {}) => {
+          await wait(1500, signal);
+          return offers.map(({ skuId }) => ({ skuId, amount: catalog[skuId] }));
+        },
+        matcher: (product, offer) => product.skuId === offer.skuId,
+        price: (product) => ({ price: product.amount }),
       };
 
       const useCdn = new URLSearchParams(location.search).has("cdn");
