@@ -7,6 +7,7 @@ import {
   RENDERED_SIDE,
   type Slide,
 } from "../components/carousel";
+import { StoryEventsController, type ViewTarget } from "../components/events";
 import { VideoController } from "../components/media";
 import {
   DEFAULT_LOCALE,
@@ -222,6 +223,13 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     onClose: () => this.closePlayer(),
   });
 
+  // Added after the carousel and the player: its hostUpdated reads what
+  // they rendered.
+  private readonly events = new StoryEventsController(this, {
+    identity: () => ({ sessionId: this.sessionId, userId: this.userId }),
+    viewTargets: () => this.viewTargets(),
+  });
+
   constructor() {
     super();
     this.inactiveAutoplay = false;
@@ -336,6 +344,35 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     this.afterRender = undefined;
     this.carousel.reset(stories.length);
     this.stories = stories;
+    this.events.impress(stories);
+  }
+
+  /**
+   * Where each Story can be seen: the cards on screen (not the hidden ones
+   * kept for the slide in) and the open player's video. Behind the expanded
+   * player, a modal over the page, the cards are covered.
+   */
+  private *viewTargets(): Generator<ViewTarget> {
+    const root = this.renderRoot;
+    const { stories } = this;
+    if (!stories.length) return;
+
+    if (!this.player.isExpanded) {
+      const cards = root.querySelectorAll<HTMLElement>(
+        '.carousel[data-layout="solo"] > .card, .slide:not([data-hidden]) > .card',
+      );
+      for (const card of cards) {
+        const slide = card.parentElement?.closest<HTMLElement>(".slide");
+        const story = stories[slide ? Number(slide.dataset.index) : 0];
+        if (story) yield [card, story];
+      }
+    }
+
+    if (this.player.isOpen) {
+      const active = stories[this.carousel.active];
+      const playerCard = root.querySelector(".player .player-stage > .card");
+      if (playerCard && active) yield [playerCard, active];
+    }
   }
 
   private videoFor(key: number) {
@@ -460,19 +497,10 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     return this.formatter.format;
   }
 
-  private fetchedProductOf(story: StoryAd): FetchedProduct {
-    return this.products === "loading"
-      ? "loading"
-      : this.products?.get(story.ad_id);
-  }
-
   private productOf(story: StoryAd) {
-    return toCardProduct(
-      story,
-      this.formatPrice,
-      this.labels,
-      this.fetchedProductOf(story),
-    );
+    const fetched: FetchedProduct =
+      this.products === "loading" ? "loading" : this.products?.get(story.ad_id);
+    return toCardProduct(story, this.formatPrice, this.labels, fetched);
   }
 
   // The highlighted card opens the player; another one takes the highlight.
@@ -501,6 +529,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       // highlight.
       cta: toCardCta(story),
       onCtaSelect: active ? undefined : () => this.carousel.step(offset),
+      onPress: () => this.events.click(story),
     });
 
   protected render() {
@@ -528,6 +557,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         neighbors,
         product: this.productOf(active),
         cta: toCardCta(active),
+        onDestinationPress: () => this.events.click(active),
       })}
     `;
   }

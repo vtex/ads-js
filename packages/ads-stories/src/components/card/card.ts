@@ -143,6 +143,11 @@ export interface CardOptions {
    * (a card without the highlight). Without it, the link opens.
    */
   onCtaSelect?: () => void;
+  /**
+   * Called by any click on the card, its product, call to action and sound
+   * button included, before what that click does.
+   */
+  onPress?: () => void;
 }
 
 /**
@@ -183,7 +188,10 @@ export function renderCard(
   const withVideo = options.withVideo ?? true;
 
   return html`
-    <div class="card">
+    <div
+      class="card"
+      @click=${{ handleEvent: () => options.onPress?.(), capture: true }}
+    >
       ${renderMedia(story, video, { withVideo })}
       <button
         type="button"

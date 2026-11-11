@@ -455,10 +455,18 @@ export interface PlayerRenderOptions {
   product?: CardProduct;
   /** The Story's call to action, for a link destination (no product). */
   cta?: CardCta;
+  /**
+   * Called by any click on the product or the call to action (the panel's
+   * buttons included), before what that click does.
+   */
+  onDestinationPress?: () => void;
 }
 
 // What shows at the bottom of the video: one or the other.
-type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta" | "labels">;
+type StoryDestination = Pick<
+  PlayerRenderOptions,
+  "product" | "cta" | "labels" | "onDestinationPress"
+>;
 
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
@@ -630,6 +638,11 @@ export class PlayerController implements ReactiveController {
   /** Rendered and, once the host has updated, shown. */
   isOpen = false;
   private expanded = false;
+
+  /** Open in the expanded view, a modal over the page. */
+  get isExpanded() {
+    return this.isOpen && this.expanded;
+  }
 
   /** The product panel is open. Closed again on a step and on opening. */
   private productOpen = false;
@@ -907,7 +920,12 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({ product, cta, labels }: StoryDestination) {
+  private renderDestination({
+    product,
+    cta,
+    labels,
+    onDestinationPress,
+  }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
@@ -925,7 +943,10 @@ export class PlayerController implements ReactiveController {
     return html`
       <div
         class="player-destination"
-        @click=${(event: Event) => event.stopPropagation()}
+        @click=${(event: Event) => {
+          event.stopPropagation();
+          onDestinationPress?.();
+        }}
       >
         ${content}
       </div>
@@ -1116,6 +1137,7 @@ export class PlayerController implements ReactiveController {
       neighbors = [],
       product,
       cta,
+      onDestinationPress,
     }: PlayerRenderOptions,
   ) {
     if (!this.isOpen) return nothing;
@@ -1152,6 +1174,7 @@ export class PlayerController implements ReactiveController {
               product,
               cta,
               labels,
+              onDestinationPress,
             })}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>

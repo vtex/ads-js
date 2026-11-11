@@ -4,8 +4,8 @@ VTEX Ads Stories web component. Framework-agnostic: works on any HTML5 page,
 including VTEX IO, FastStore and non-VTEX storefronts.
 
 > Work in progress. Currently requests the placement's Stories from the ad
-> API and shows them in a carousel, whose cards open in a player at the bottom
-> right. The ad events come next.
+> API, shows them in a carousel, whose cards open in a player at the bottom
+> right, and sends their impression, view and click events.
 
 ## npm
 
@@ -304,6 +304,26 @@ of the screen, which can be expanded. With more than one Story:
 - **Keyboard**: with the focus in the player, the left and right arrow keys step
   too (not with a modifier key held). Elsewhere on the page they keep working as
   usual.
+
+## Ad events
+
+The element sends each Story's impression, view and click to the URLs the ad
+API returned for it (`impression_url`, `view_url`, `click_url`), each at most
+once per Story and `session-id`:
+
+- **Impression**: when the carousel renders the Stories.
+- **View**: when a card, or the open player's video, stays at least 50% on
+  screen for 2 continuous seconds with the page visible. Cards behind the
+  expanded player don't count. Browsers without `IntersectionObserver` send no
+  view.
+- **Click**: on the first touch on a card (its product, call to action and
+  sound button included), or on the product or call to action in the player.
+
+Each event is a `POST` with a JSON body holding `session_id` and, when set,
+`user_id`, sent with `navigator.sendBeacon` (a `fetch` with `keepalive` when
+the browser can't queue the beacon), so it isn't lost when the shopper leaves
+the page. The ad API also deduplicates them by session. A store that changes
+the element takes over keeping these rules.
 
 ## Development
 
