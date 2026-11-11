@@ -32,6 +32,10 @@ export interface VtexAdsStoryAttributes {
   quantity?: number;
   /** Currency of the prices, ISO 4217 ("BRL"). Default BRL. */
   currency?: string;
+  /** The add to cart button's text. Default in the element's language. */
+  "label-add-to-cart"?: string;
+  /** The view product button's text. Default in the element's language. */
+  "label-view-product"?: string;
   /**
    * "none": no product request. To set a strategy, assign the element's
    * `hydration` property. Missing: Intelligent Search with `account-name`.

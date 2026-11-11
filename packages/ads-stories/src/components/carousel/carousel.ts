@@ -5,6 +5,7 @@ import {
   type ReactiveControllerHost,
   type TemplateResult,
 } from "lit";
+import type { StoryLabels } from "../../locales";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
@@ -209,17 +210,7 @@ export const carouselStyles = css`
   }
 `;
 
-export interface CarouselLabels {
-  /** Accessible name of the carousel. */
-  carousel: string;
-  /** What the carousel is, read instead of "region". */
-  carouselRole: string;
-  previous: string;
-  next: string;
-}
-
 export interface CarouselOptions {
-  labels: CarouselLabels;
   /**
    * Called when the highlight moves, before the host renders it, with the
    * keys (see Slide) of the slide that loses it and the one that gets it.
@@ -545,7 +536,11 @@ export class CarouselController implements ReactiveController {
    * One item: the card centered over the background. More: the cards in the
    * pair or rolling layout, with the arrows.
    */
-  render<T>(items: readonly T[], renderSlide: RenderSlide<T>) {
+  render<T>(
+    items: readonly T[],
+    renderSlide: RenderSlide<T>,
+    labels: StoryLabels,
+  ) {
     if (this.layout === "solo") {
       return html`
         <div class="carousel" data-layout="solo">
@@ -560,7 +555,6 @@ export class CarouselController implements ReactiveController {
       `;
     }
 
-    const { labels } = this.options;
     const locked = this.options.locked?.() ?? false;
 
     return html`

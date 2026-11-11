@@ -26,6 +26,8 @@ export type ElementArgs = {
   hydrationTimeout?: number;
   lang?: string;
   currency?: string;
+  labelAddToCart?: string;
+  labelViewProduct?: string;
   inactiveAutoplay: boolean;
   hydration?: StoryHydration;
   theme?: Record<string, string>;
@@ -44,6 +46,8 @@ export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
   hydrationTimeout: { name: "hydration-timeout", control: "number" },
   lang: { control: "text" },
   currency: { control: "text" },
+  labelAddToCart: { name: "label-add-to-cart", control: "text" },
+  labelViewProduct: { name: "label-view-product", control: "text" },
   inactiveAutoplay: { name: "inactive-autoplay", control: "boolean" },
   hydration: { control: false },
 };
@@ -71,6 +75,8 @@ export const renderElement = (
           hydration-timeout=${ifDefined(args.hydrationTimeout)}
           lang=${ifDefined(args.lang)}
           currency=${ifDefined(args.currency)}
+          label-add-to-cart=${ifDefined(args.labelAddToCart)}
+          label-view-product=${ifDefined(args.labelViewProduct)}
           ?inactive-autoplay=${args.inactiveAutoplay}
           .hydration=${args.hydration}
         ></vtex-ads-story>`,

@@ -712,4 +712,97 @@ describe("vtex-ads-story", () => {
       expect(getPlayers(el)).toHaveLength(0);
     });
   });
+
+  describe("labels", () => {
+    // Opens the player with the product panel open, from the card's product.
+    async function openPanel(el: VtexAdsStoryElement) {
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".card-product")?.click();
+      await flushRender(el);
+      const panel = el.shadowRoot?.querySelector(".player .product-panel");
+      return {
+        addToCart: panel
+          ?.querySelector(".product-add-to-cart")
+          ?.textContent?.trim(),
+        viewProduct: panel?.querySelector(".product-view")?.textContent?.trim(),
+      };
+    }
+
+    afterEach(() => {
+      document.documentElement.lang = "";
+    });
+
+    it("shows the texts in Portuguese by default", async () => {
+      const el = await mount();
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Adicionar ao carrinho",
+        viewProduct: "Ver produto",
+      });
+      expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
+        "Fechar vídeo",
+      );
+    });
+
+    it("shows the texts in the element's language", async () => {
+      const el = await mount({ ...REQUIRED_ATTRIBUTES, lang: "es-AR" });
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Agregar al carrito",
+        viewProduct: "Ver producto",
+      });
+      expect(el.shadowRoot?.activeElement?.getAttribute("aria-label")).toBe(
+        "Cerrar video",
+      );
+      expect(
+        el.shadowRoot?.querySelector(".card-open")?.getAttribute("aria-label"),
+      ).toBe("Ver video");
+    });
+
+    it("shows the texts in the page's language", async () => {
+      document.documentElement.lang = "en-US";
+      const el = await mount();
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Add to cart",
+        viewProduct: "View product",
+      });
+    });
+
+    it("uses the store's texts over the language's", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        lang: "es-AR",
+        "label-add-to-cart": "Comprar",
+        "label-view-product": "Detalles",
+      });
+
+      expect(await openPanel(el)).toEqual({
+        addToCart: "Comprar",
+        viewProduct: "Detalles",
+      });
+    });
+
+    it("keeps the default for a blank text", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "label-add-to-cart": "  ",
+      });
+
+      expect((await openPanel(el)).addToCart).toBe("Adicionar ao carrinho");
+    });
+
+    it("shows a changed text without a new request", async () => {
+      const el = await mount();
+      await openPanel(el);
+      el.setAttribute("label-add-to-cart", "Comprar");
+      await flushRender(el);
+
+      expect(
+        el.shadowRoot
+          ?.querySelector(".player .product-add-to-cart")
+          ?.textContent?.trim(),
+      ).toBe("Comprar");
+      expect(getRawAdsMock).toHaveBeenCalledTimes(1);
+    });
+  });
 });

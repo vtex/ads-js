@@ -51,16 +51,6 @@ export const FourStories: Story = {
   },
 };
 
-export const AnotherLanguageAndCurrency: Story = {
-  name: "Another language and currency",
-  args: { placement: "four_stories", lang: "es-AR", currency: "ARS" },
-  parameters: {
-    note: html`With <code>lang="es-AR"</code> and <code>currency="ARS"</code>,
-      the product prices read <code>$ 129,90</code> instead of
-      <code>R$ 129,90</code>.`,
-  },
-};
-
 export const SlowAdServer: Story = {
   name: "Slow ad server",
   args: { placement: "slow_stories" },

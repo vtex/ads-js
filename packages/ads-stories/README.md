@@ -120,26 +120,52 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 [`@vtex/ads-core`](../core) and shows them in a carousel (see
 [Layout](#layout)).
 
-| Attribute           | Required | Description                                                                                                                                                                             |
-| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `publisher-id`      | Yes      | The publisher the ads are requested for                                                                                                                                                 |
-| `session-id`        | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
-| `placement`         | Yes      | The Story placement configured for the publisher                                                                                                                                        |
-| `user-id`           | No       | The shopper's id, when known                                                                                                                                                            |
-| `account-name`      | No       | The VTEX account name. Also turns on the product hydration from Intelligent Search (see [Product hydration](#product-hydration))                                                        |
-| `channel`           | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
-| `timeout`           | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
-| `quantity`          | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
-| `currency`          | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
-| `inactive-autoplay` | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
-| `hydration`         | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
-| `hydration-timeout` | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
+| Attribute            | Required | Description                                                                                                                                                                             |
+| -------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `publisher-id`       | Yes      | The publisher the ads are requested for                                                                                                                                                 |
+| `session-id`         | Yes      | The store's session id. Use the same one sent with the store's other ad events                                                                                                          |
+| `placement`          | Yes      | The Story placement configured for the publisher                                                                                                                                        |
+| `user-id`            | No       | The shopper's id, when known                                                                                                                                                            |
+| `account-name`       | No       | The VTEX account name. Also turns on the product hydration from Intelligent Search (see [Product hydration](#product-hydration))                                                        |
+| `channel`            | No       | `site` or `app`. Other values are not sent                                                                                                                                              |
+| `timeout`            | No       | Time limit for the ad request, in milliseconds. Default `2000`                                                                                                                          |
+| `quantity`           | No       | How many Stories to request: the carousel positions. Default `8`. Below `1` or not a number: the default                                                                                |
+| `currency`           | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                     |
+| `label-add-to-cart`  | No       | The add to cart button's text. Missing or blank: the default in the element's language (see [Language](#language))                                                                      |
+| `label-view-product` | No       | The view product button's text. Missing or blank: the default in the element's language                                                                                                 |
+| `inactive-autoplay`  | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
+| `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
+| `hydration-timeout`  | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
 The element renders nothing while the request is pending, when a required
 attribute is missing, when the request fails or takes longer than `timeout`,
 or when the placement has no Story. Changing any of these attributes, except
-`timeout`, `hydration-timeout`, `inactive-autoplay` and `currency`, requests
-the Stories again; a new time limit applies to the next request.
+`timeout`, `hydration-timeout`, `inactive-autoplay`, `currency`,
+`label-add-to-cart` and `label-view-product`, requests the Stories again; a new time limit applies to the next request.
+
+## Language
+
+The element's texts (buttons, "Esgotado", and the names screen readers read
+out) and its prices follow the language of the closest element with a `lang`
+attribute, the element itself included: usually `<html lang>`, or
+`<vtex-ads-story lang="es-AR">` for the widget alone. The texts come in
+Portuguese, Spanish and English, picked by the language alone (`es-AR` and
+`es-MX` both get Spanish). Without a `lang`, or with another language, they
+are in Portuguese and prices use `pt-BR`.
+
+`label-add-to-cart` and `label-view-product` replace those two buttons'
+texts in any language:
+
+```html
+<vtex-ads-story
+  lang="es-AR"
+  label-add-to-cart="Comprar"
+  label-view-product="Ver detalles"
+  ...
+></vtex-ads-story>
+```
+
+The call to action's text comes from the campaign.
 
 ## Customization
 
@@ -201,10 +227,8 @@ player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
 Adding to the cart does nothing yet.
 
-Prices are formatted in the language of the closest element with a `lang`
-attribute, the element itself included (usually `<html lang>`, or
-`<vtex-ads-story lang="es-AR">` for the widget alone), and in `currency`.
-Without a `lang`, or with one the browser doesn't know, they use `pt-BR`.
+Prices are formatted in the element's language (see [Language](#language))
+and in `currency`.
 
 #### Product hydration
 

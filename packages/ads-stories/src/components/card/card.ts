@@ -1,4 +1,5 @@
 import { css, html, nothing } from "lit";
+import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
 import { hasVideo, renderMedia, type VideoController } from "../media";
 import {
@@ -129,9 +130,8 @@ export interface CardOptions {
    * card shows only the cover, with no sound button.
    */
   withVideo?: boolean;
-  /** Accessible names of the sound button, shown when the card has a video. */
-  soundOnLabel: string;
-  soundOffLabel: string;
+  /** The texts (the sound button's, shown when the card has a video). */
+  labels: StoryLabels;
   /** The Story's product, shown at the bottom of the card. */
   product?: CardProduct;
   /** Called by a click on the product (default onSelect). */
@@ -156,7 +156,9 @@ function renderSoundButton(video: VideoController, options: CardOptions) {
     <button
       type="button"
       class="card-sound"
-      aria-label=${video.muted ? options.soundOnLabel : options.soundOffLabel}
+      aria-label=${video.muted
+        ? options.labels.soundOn
+        : options.labels.soundOff}
       @click=${() => video.toggleMuted()}
     >
       ${icon(video.muted ? "soundOff" : "soundOn")}
