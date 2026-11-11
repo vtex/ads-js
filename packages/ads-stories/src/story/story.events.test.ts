@@ -29,24 +29,7 @@ vi.mock("@vtex/ads-core", () => ({
 
 const getRawAdsMock = vi.mocked(getRawAds);
 
-// Each Story with its own event URLs, so the beacons tell them apart.
-const withEventUrls = (story: StoryAdDetail): StoryAdDetail => ({
-  ...story,
-  impression_url: `https://events.example/impression/${story.ad_id}`,
-  view_url: `https://events.example/view/${story.ad_id}`,
-  click_url: `https://events.example/click/${story.ad_id}`,
-});
-
-const [story1, story2, story3] = mockStories.map(withEventUrls);
-
-// A link Story: a call to action instead of a product.
-const linkStory: StoryAdDetail = withEventUrls({
-  ...mockStories[0],
-  ad_id: "story-ad-link",
-  product: null,
-  destination_url: "https://www.example.com/promo",
-  call_to_action: "Saiba mais",
-});
+const [story1, story2, story3, linkStory] = mockStories;
 
 /** The URLs beaconed so far, in order. */
 const beaconed = () =>
