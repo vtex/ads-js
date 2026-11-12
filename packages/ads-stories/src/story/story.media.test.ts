@@ -15,6 +15,7 @@ import {
 } from "./story";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
+import { FakeImage, pendingDecodes, resetImageMock } from "../utils/image.mock";
 import { MEDIA_TIMEOUT } from "../utils/preload-images";
 import { mockStories, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
 
@@ -28,20 +29,6 @@ vi.mock("@vtex/ads-core", () => ({
 }));
 
 const getRawAdsMock = vi.mocked(getRawAds);
-
-// Images that decode only when the test says so, by URL.
-const pending = new Map<string, { resolve: () => void; reject: () => void }>();
-const requested: string[] = [];
-
-class FakeImage {
-  src = "";
-  decode() {
-    requested.push(this.src);
-    return new Promise<void>((resolve, reject) => {
-      pending.set(this.src, { resolve, reject: () => reject(new Error()) });
-    });
-  }
-}
 
 function deferred() {
   let resolve!: (value: RawAdsResponse) => void;
@@ -72,7 +59,7 @@ async function mount() {
 }
 
 const decodeAll = () => {
-  for (const { resolve } of pending.values()) resolve();
+  for (const { resolve } of pendingDecodes) resolve();
 };
 
 describe(`${TAG_NAME} media loading`, () => {
@@ -85,8 +72,7 @@ describe(`${TAG_NAME} media loading`, () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.stubGlobal("Image", FakeImage);
-    pending.clear();
-    requested.length = 0;
+    resetImageMock();
     getRawAdsMock.mockReset();
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStories[0]]));
   });
@@ -165,7 +151,9 @@ describe(`${TAG_NAME} media loading`, () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 2)));
     await mount();
 
-    expect(requested).toEqual([mockStories[0].poster_url]);
+    expect(pendingDecodes.map(({ src }) => src)).toEqual([
+      mockStories[0].poster_url,
+    ]);
   });
 
   it("doesn't wait when the cover isn't an http(s) URL", async () => {
@@ -174,14 +162,14 @@ describe(`${TAG_NAME} media loading`, () => {
     );
     const el = await mount();
 
-    expect(requested).toEqual([]);
+    expect(pendingDecodes).toEqual([]);
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
   });
 
   it("shows the cards once a broken image fails", async () => {
     const el = await mount();
 
-    for (const { reject } of pending.values()) reject();
+    for (const { reject } of pendingDecodes) reject();
     await settle(el);
 
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
@@ -227,14 +215,13 @@ describe(`${TAG_NAME} media loading`, () => {
 
   it("ignores the images of Stories already replaced", async () => {
     const el = await mount();
-    const stale = new Map(pending);
+    const stale = [...pendingDecodes];
 
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStories[1]], "other"));
     el.setAttribute("placement", "other");
     await settle(el);
-    pending.clear();
 
-    for (const { resolve } of stale.values()) resolve();
+    for (const { resolve } of stale) resolve();
     await settle(el);
 
     expect(root(el)?.hasAttribute("data-loading")).toBe(true);

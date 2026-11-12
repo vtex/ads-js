@@ -57,7 +57,11 @@ const MEDIA_DELAY_PARAM = "media-delay-ms";
 
 // The test Stories' covers and product photos, set to come after `ms`.
 const withMediaDelay = (story: StoryAdDetail, ms: number): StoryAdDetail => {
-  const slow = (url: string) => `${url}?${MEDIA_DELAY_PARAM}=${ms}`;
+  const slow = (url: string) => {
+    const delayed = new URL(url);
+    delayed.searchParams.set(MEDIA_DELAY_PARAM, String(ms));
+    return delayed.toString();
+  };
   return {
     ...story,
     poster_url: slow(story.poster_url),

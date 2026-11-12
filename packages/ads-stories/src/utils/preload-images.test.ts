@@ -1,23 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { decodeOf, FakeImage, resetImageMock } from "./image.mock";
 import { MEDIA_TIMEOUT, preloadImages } from "./preload-images";
-
-type Decode = () => Promise<void>;
-
-// Image whose decode() each test settles by hand, by the image's URL.
-const decoders = new Map<string, { resolve: () => void; reject: () => void }>();
-
-class FakeImage {
-  src = "";
-  decode: Decode = () =>
-    new Promise<void>((resolve, reject) => {
-      decoders.set(this.src, { resolve, reject: () => reject(new Error()) });
-    });
-}
 
 describe("preloadImages", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    decoders.clear();
+    resetImageMock();
     vi.stubGlobal("Image", FakeImage);
   });
 
@@ -46,11 +34,11 @@ describe("preloadImages", () => {
       preloadImages(["https://a/1.png", "https://a/2.png"]),
     );
 
-    decoders.get("https://a/1.png")?.resolve();
+    decodeOf("https://a/1.png")?.resolve();
     await vi.advanceTimersByTimeAsync(0);
     expect(state.done).toBe(false);
 
-    decoders.get("https://a/2.png")?.resolve();
+    decodeOf("https://a/2.png")?.resolve();
     await vi.advanceTimersByTimeAsync(0);
     expect(state.done).toBe(true);
   });
@@ -60,8 +48,8 @@ describe("preloadImages", () => {
       preloadImages(["https://a/1.png", "https://a/2.png"]),
     );
 
-    decoders.get("https://a/1.png")?.reject();
-    decoders.get("https://a/2.png")?.resolve();
+    decodeOf("https://a/1.png")?.reject();
+    decodeOf("https://a/2.png")?.resolve();
     await vi.advanceTimersByTimeAsync(0);
 
     expect(state.done).toBe(true);
@@ -92,7 +80,7 @@ describe("preloadImages", () => {
 
   it("clears its timer once the images are ready", async () => {
     void preloadImages(["https://a/1.png"]);
-    decoders.get("https://a/1.png")?.resolve();
+    decodeOf("https://a/1.png")?.resolve();
     await vi.advanceTimersByTimeAsync(0);
 
     expect(vi.getTimerCount()).toBe(0);
