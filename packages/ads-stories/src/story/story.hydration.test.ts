@@ -263,7 +263,7 @@ describe(`${TAG_NAME} product hydration`, () => {
     );
   });
 
-  it("shows a sold out product as Esgotado, with a disabled button", async () => {
+  it("keeps the price of a sold out product, with a disabled button", async () => {
     intelligentSearchAvailabilityMock.mockReturnValue(false);
 
     const el = await mount(WITH_ACCOUNT);
@@ -272,12 +272,10 @@ describe(`${TAG_NAME} product hydration`, () => {
       { sku: "sku-1" },
       { skuId: "sku-1", sellerId: "1", productId: "" },
     );
-    expect(
-      pill(el)?.querySelector(".product-sold-out")?.textContent?.trim(),
-    ).toBe("Esgotado");
-    expect(priceOf(el)).toBeUndefined();
-    expect(pill(el)?.getAttribute("aria-label")).toBe(
-      `${mockStory.product?.product_name}, Esgotado`,
+    expect(pill(el)?.querySelector(".product-sold-out")).toBeNull();
+    expect(priceOf(el)).toBe("R$ 99,90");
+    expect(pill(el)?.getAttribute("aria-label")?.replace(/\s/g, " ")).toBe(
+      `${mockStory.product?.product_name}, R$ 99,90`,
     );
 
     const panel = await openPanel(el);
