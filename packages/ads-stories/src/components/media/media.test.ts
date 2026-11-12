@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
 import { mountHost } from "../host.mock";
 import { installMediaMocks } from "./media.mock";
-import { renderMedia } from "./media";
+import { renderMedia, type MediaOptions } from "./media";
+import { en } from "../../locales";
 import { VideoController } from "./video-controller";
 import type { StoryMedia } from "../../types";
 
@@ -96,6 +97,8 @@ describe("renderMedia video", () => {
     expect(video.failed).toBe(true);
     expect(container.querySelector("video")).toBeNull();
     expect(container.querySelector(".poster")).not.toBeNull();
+    // Without labels, no notice.
+    expect(container.querySelector(".media-status")).toBeNull();
   });
 
   it.each([
@@ -160,5 +163,78 @@ describe("VideoController", () => {
       video.togglePlayback();
       video.toggleMuted();
     }).not.toThrow();
+  });
+});
+
+describe("renderMedia failed video notice", () => {
+  const story = {
+    poster_url: "https://example.com/cover.jpg",
+    media_url: "https://example.com/story.mp4",
+  };
+
+  beforeAll(() => {
+    installMediaMocks();
+  });
+
+  function mountWith(options: MediaOptions) {
+    const { container, controller: video } = mountHost(
+      (host) => new VideoController(host),
+      (video) => renderMedia(story, video, { labels: en, ...options }),
+    );
+    const fail = () =>
+      container.querySelector("video")?.dispatchEvent(new Event("error"));
+    return { container, video, fail };
+  }
+
+  it("says the video is unavailable without onRetry", () => {
+    const { container, fail } = mountWith({});
+    expect(container.querySelector(".media-status")).toBeNull();
+
+    fail();
+
+    const status = container.querySelector(".media-status");
+    expect(status?.textContent?.trim()).toBe("Video unavailable");
+    expect(container.querySelector(".media-retry")).toBeNull();
+  });
+
+  it("has no notice for a cover without a video", () => {
+    const { container, video } = mountWith({ withVideo: false });
+    video.fail();
+    expect(container.querySelector(".media-status")).toBeNull();
+  });
+
+  it("shows a spinner while it loads again, until it loads", async () => {
+    const onRetry = vi.fn();
+    const { container, video, fail } = mountWith({ onRetry });
+    fail();
+
+    container.querySelector<HTMLButtonElement>(".media-retry")?.click();
+    expect(onRetry).toHaveBeenCalledTimes(1);
+
+    const ready = video.retry();
+    expect(video.retrying).toBe(true);
+    expect(container.querySelector("video")).not.toBeNull();
+    expect(container.querySelector(".media-spinner")).not.toBeNull();
+    expect(container.querySelector(".media-status")?.textContent).toContain(
+      "Loading video",
+    );
+
+    container.querySelector("video")?.dispatchEvent(new Event("loadeddata"));
+    await expect(ready).resolves.toBe(true);
+    expect(video.retrying).toBe(false);
+    expect(container.querySelector(".media-status")).toBeNull();
+  });
+
+  it("goes back to the notice when it fails again", async () => {
+    const { container, video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+
+    const ready = video.retry();
+    fail();
+
+    await expect(ready).resolves.toBe(false);
+    expect(video.retrying).toBe(false);
+    expect(container.querySelector(".media-spinner")).toBeNull();
+    expect(container.querySelector(".media-retry")).not.toBeNull();
   });
 });

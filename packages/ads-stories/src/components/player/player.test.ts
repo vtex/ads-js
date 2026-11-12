@@ -497,6 +497,55 @@ describe("PlayerController", () => {
       expect(player.hasAttribute("data-paused")).toBe(false);
       expect(player.querySelector(".poster")).not.toBeNull();
     });
+
+    it("offers to try again when the video fails", async () => {
+      const { player, video } = await setupWithVideo();
+      video?.dispatchEvent(new Event("error"));
+
+      const status = player.querySelector(".media-status");
+      expect(status?.getAttribute("role")).toBe("status");
+      expect(status?.textContent).toContain(
+        "Não foi possível carregar o vídeo",
+      );
+      expect(player.querySelector(".media-retry")?.textContent?.trim()).toBe(
+        "Tentar de novo",
+      );
+    });
+
+    it("loads the video again on retry, then plays it with the sound on", async () => {
+      const { player, video, toggle } = await setupWithVideo();
+      video?.dispatchEvent(new Event("error"));
+
+      player.querySelector<HTMLButtonElement>(".media-retry")?.click();
+
+      const retried = player.querySelector("video");
+      expect(retried).not.toBeNull();
+      expect(retried).not.toBe(video);
+      expect(player.querySelector(".media-spinner")).not.toBeNull();
+      expect(player.querySelector(".media-status")?.textContent).toContain(
+        "Carregando vídeo",
+      );
+      // The click stays on the retry button: it doesn't reach the video.
+      expect(toggle()).toBeNull();
+
+      retried?.dispatchEvent(new Event("loadeddata"));
+      await vi.waitFor(() => expect(retried?.paused).toBe(false));
+      expect(retried?.muted).toBe(false);
+      expect(player.querySelector(".media-status")).toBeNull();
+      expect(toggle()).not.toBeNull();
+    });
+
+    it("shows the notice again when the retry fails too", async () => {
+      const { player, video } = await setupWithVideo();
+      video?.dispatchEvent(new Event("error"));
+      player.querySelector<HTMLButtonElement>(".media-retry")?.click();
+
+      player.querySelector("video")?.dispatchEvent(new Event("error"));
+
+      expect(player.querySelector("video")).toBeNull();
+      expect(player.querySelector(".media-spinner")).toBeNull();
+      expect(player.querySelector(".media-retry")).not.toBeNull();
+    });
   });
 
   describe("navigation", () => {

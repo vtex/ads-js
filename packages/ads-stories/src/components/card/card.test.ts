@@ -139,3 +139,24 @@ describe("renderCard sound button", () => {
     expect(sound()).toBeNull();
   });
 });
+
+describe("renderCard failed video", () => {
+  beforeAll(() => {
+    installMediaMocks();
+  });
+
+  it("says the video is unavailable, without a retry or play icon", () => {
+    const { card } = mount({
+      poster_url: "https://example.com/cover.jpg",
+      media_url: "https://example.com/story.mp4",
+    });
+    card?.querySelector("video")?.dispatchEvent(new Event("error"));
+
+    const status = card?.querySelector(".media-status");
+    expect(status?.textContent?.trim()).toBe("Vídeo indisponível");
+    expect(status?.querySelector("svg.icon")).not.toBeNull();
+    expect(card?.querySelector(".media-retry")).toBeNull();
+    expect(card?.querySelector(".play")).toBeNull();
+    expect(card?.querySelector(".poster")).not.toBeNull();
+  });
+});
