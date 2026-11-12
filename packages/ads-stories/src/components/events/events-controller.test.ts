@@ -76,8 +76,8 @@ describe("StoryEventsController", () => {
     expect(beaconed()).toEqual([]);
 
     connect();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(beaconed()).toEqual([stories[0].impression_url]);
+    await vi.waitFor(() =>
+      expect(beaconed()).toEqual([stories[0].impression_url]),
+    );
   });
 });
