@@ -11,7 +11,7 @@ export function httpUrl(value: string | undefined) {
   }
 }
 
-const STORE_BASE = "http://store.invalid";
+const STORE_BASE = "https://store.invalid";
 
 // A path on the store the Story runs in ("/product/p"), resolved the way the
 // browser would, or null when it lands on another host ("//evil.com",
