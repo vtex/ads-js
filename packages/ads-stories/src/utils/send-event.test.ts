@@ -7,7 +7,7 @@ const beacon = () => vi.mocked(navigator.sendBeacon);
 
 async function bodyOf(blob: unknown) {
   expect(blob).toBeInstanceOf(Blob);
-  expect((blob as Blob).type).toBe("application/json");
+  expect((blob as Blob).type).toBe("text/plain;charset=utf-8");
   return JSON.parse(await (blob as Blob).text());
 }
 
@@ -24,7 +24,7 @@ describe("sendEvent", () => {
     vi.unstubAllGlobals();
   });
 
-  it("posts the session and user as JSON through the Beacon API", async () => {
+  it("posts the session and user as JSON text through the Beacon API", async () => {
     expect(sendEvent(URL, { sessionId: "s-1", userId: "u-1" })).toBe(true);
 
     expect(beacon()).toHaveBeenCalledOnce();
@@ -63,7 +63,7 @@ describe("sendEvent", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ session_id: "s-1" }),
       keepalive: true,
       credentials: "omit",

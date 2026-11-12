@@ -1,6 +1,11 @@
 import { httpUrl } from "./http-url";
 import { TAG_NAME } from "../tag-name";
 
+// A CORS-safelisted type: the browser sends the event without a preflight
+// request, and sendBeacon accepts it everywhere. The event host reads the
+// body as JSON whatever its type.
+const CONTENT_TYPE = "text/plain;charset=utf-8";
+
 /** Who the event is for: the same session sent in the ad request. */
 export interface EventIdentity {
   sessionId: string;
@@ -13,6 +18,11 @@ export interface EventIdentity {
  * and, when known, `user_id`, through `navigator.sendBeacon`, so the event
  * survives the page being left. Without the Beacon API, or when the browser
  * refuses to queue the beacon, it falls back to a `fetch` with `keepalive`.
+ * The body goes as `text/plain` (see CONTENT_TYPE).
+ *
+ * The fallback isn't awaited: it returns true once the `fetch` starts, and a
+ * failed request is logged, not sent again. The server deduplicates by
+ * session anyway, and a retry could outlive the page.
  *
  * Returns false, sending nothing, when the URL isn't an absolute http(s)
  * URL, during server-side rendering or when both ways fail at once.
@@ -33,12 +43,12 @@ export function sendEvent(
   try {
     const queued = globalThis.navigator?.sendBeacon?.(
       target,
-      new Blob([body], { type: "application/json" }),
+      new Blob([body], { type: CONTENT_TYPE }),
     );
     if (queued) return true;
   } catch {
-    // Some browsers throw for a Blob that isn't a simple content type: the
-    // fetch below sends it instead.
+    // A browser that throws instead of refusing (for example, for a URL it
+    // won't beacon to): the fetch below sends it instead.
   }
 
   if (typeof globalThis.fetch !== "function") return false;
@@ -46,7 +56,7 @@ export function sendEvent(
   globalThis
     .fetch(target, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": CONTENT_TYPE },
       body,
       keepalive: true,
       credentials: "omit",
