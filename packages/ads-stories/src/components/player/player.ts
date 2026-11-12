@@ -11,7 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
-import { httpUrl } from "../../utils/http-url";
+import { httpUrl } from "../../utils/safe-url";
 import {
   renderCta,
   renderExpandableProduct,

@@ -32,7 +32,7 @@ import {
   type StoryProductDetails,
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
-import { httpUrl } from "../utils/http-url";
+import { httpUrl } from "../utils/safe-url";
 import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
 import { TAG_NAME } from "../tag-name";

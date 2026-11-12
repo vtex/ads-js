@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
 import type { StoryMedia } from "../../types";
-import { httpUrl } from "../../utils/http-url";
+import { httpUrl } from "../../utils/safe-url";
 import type { VideoController } from "./video-controller";
 
 /** Media query for people who asked the system for less motion. */

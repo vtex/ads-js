@@ -140,7 +140,17 @@ describe("toCardProduct", () => {
     expect(product?.url).toBe("https://example.com/destination/p");
   });
 
-  it("has no URL when the destination isn't an absolute http(s) URL", () => {
+  it("keeps a path on the store as the URL", () => {
+    const product = toCardProduct(
+      { ...storyWith({}), destination_url: "/path-to-product/product-112" },
+      format,
+      labels,
+    );
+
+    expect(product?.url).toBe("/path-to-product/product-112");
+  });
+
+  it("has no URL when the destination isn't an http(s) URL or a store path", () => {
     const product = toCardProduct(
       { ...storyWith({}), destination_url: "javascript:alert(1)" },
       format,

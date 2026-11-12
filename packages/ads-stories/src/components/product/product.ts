@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
-import { httpUrl } from "../../utils/http-url";
+import { destinationUrl, httpUrl } from "../../utils/safe-url";
 import type { StoryAd } from "../../types";
 import type { StoryProductDetails } from "../../utils/hydrate-products";
 import { readProductPrice } from "./price";
@@ -57,7 +57,7 @@ export function toCardProduct(
   const base = {
     name,
     imageUrl: httpUrl(product.image_url) ?? undefined,
-    url: httpUrl(story.destination_url) ?? undefined,
+    url: destinationUrl(story.destination_url) ?? undefined,
   };
 
   if (fetched === "loading") {
