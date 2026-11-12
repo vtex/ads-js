@@ -137,8 +137,10 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
 | `hydration-timeout`  | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
-While the request is pending, and then while the first Story's cover loads (up
-to 3 seconds), the element shows a skeleton of the carousel. It renders nothing
+While the request is pending, and then until the first Story's cover or video
+loads, whichever comes first (up to 3 seconds), the element shows a skeleton
+of the carousel. The videos start, from the beginning, when the skeleton
+leaves. It renders nothing
 when a required attribute is missing, when the request fails or takes longer
 than `timeout`, or when the placement has no Story. Changing any of these
 attributes, except
@@ -313,7 +315,8 @@ The element sends each Story's impression, view and click to the URLs the ad
 API returned for it (`impression_url`, `view_url`, `click_url`), each at most
 once per Story and `session-id`:
 
-- **Impression**: when the carousel renders the Stories.
+- **Impression**: when the carousel shows the Stories, once the skeleton
+  leaves. Nothing is sent while it is up.
 - **View**: when a card's video, or the open player's, plays for 2 continuous
   seconds while at least 50% of it is on screen, with the page visible. A card
   showing only its cover, or a paused video, doesn't count, and cards behind

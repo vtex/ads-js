@@ -427,10 +427,11 @@ describe(`${TAG_NAME} events`, () => {
     it("counts only while the video plays, starting over after a pause", async () => {
       const el = await mount([story1]);
       vi.useFakeTimers();
-      expect(observed()).toEqual([]);
-
-      await playVideos(el);
+      // The highlighted card's video starts when the cards show.
       const card = activeCard(el);
+      expect(card?.querySelector("video")?.paused).toBe(false);
+      expect(observed()).toContain(card);
+
       intersect(card, 1);
       vi.advanceTimersByTime(VIEW_DURATION_MS - 100);
 

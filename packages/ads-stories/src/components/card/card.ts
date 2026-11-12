@@ -131,6 +131,11 @@ export interface CardOptions {
    * card shows only the cover, with no sound button.
    */
   withVideo?: boolean;
+  /**
+   * Whether the video plays on its own (default true). Without it, the
+   * video loads but waits (see renderMedia).
+   */
+  autoplay?: boolean;
   /** The texts (the sound button's, shown when the card has a video). */
   labels: StoryLabels;
   /** The Story's product, shown at the bottom of the card. */
@@ -198,7 +203,10 @@ export function renderCard(
       ${ref(options.ref)}
       @click=${{ handleEvent: () => options.onPress?.(), capture: true }}
     >
-      ${renderMedia(story, video, { withVideo })}
+      ${renderMedia(story, video, {
+        withVideo,
+        autoplay: options.autoplay,
+      })}
       <button
         type="button"
         class="card-open"

@@ -17,7 +17,7 @@ import { AUTO_ADVANCE_MS } from "../components/carousel";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { FakeImage, pendingDecodes, resetImageMock } from "../utils/image.mock";
-import { MEDIA_TIMEOUT } from "../utils/preload-images";
+import { MEDIA_TIMEOUT } from "../utils/media-ready";
 import { mockStories, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
 
 vi.mock("@vtex/ads-core", () => ({
@@ -58,6 +58,15 @@ async function mount() {
   await settle(el);
   return el;
 }
+
+const cardVideo = (el: VtexAdsStoryCarouselElement) =>
+  el.shadowRoot?.querySelector<HTMLVideoElement>(".carousel video");
+
+const impressions = () =>
+  vi
+    .mocked(navigator.sendBeacon)
+    .mock.calls.map(([url]) => String(url))
+    .filter((url) => url.includes("/impression/"));
 
 const decodeAll = () => {
   for (const { resolve } of pendingDecodes) resolve();
@@ -148,17 +157,37 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(skeleton(el)?.hasAttribute("data-done")).toBe(true);
   });
 
-  it("renders the video only once the skeleton leaves", async () => {
+  it("loads the video under the skeleton without playing it", async () => {
     const el = await mount();
-    const video = () => el.shadowRoot?.querySelector(".carousel video");
 
-    expect(video()).toBeNull();
+    expect(cardVideo(el)?.getAttribute("preload")).toBe("auto");
+    expect(cardVideo(el)?.hasAttribute("autoplay")).toBe(false);
+    expect(cardVideo(el)?.paused).toBe(true);
 
     decodeAll();
     await settle(el);
 
-    expect(video()).not.toBeNull();
-    expect(video()?.hasAttribute("autoplay")).toBe(true);
+    expect(cardVideo(el)?.hasAttribute("autoplay")).toBe(true);
+    expect(cardVideo(el)?.paused).toBe(false);
+  });
+
+  it("shows the cards once the video's first frame loads, before the cover", async () => {
+    const el = await mount();
+
+    cardVideo(el)?.dispatchEvent(new Event("loadeddata"));
+    await settle(el);
+
+    expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+  });
+
+  it("sends the impressions only once the skeleton leaves", async () => {
+    const el = await mount();
+    expect(impressions()).toEqual([]);
+
+    decodeAll();
+    await settle(el);
+
+    expect(impressions()).toEqual([mockStories[0].impression_url]);
   });
 
   it("waits only for the first Story's cover", async () => {
@@ -170,22 +199,30 @@ describe(`${TAG_NAME} media loading`, () => {
     ]);
   });
 
-  it("doesn't wait when the cover isn't an http(s) URL", async () => {
+  it("waits only for the video when the cover isn't an http(s) URL", async () => {
     getRawAdsMock.mockResolvedValue(
       rawAdsWith([{ ...mockStories[0], poster_url: "javascript:alert(1)" }]),
     );
     const el = await mount();
 
     expect(pendingDecodes).toEqual([]);
+    expect(root(el)?.hasAttribute("data-loading")).toBe(true);
+
+    cardVideo(el)?.dispatchEvent(new Event("loadeddata"));
+    await settle(el);
+
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
   });
 
-  it("shows the cards once a broken image fails", async () => {
+  it("keeps waiting for the video when the cover fails, until it fails too", async () => {
     const el = await mount();
 
     for (const { reject } of pendingDecodes) reject();
     await settle(el);
+    expect(root(el)?.hasAttribute("data-loading")).toBe(true);
 
+    cardVideo(el)?.dispatchEvent(new Event("error"));
+    await settle(el);
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
   });
 
@@ -237,13 +274,14 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(skeleton(el)?.querySelectorAll(".skeleton-card")).toHaveLength(5);
   });
 
-  it("doesn't show a skeleton when there are no images", async () => {
+  it("doesn't show a skeleton without a cover or a video", async () => {
     getRawAdsMock.mockResolvedValue(
-      rawAdsWith([{ ...mockStories[3], poster_url: "" }]),
+      rawAdsWith([{ ...mockStories[0], poster_url: "", media_url: "" }]),
     );
     const el = await mount();
 
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+    expect(impressions()).toEqual([mockStories[0].impression_url]);
   });
 
   it("stops waiting for the cover when the element leaves the page", async () => {

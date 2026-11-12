@@ -33,7 +33,7 @@ import {
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
 import { httpUrl } from "../utils/http-url";
-import { preloadImages } from "../utils/preload-images";
+import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
 import { TAG_NAME } from "../tag-name";
 
@@ -181,14 +181,15 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   declare private requesting: boolean;
 
   /**
-   * The first Story's cover is still loading: a skeleton covers the cards
-   * until it is ready (or MEDIA_TIMEOUT passes), so the first card doesn't
-   * show up piece by piece.
+   * The first Story's media is still loading: a skeleton covers the cards
+   * until its cover or its video is ready (or MEDIA_TIMEOUT passes), so the
+   * first card doesn't show up piece by piece. Meanwhile, the cards load
+   * underneath, their videos without playing, and no event goes out.
    */
   declare private mediaLoading: boolean;
 
   /**
-   * Cancels the wait for the cover in progress: when other Stories replace
+   * Cancels the wait for the media in progress: when other Stories replace
    * its Stories, or the element leaves the page.
    */
   private mediaWait?: AbortController;
@@ -378,23 +379,42 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     this.afterRender = undefined;
     this.carousel.reset(stories.length);
     this.stories = stories;
-    this.events.impress(stories);
-    void this.waitForFirstCover(stories);
+    void this.waitForFirstMedia(stories);
   }
 
-  private async waitForFirstCover(stories: StoryAd[]) {
+  /**
+   * Shows the cards once the first Story's cover or video is ready: whichever
+   * loads first, or once both failed. Only then are the Stories impressed
+   * and do their videos play, from the start.
+   */
+  private async waitForFirstMedia(stories: StoryAd[]) {
     this.mediaWait?.abort();
     const wait = new AbortController();
     this.mediaWait = wait;
+
     const cover = httpUrl(stories[0]?.poster_url);
+    const video = httpUrl(stories[0]?.media_url);
+    const checks: Promise<boolean>[] = [];
+    if (cover) checks.push(decodeImage(cover));
+    // The first card's: the highlighted one, after carousel.reset().
+    if (video) checks.push(this.videoFor(this.carousel.activeKey).ready);
 
-    this.mediaLoading = cover !== null;
-    if (!cover) return;
-
-    await preloadImages([cover], wait.signal);
+    this.mediaLoading = checks.length > 0;
+    await firstReady(checks, wait.signal);
     // Other Stories came meanwhile: they wait for their own media. Leaving
     // the page ends the wait with the cards shown.
-    if (this.mediaWait === wait) this.mediaLoading = false;
+    if (this.mediaWait !== wait) return;
+
+    this.mediaWait = undefined;
+    this.mediaLoading = false;
+    this.events.impress(stories);
+    this.afterRender = () => {
+      if (!this.isConnected) return;
+      for (const cardVideo of this.cardVideos.values()) cardVideo.resume();
+    };
+    // Without media to wait for, mediaLoading didn't change: nothing else
+    // asks for the render that sends the impressions.
+    this.requestUpdate();
   }
 
   /**
@@ -558,9 +578,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         this.stories.length,
       ),
       labels: this.labels,
-      // Not under the skeleton: the video starts when the cards show.
-      withVideo:
-        !this.mediaLoading && (active || (this.inactiveAutoplay && !hidden)),
+      withVideo: active || (this.inactiveAutoplay && !hidden),
+      autoplay: !this.mediaLoading,
       product: this.productOf(story),
       onSelect: active
         ? () => this.openPlayer()

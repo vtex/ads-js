@@ -25,7 +25,20 @@ export class VideoController {
   /** The video could not load: only the cover is shown. */
   failed = false;
 
-  constructor(private readonly host: ReactiveControllerHost) {}
+  private readyState!: Promise<boolean>;
+  private settleReady!: (ready: boolean) => void;
+
+  constructor(private readonly host: ReactiveControllerHost) {
+    this.waitForReady();
+  }
+
+  /**
+   * Resolves true once the video's first frame has loaded, or false if it
+   * fails. A new one for each new <video> (see reset).
+   */
+  get ready(): Promise<boolean> {
+    return this.readyState;
+  }
 
   /** The rendered <video> is on the page and playing. */
   get playing() {
@@ -38,6 +51,7 @@ export class VideoController {
     this.paused = true;
     this.muted = true;
     this.failed = false;
+    this.waitForReady();
   }
 
   play() {
@@ -117,9 +131,19 @@ export class VideoController {
     this.host.requestUpdate();
   };
 
+  /** Listener for the video's loadeddata event. */
+  readonly loaded = () => {
+    this.settleReady(true);
+  };
+
   /** Listener for the video's error event. */
   readonly fail = () => {
     this.failed = true;
+    this.settleReady(false);
     this.host.requestUpdate();
   };
+
+  private waitForReady() {
+    this.readyState = new Promise((settle) => (this.settleReady = settle));
+  }
 }
