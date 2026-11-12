@@ -322,8 +322,9 @@ once per Story and `session-id`:
 Each event is a `POST` with a JSON body holding `session_id` and, when set,
 `user_id`, sent with `navigator.sendBeacon` (a `fetch` with `keepalive` when
 the browser can't queue the beacon), so it isn't lost when the shopper leaves
-the page. The ad API also deduplicates them by session. A store that changes
-the element takes over keeping these rules.
+the page. A failed `fetch` is logged to the console and not sent again. The ad
+API also deduplicates the events by session. A store that changes the element
+takes over keeping these rules.
 
 ## Development
 
