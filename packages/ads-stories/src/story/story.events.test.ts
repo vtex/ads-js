@@ -112,6 +112,14 @@ const query = <E extends Element = HTMLElement>(
   selector: string,
 ) => el.shadowRoot?.querySelector<E>(selector) ?? null;
 
+/** Plays the rendered videos: jsdom doesn't autoplay. */
+async function playVideos(el: VtexAdsStoryCarouselElement) {
+  for (const video of el.shadowRoot?.querySelectorAll("video") ?? []) {
+    await video.play();
+  }
+  await el.updateComplete;
+}
+
 async function click(el: VtexAdsStoryCarouselElement, selector: string) {
   const target = query(el, selector);
   if (!target) throw new Error(`Nothing matches ${selector}`);
@@ -227,19 +235,39 @@ describe(`${TAG_NAME} events`, () => {
       expect(beaconedOf("click")[0]).not.toBe(story1.click_url);
     });
 
-    it("counts the player's product, not its video or buttons", async () => {
-      const el = await mount([story1, story2]);
+    it.each([
+      ["video", ".player .player-stage > .card video"],
+      ["play button", ".player-toggle"],
+      ["sound button", ".player-sound"],
+      ["product", ".player .product-summary"],
+    ])(
+      "counts a click on the player's %s, for the Story it shows",
+      async (_, selector) => {
+        const el = await mount([story1, story2]);
+        await click(el, ".slide[data-active] .card-open");
+        // The next Story, reached in the player: no touch on its card.
+        await click(el, ".player-next");
+        expect(beaconedOf("click")).toEqual([story1.click_url]);
 
+        await click(el, selector);
+
+        expect(beaconedOf("click")).toEqual([
+          story1.click_url,
+          story2.click_url,
+        ]);
+      },
+    );
+
+    it("doesn't count the player's previous, next or close", async () => {
+      const el = await mount([story1, story2, story3]);
       await click(el, ".slide[data-active] .card-open");
-      expect(beaconedOf("click")).toEqual([story1.click_url]);
 
-      // The next Story, reached in the player: no touch on its card.
       await click(el, ".player-next");
-      await click(el, ".player .player-stage > .card");
-      expect(beaconedOf("click")).toEqual([story1.click_url]);
+      await click(el, ".player-next");
+      await click(el, ".player-previous");
+      await click(el, ".player-close");
 
-      await click(el, ".player .product-summary");
-      expect(beaconedOf("click")).toEqual([story1.click_url, story2.click_url]);
+      expect(beaconedOf("click")).toEqual([story1.click_url]);
     });
   });
 
@@ -252,6 +280,7 @@ describe(`${TAG_NAME} events`, () => {
 
     it("sends the view after half the card stayed on screen for 2 s", async () => {
       const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
 
       intersect(activeCard(el), 0.5);
@@ -264,6 +293,7 @@ describe(`${TAG_NAME} events`, () => {
 
     it("starts over when the card leaves the screen before 2 s", async () => {
       const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
       const card = activeCard(el);
 
@@ -280,6 +310,7 @@ describe(`${TAG_NAME} events`, () => {
 
     it("sends it once, and stops watching the Story", async () => {
       const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
       const card = activeCard(el);
 
@@ -295,6 +326,7 @@ describe(`${TAG_NAME} events`, () => {
 
     it("stops the count while the page is hidden", async () => {
       const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
       const hidden = vi.spyOn(document, "hidden", "get");
 
@@ -312,7 +344,11 @@ describe(`${TAG_NAME} events`, () => {
     });
 
     it("watches only the cards on screen, not the hidden ones", async () => {
-      const el = await mount([story1, story2, story3]);
+      const el = await mount([story1, story2, story3], {
+        ...REQUIRED_ATTRIBUTES,
+        "inactive-autoplay": "",
+      });
+      await playVideos(el);
 
       const hiddenCards = [
         ...(el.shadowRoot?.querySelectorAll(".slide[data-hidden] > .card") ??
@@ -333,6 +369,7 @@ describe(`${TAG_NAME} events`, () => {
       const el = await mount([story1, story2]);
       await click(el, ".slide[data-active] .card-open");
       await click(el, ".player-next");
+      await playVideos(el);
       vi.useFakeTimers();
 
       intersect(query(el, ".player .player-stage > .card"), 1);
@@ -343,6 +380,7 @@ describe(`${TAG_NAME} events`, () => {
 
     it("stops watching when the element leaves the page", async () => {
       const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
 
       intersect(activeCard(el), 1);
@@ -353,26 +391,57 @@ describe(`${TAG_NAME} events`, () => {
       expect(observed()).toEqual([]);
     });
 
-    it("watches the cards again after the element moves on the page", async () => {
-      // Covers only: no video resumes and renders again on the move.
-      const covers = [story1, story2, story3].map((story) => ({
-        ...story,
-        media_url: "",
-      }));
-      const el = await mount(covers);
-      const shownCards = [
-        ...(el.shadowRoot?.querySelectorAll(
-          ".slide:not([data-hidden]) > .card",
-        ) ?? []),
-      ];
+    it("watches the card again after the element moves on the page", async () => {
+      const el = await mount([story1, story2, story3]);
+      await playVideos(el);
 
       el.remove();
       document.body.appendChild(el);
       await el.updateComplete;
       vi.useFakeTimers();
 
-      expect(observed()).toEqual(expect.arrayContaining(shownCards));
+      expect(observed()).toContain(activeCard(el));
       intersect(activeCard(el), 1);
+      vi.advanceTimersByTime(VIEW_DURATION_MS);
+      expect(beaconedOf("view")).toEqual([story1.view_url]);
+    });
+
+    it("doesn't count a card showing only its cover", async () => {
+      const el = await mount([story1, story2, story3]);
+      await playVideos(el);
+
+      const covers = [
+        ...(el.shadowRoot?.querySelectorAll(
+          ".slide:not([data-active]):not([data-hidden]) > .card",
+        ) ?? []),
+      ];
+
+      expect(covers.length).toBeGreaterThan(0);
+      for (const card of covers) {
+        expect(card.querySelector("video")).toBeNull();
+        expect(observed()).not.toContain(card);
+      }
+      expect(observed()).toContain(activeCard(el));
+    });
+
+    it("counts only while the video plays, starting over after a pause", async () => {
+      const el = await mount([story1]);
+      vi.useFakeTimers();
+      expect(observed()).toEqual([]);
+
+      await playVideos(el);
+      const card = activeCard(el);
+      intersect(card, 1);
+      vi.advanceTimersByTime(VIEW_DURATION_MS - 100);
+
+      card?.querySelector("video")?.pause();
+      await el.updateComplete;
+      expect(observed()).not.toContain(card);
+      vi.advanceTimersByTime(VIEW_DURATION_MS);
+      expect(beaconedOf("view")).toEqual([]);
+
+      await playVideos(el);
+      intersect(card, 1);
       vi.advanceTimersByTime(VIEW_DURATION_MS);
       expect(beaconedOf("view")).toEqual([story1.view_url]);
     });

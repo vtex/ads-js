@@ -312,12 +312,15 @@ API returned for it (`impression_url`, `view_url`, `click_url`), each at most
 once per Story and `session-id`:
 
 - **Impression**: when the carousel renders the Stories.
-- **View**: when a card, or the open player's video, stays at least 50% on
-  screen for 2 continuous seconds with the page visible. Cards behind the
-  expanded player don't count. Browsers without `IntersectionObserver` send no
-  view.
+- **View**: when a card's video, or the open player's, plays for 2 continuous
+  seconds while at least 50% of it is on screen, with the page visible. A card
+  showing only its cover, or a paused video, doesn't count, and cards behind
+  the expanded player don't either. Browsers without `IntersectionObserver`
+  send no view.
 - **Click**: on the first touch on a card (its product, call to action and
-  sound button included), or on the product or call to action in the player.
+  sound button included), or on the player's video (its play and sound
+  buttons, product and call to action included). Previous, next and the
+  player's window buttons don't count.
 
 Each event is a `POST` with a JSON body holding `session_id` and, when set,
 `user_id`, sent with `navigator.sendBeacon` (a `fetch` with `keepalive` when

@@ -348,23 +348,26 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   }
 
   /**
-   * Where each Story can be seen: the cards on screen (not the hidden ones
-   * kept for the slide in) and the open player's video. Behind the expanded
-   * player, a modal over the page, the cards are covered.
+   * Where each Story is being watched: the cards on screen (not the hidden
+   * ones kept for the slide in) and the open player's video, while their
+   * video plays. A card showing only its cover doesn't count. Behind the
+   * expanded player, a modal over the page, the cards are covered.
    */
   private *viewTargets(): Generator<ViewTarget> {
     const { stories } = this;
 
     if (!this.player.isExpanded) {
-      for (const [card, index] of this.carousel.visibleCards()) {
+      for (const [card, { key, index }] of this.carousel.visibleCards()) {
         const story = stories[index];
-        if (story) yield [card, story];
+        if (story && this.cardVideos.get(key)?.playing) yield [card, story];
       }
     }
 
     const stageCard = this.player.stageCard;
     const active = stories[this.carousel.active];
-    if (stageCard && active) yield [stageCard, active];
+    if (stageCard && active && this.player.video.playing) {
+      yield [stageCard, active];
+    }
   }
 
   private videoFor(key: number) {
@@ -547,7 +550,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         neighbors,
         product: this.productOf(active),
         cta: toCardCta(active),
-        onDestinationPress: () => this.events.click(active),
+        onPress: () => this.events.click(active),
       })}
     `;
   }

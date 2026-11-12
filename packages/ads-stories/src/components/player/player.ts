@@ -456,17 +456,16 @@ export interface PlayerRenderOptions {
   /** The Story's call to action, for a link destination (no product). */
   cta?: CardCta;
   /**
-   * Called by any click on the product or the call to action (the panel's
-   * buttons included), before what that click does.
+   * Called by any click on the video's card (the video, its play and sound
+   * buttons, the product and the call to action), before what that click
+   * does. Not by previous and next, the window buttons or the covers beside
+   * the video.
    */
-  onDestinationPress?: () => void;
+  onPress?: () => void;
 }
 
 // What shows at the bottom of the video: one or the other.
-type StoryDestination = Pick<
-  PlayerRenderOptions,
-  "product" | "cta" | "labels" | "onDestinationPress"
->;
+type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta" | "labels">;
 
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
@@ -926,12 +925,7 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({
-    product,
-    cta,
-    labels,
-    onDestinationPress,
-  }: StoryDestination) {
+  private renderDestination({ product, cta, labels }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
@@ -949,10 +943,7 @@ export class PlayerController implements ReactiveController {
     return html`
       <div
         class="player-destination"
-        @click=${(event: Event) => {
-          event.stopPropagation();
-          onDestinationPress?.();
-        }}
+        @click=${(event: Event) => event.stopPropagation()}
       >
         ${content}
       </div>
@@ -1143,7 +1134,7 @@ export class PlayerController implements ReactiveController {
       neighbors = [],
       product,
       cta,
-      onDestinationPress,
+      onPress,
     }: PlayerRenderOptions,
   ) {
     if (!this.isOpen) return nothing;
@@ -1174,13 +1165,22 @@ export class PlayerController implements ReactiveController {
         ${this.renderNeighbors(shownNeighbors, labels)}
         <div class="player-frame">
           ${this.renderWindowControls(labels)}
-          <div class="player-stage" ${ref(this.stage)}>
+          <div
+            class="player-stage"
+            ${ref(this.stage)}
+            @click=${{
+              handleEvent: (event: Event) => {
+                const card = this.stageCardRef.value;
+                if (card?.contains(event.target as Node)) onPress?.();
+              },
+              capture: true,
+            }}
+          >
             ${navigation ? this.renderNavigation(labels) : nothing}
             ${this.renderVideo(story, navigation && expanded, {
               product,
               cta,
               labels,
-              onDestinationPress,
             })}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>

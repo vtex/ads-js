@@ -330,12 +330,12 @@ export class CarouselController implements ReactiveController {
   }
 
   /**
-   * The cards on screen, with the index of their Story: not the hidden ones
-   * kept for the slide in.
+   * The cards on screen, with their slide: not the hidden ones kept for the
+   * slide in.
    */
-  *visibleCards(): Generator<readonly [card: Element, index: number]> {
+  *visibleCards(): Generator<readonly [card: Element, slide: Slide]> {
     for (const [card, slide] of this.cards) {
-      if (!slide.hidden) yield [card, slide.index];
+      if (!slide.hidden) yield [card, slide];
     }
   }
 
