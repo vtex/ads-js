@@ -9,7 +9,7 @@ import type { StoryLabels } from "../../locales";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
-import { REDUCED_MOTION } from "../media";
+import { prefersReducedMotion } from "../media";
 
 export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
@@ -316,7 +316,6 @@ export class CarouselController implements ReactiveController {
   private narrow = false;
   private media?: MediaQueryList;
   private reducedMotion = false;
-  private motionMedia?: MediaQueryList;
   private connected = false;
   private hovered = false;
   private focused = false;
@@ -377,9 +376,7 @@ export class CarouselController implements ReactiveController {
     this.media = globalThis.matchMedia?.(NARROW_SCREEN.toString());
     this.media?.addEventListener("change", this.onMediaChange);
     this.narrow = this.media?.matches ?? false;
-    this.motionMedia = globalThis.matchMedia?.(REDUCED_MOTION);
-    this.motionMedia?.addEventListener("change", this.onMotionChange);
-    this.reducedMotion = this.motionMedia?.matches ?? false;
+    this.reducedMotion = prefersReducedMotion();
     this.syncTimer();
   }
 
@@ -387,8 +384,6 @@ export class CarouselController implements ReactiveController {
     this.connected = false;
     this.media?.removeEventListener("change", this.onMediaChange);
     this.media = undefined;
-    this.motionMedia?.removeEventListener("change", this.onMotionChange);
-    this.motionMedia = undefined;
     this.endSwipe();
     this.syncTimer();
   }
@@ -479,11 +474,6 @@ export class CarouselController implements ReactiveController {
 
     this.options.onLayoutChange?.();
     this.host.requestUpdate();
-  };
-
-  private readonly onMotionChange = (event: MediaQueryListEvent) => {
-    this.reducedMotion = event.matches;
-    this.syncTimer();
   };
 
   private readonly onPointerEnter = () => {
