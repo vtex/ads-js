@@ -97,15 +97,18 @@ export class StoryEventsController implements ReactiveController {
 
   hostUpdated() {
     const stories = this.pendingImpressions;
-    this.pendingImpressions = [];
-    for (const story of stories) this.send("impression", story);
+    if (stories.length && this.options.identity().sessionId) {
+      this.pendingImpressions = [];
+      for (const story of stories) this.send("impression", story);
+    }
 
     this.syncViewTargets();
   }
 
   /**
    * The Stories the host renders next: their impressions go out once that
-   * render is done. Replaces Stories passed before and not rendered yet.
+   * render is done, or, without a session yet, after the first render that
+   * has one. Replaces Stories passed before and not sent yet.
    */
   impress(stories: readonly StoryAd[]) {
     this.pendingImpressions = stories;
