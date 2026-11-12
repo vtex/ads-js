@@ -148,6 +148,19 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(skeleton(el)?.hasAttribute("data-done")).toBe(true);
   });
 
+  it("renders the video only once the skeleton leaves", async () => {
+    const el = await mount();
+    const video = () => el.shadowRoot?.querySelector(".carousel video");
+
+    expect(video()).toBeNull();
+
+    decodeAll();
+    await settle(el);
+
+    expect(video()).not.toBeNull();
+    expect(video()?.hasAttribute("autoplay")).toBe(true);
+  });
+
   it("waits only for the first Story's cover", async () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 2)));
     await mount();

@@ -558,7 +558,9 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         this.stories.length,
       ),
       labels: this.labels,
-      withVideo: active || (this.inactiveAutoplay && !hidden),
+      // Not under the skeleton: the video starts when the cards show.
+      withVideo:
+        !this.mediaLoading && (active || (this.inactiveAutoplay && !hidden)),
       product: this.productOf(story),
       onSelect: active
         ? () => this.openPlayer()
