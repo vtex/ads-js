@@ -13,6 +13,7 @@ import {
   TAG_NAME,
   type VtexAdsStoryCarouselElement,
 } from "./story";
+import { AUTO_ADVANCE_MS } from "../components/carousel";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { FakeImage, pendingDecodes, resetImageMock } from "../utils/image.mock";
@@ -182,6 +183,25 @@ describe(`${TAG_NAME} media loading`, () => {
     await el.updateComplete;
 
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+  });
+
+  it("gives the first Story its full time after the cover times out", async () => {
+    getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 2)));
+    const el = await mount();
+    const highlighted = () =>
+      [...(el.shadowRoot?.querySelectorAll(".slide") ?? [])].findIndex(
+        (slide) => slide.hasAttribute("data-active"),
+      );
+
+    await vi.advanceTimersByTimeAsync(MEDIA_TIMEOUT);
+    await el.updateComplete;
+    expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1);
+    expect(highlighted()).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(highlighted()).toBe(1);
   });
 
   it("draws the five placeholder cards for a single Story too", async () => {

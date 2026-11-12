@@ -241,7 +241,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       }
     },
     // The player shows the highlighted Story: the highlight stays on it.
-    locked: () => this.player.isOpen,
+    locked: () => this.player.isOpen || this.mediaLoading,
   });
 
   private readonly player = new PlayerController(this, {
