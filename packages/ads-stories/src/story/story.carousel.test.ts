@@ -18,8 +18,10 @@ import { installDialogMocks } from "../components/player/dialog.mock";
 import {
   AUTO_ADVANCE_MS,
   carouselStyles,
+  MAX_SLIDE_DURATION_MS,
   NARROW_SCREEN,
   RENDERED_SIDE,
+  toSlideDuration,
 } from "../components/carousel";
 import { REDUCED_MOTION } from "../components/media";
 import {
@@ -399,6 +401,16 @@ describe(`${TAG_NAME} carousel`, () => {
 
       await vi.advanceTimersByTimeAsync(8000 - AUTO_ADVANCE_MS);
       expect(activeIndex(el)).toBe(1);
+    });
+
+    it.each([
+      [MAX_SLIDE_DURATION_MS, MAX_SLIDE_DURATION_MS],
+      [MAX_SLIDE_DURATION_MS + 1, MAX_SLIDE_DURATION_MS],
+      [2 ** 31, MAX_SLIDE_DURATION_MS],
+      [Infinity, AUTO_ADVANCE_MS],
+      [0, 0],
+    ])("turns slide-duration %s into %s", (value, expected) => {
+      expect(toSlideDuration(value)).toBe(expected);
     });
 
     it("does not advance with slide-duration 0, the arrows still step", async () => {

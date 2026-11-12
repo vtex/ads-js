@@ -2,6 +2,7 @@ export {
   AUTO_ADVANCE_MS,
   CarouselController,
   carouselStyles,
+  MAX_SLIDE_DURATION_MS,
   NARROW_SCREEN,
   RENDERED_SIDE,
   SWIPE_DISTANCE,
