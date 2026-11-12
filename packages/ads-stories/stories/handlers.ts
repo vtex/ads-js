@@ -6,9 +6,12 @@
  * requested quantity), with the delay and count set for it in SCENARIOS.
  * Intelligent Search answers each account in SEARCH_SCENARIOS after its
  * delay, or with an error, with the products in SEARCH_PRODUCTS.
+ *
+ * The test Stories' impression, view and click beacons are accepted (202)
+ * and logged to the console, so each event shows when it fires.
  */
 import { delay, http, HttpResponse } from "msw";
-import { mockStories } from "../src/story/story.mock";
+import { MOCK_EVENTS_BASE, mockStories } from "../src/story/story.mock";
 
 const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/*";
 
@@ -99,6 +102,15 @@ export const handlers = [
         : [];
     }
     return HttpResponse.json(body);
+  }),
+
+  http.post(`${MOCK_EVENTS_BASE}/:kind/:adId`, async ({ request, params }) => {
+    const body: unknown = await request.json().catch(() => null);
+    console.info(
+      `[events mock] ${String(params.kind)} ${String(params.adId)}`,
+      body,
+    );
+    return new HttpResponse(null, { status: 202 });
   }),
 
   // Answers `q=sku:a;b` and `q=product:1;2` with the products found.

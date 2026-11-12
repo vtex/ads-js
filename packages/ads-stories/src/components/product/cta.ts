@@ -1,6 +1,6 @@
 import { html } from "lit";
 import { icon } from "../icons";
-import { httpUrl } from "../media";
+import { httpUrl } from "../../utils/http-url";
 import type { StoryAd } from "../../types";
 
 /** The call to action of a Story whose destination is a link. */

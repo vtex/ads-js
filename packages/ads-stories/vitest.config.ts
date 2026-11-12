@@ -9,6 +9,7 @@ export default mergeConfig(
     test: {
       name: "ads-stories",
       environment: "jsdom",
+      setupFiles: ["./vitest.setup.ts"],
       coverage: { include: ["src/**/*.{js,jsx,ts,tsx}"] },
     },
   }),

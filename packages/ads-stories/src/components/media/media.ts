@@ -1,19 +1,8 @@
 import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
 import type { StoryMedia } from "../../types";
+import { httpUrl } from "../../utils/http-url";
 import type { VideoController } from "./video-controller";
-
-// Only absolute http(s) URLs reach the DOM. Relative and protocol-relative
-// ones ("/a.jpg", "//host/a.jpg") don't parse without a base, so they're out.
-export function httpUrl(value: string | undefined) {
-  if (!value) return null;
-  try {
-    const { protocol } = new URL(value);
-    return protocol === "https:" || protocol === "http:" ? value : null;
-  } catch {
-    return null;
-  }
-}
 
 export function prefersReducedMotion() {
   return (

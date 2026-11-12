@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
-import { httpUrl } from "../media";
+import { httpUrl } from "../../utils/http-url";
 import type { StoryAd } from "../../types";
 import type { StoryProductDetails } from "../../utils/hydrate-products";
 import { readProductPrice } from "./price";

@@ -7,6 +7,20 @@ export const REQUIRED_ATTRIBUTES = {
   placement: "home_stories",
 };
 
+/**
+ * Where the mock Stories' events go, as the ad server's beacon URLs:
+ * `<base>/<impression|view|click>/<ad_id>`. Answered by the playground's MSW
+ * handlers.
+ */
+export const MOCK_EVENTS_BASE = "https://events.example/v1/beacon";
+
+/** The impression, view and click URLs of a mock Story. */
+const eventUrls = (adId: string) => ({
+  impression_url: `${MOCK_EVENTS_BASE}/impression/${adId}`,
+  view_url: `${MOCK_EVENTS_BASE}/view/${adId}`,
+  click_url: `${MOCK_EVENTS_BASE}/click/${adId}`,
+});
+
 /** A Story with a real cover and video, also served by the playground. */
 export const mockStory: StoryAdDetail = {
   type: "story",
@@ -28,9 +42,7 @@ export const mockStory: StoryAdDetail = {
     url: "https://www.example.com/product/p",
     product_metadata: { price: 159.9, promotional_price: 129.9 },
   },
-  impression_url: "https://events.example/impression",
-  view_url: "https://events.example/view",
-  click_url: "https://events.example/click",
+  ...eventUrls("story-ad-1"),
 };
 
 /** Several Stories in ad server order, served by the playground. */
@@ -39,6 +51,7 @@ export const mockStories: StoryAdDetail[] = [
   {
     ...mockStory,
     ad_id: "story-ad-2",
+    ...eventUrls("story-ad-2"),
     campaign_id: "campaign-2",
     position: 1,
     campaign_name: "Story campaign 2",
@@ -58,6 +71,7 @@ export const mockStories: StoryAdDetail[] = [
   {
     ...mockStory,
     ad_id: "story-ad-3",
+    ...eventUrls("story-ad-3"),
     campaign_id: "campaign-3",
     position: 2,
     campaign_name: "Story campaign 3",
@@ -77,6 +91,7 @@ export const mockStories: StoryAdDetail[] = [
   {
     ...mockStory,
     ad_id: "story-ad-4",
+    ...eventUrls("story-ad-4"),
     campaign_id: "campaign-4",
     position: 3,
     campaign_name: "Story campaign 4",

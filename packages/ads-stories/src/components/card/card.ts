@@ -1,4 +1,5 @@
 import { css, html, nothing } from "lit";
+import { ref, type RefOrCallback } from "lit/directives/ref.js";
 import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
 import { hasVideo, renderMedia, type VideoController } from "../media";
@@ -143,6 +144,15 @@ export interface CardOptions {
    * (a card without the highlight). Without it, the link opens.
    */
   onCtaSelect?: () => void;
+  /**
+   * Called by any click on the card, its product, call to action and sound
+   * button included, before what that click does.
+   */
+  onPress?: () => void;
+  /** Receives the card's element (see Slide's cardRef). */
+  ref?: RefOrCallback;
+  /** Receives the button that takes the focus (see Slide's focusRef). */
+  openRef?: RefOrCallback;
 }
 
 /**
@@ -183,11 +193,16 @@ export function renderCard(
   const withVideo = options.withVideo ?? true;
 
   return html`
-    <div class="card">
+    <div
+      class="card"
+      ${ref(options.ref)}
+      @click=${{ handleEvent: () => options.onPress?.(), capture: true }}
+    >
       ${renderMedia(story, video, { withVideo })}
       <button
         type="button"
         class="card-open"
+        ${ref(options.openRef)}
         aria-label=${options.label}
         @click=${options.onSelect}
       >

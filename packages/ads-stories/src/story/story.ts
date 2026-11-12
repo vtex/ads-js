@@ -7,6 +7,7 @@ import {
   RENDERED_SIDE,
   type Slide,
 } from "../components/carousel";
+import { StoryEventsController, type ViewTarget } from "../components/events";
 import { VideoController } from "../components/media";
 import {
   DEFAULT_LOCALE,
@@ -222,6 +223,13 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     onClose: () => this.closePlayer(),
   });
 
+  // Added after the carousel and the player: its hostUpdated reads what
+  // they rendered.
+  private readonly events = new StoryEventsController(this, {
+    identity: () => ({ sessionId: this.sessionId, userId: this.userId }),
+    viewTargets: () => this.viewTargets(),
+  });
+
   constructor() {
     super();
     this.inactiveAutoplay = false;
@@ -336,6 +344,30 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     this.afterRender = undefined;
     this.carousel.reset(stories.length);
     this.stories = stories;
+    this.events.impress(stories);
+  }
+
+  /**
+   * Where each Story is being watched: the cards on screen (not the hidden
+   * ones kept for the slide in) and the open player's video, while their
+   * video plays. A card showing only its cover doesn't count. Behind the
+   * expanded player, a modal over the page, the cards are covered.
+   */
+  private *viewTargets(): Generator<ViewTarget> {
+    const { stories } = this;
+
+    if (!this.player.isExpanded) {
+      for (const [card, { key, index }] of this.carousel.visibleCards()) {
+        const story = stories[index];
+        if (story && this.cardVideos.get(key)?.playing) yield [card, story];
+      }
+    }
+
+    const stageCard = this.player.stageCard;
+    const active = stories[this.carousel.active];
+    if (stageCard && active && this.player.video.playing) {
+      yield [stageCard, active];
+    }
   }
 
   private videoFor(key: number) {
@@ -408,11 +440,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     // The highlighted card, and with inactive-autoplay the others, which may
     // have been highlighted and paused while the player stepped.
     for (const video of this.cardVideos.values()) video.resume();
-    this.renderRoot
-      .querySelector<HTMLElement>(
-        '.carousel[data-layout="solo"] .card-open, .slide[data-active] .card-open',
-      )
-      ?.focus();
+    this.carousel.focusActive();
   }
 
   // The formatter for the current language and currency, made again only
@@ -460,26 +488,17 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     return this.formatter.format;
   }
 
-  private fetchedProductOf(story: StoryAd): FetchedProduct {
-    return this.products === "loading"
-      ? "loading"
-      : this.products?.get(story.ad_id);
-  }
-
   private productOf(story: StoryAd) {
-    return toCardProduct(
-      story,
-      this.formatPrice,
-      this.labels,
-      this.fetchedProductOf(story),
-    );
+    const fetched: FetchedProduct =
+      this.products === "loading" ? "loading" : this.products?.get(story.ad_id);
+    return toCardProduct(story, this.formatPrice, this.labels, fetched);
   }
 
   // The highlighted card opens the player; another one takes the highlight.
   // Hidden cards, out of sight, show only their cover.
   private readonly renderSlide = (
     story: StoryAd,
-    { key, index, offset, active, hidden }: Slide,
+    { key, index, offset, active, hidden, cardRef, focusRef }: Slide,
   ) =>
     renderCard(story, this.videoFor(key), {
       label: this.labels.position(
@@ -501,6 +520,9 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       // highlight.
       cta: toCardCta(story),
       onCtaSelect: active ? undefined : () => this.carousel.step(offset),
+      onPress: () => this.events.click(story),
+      ref: cardRef,
+      openRef: focusRef,
     });
 
   protected render() {
@@ -528,6 +550,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         neighbors,
         product: this.productOf(active),
         cta: toCardCta(active),
+        onPress: () => this.events.click(active),
       })}
     `;
   }
