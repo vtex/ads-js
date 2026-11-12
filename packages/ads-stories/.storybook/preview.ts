@@ -27,18 +27,16 @@ const preview: Preview = {
   args: { publisherId: "7082a92d-9ff7-48a3-9c12-6ae3d64e405e" },
   initialGlobals: { adApi: "mock" },
   loaders: [
-    (context) =>
-      msw({
-        ...context,
-        parameters: {
-          ...context.parameters,
-          msw: context.globals.adApi === "live" ? [] : handlers,
-        },
-      }),
+    async (context) => {
+      await msw(context);
+      if (context.globals.adApi === "live") context.msw.resetHandlers();
+      return {};
+    },
   ],
   parameters: {
     layout: "padded",
     controls: { expanded: true },
+    msw: handlers,
   },
 };
 
