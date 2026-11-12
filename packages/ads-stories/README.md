@@ -303,7 +303,8 @@ highlight, as the card does. Without a text, there is no button.
 ### Player
 
 Clicking the highlighted card opens it in the mini player, at the bottom right
-of the screen, which can be expanded. With more than one Story:
+of the screen, which can be expanded. Its video plays with the sound on, or
+muted if the browser blocks it. With more than one Story:
 
 - **Mini player**: previous and next buttons above its top left change the video
   in the player, and the carousel highlight follows. The carousel's own advance

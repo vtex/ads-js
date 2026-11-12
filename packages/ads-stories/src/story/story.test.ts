@@ -629,7 +629,7 @@ describe(TAG_NAME, () => {
       const { card, player } = getVideos(el);
       expect(card?.paused).toBe(true);
       expect(player?.paused).toBe(false);
-      expect(player?.muted).toBe(true);
+      expect(player?.muted).toBe(false);
     });
 
     it("plays the card video again when the player closes", async () => {
