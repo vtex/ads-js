@@ -14,6 +14,7 @@ import {
   intelligentSearchFetcher,
   intelligentSearchPrice,
   type HydratedAds,
+  type ProductPrice,
   type StoryAdDetail,
 } from "@vtex/ads-core";
 import {
@@ -303,6 +304,43 @@ describe(`${TAG_NAME} product hydration`, () => {
     expect(
       (await openPanel(el))?.querySelector(".product-add-to-cart"),
     ).not.toBeNull();
+  });
+
+  it.each([
+    ["no amount", { price: undefined }],
+    ["NaN", { price: Number.NaN }],
+    ["a string", { price: "49.9" }],
+    ["a negative amount", { price: -1 }],
+  ])(
+    "falls back to the ad server's price when the strategy returns %s",
+    async (_, price) => {
+      const strategy: StoryHydration = {
+        fetcher: vi.fn(),
+        matcher: vi.fn(),
+        price: () => price as unknown as ProductPrice,
+      };
+
+      const el = await mount(REQUIRED_ATTRIBUTES, (element) => {
+        element.hydration = strategy;
+      });
+
+      expect(priceOf(el)).toBe("R$ 129,90");
+    },
+  );
+
+  it("drops a list price that isn't an amount above the price", async () => {
+    const strategy: StoryHydration = {
+      fetcher: vi.fn(),
+      matcher: vi.fn(),
+      price: () => ({ price: 50, listPrice: Number.NaN }),
+    };
+
+    const el = await mount(REQUIRED_ATTRIBUTES, (element) => {
+      element.hydration = strategy;
+    });
+
+    expect(priceOf(el)).toBe("R$ 50,00");
+    expect(pill(el)?.querySelector(".product-list-price")).toBeNull();
   });
 
   it("shows a price of 0 as the strategy returns it", async () => {
