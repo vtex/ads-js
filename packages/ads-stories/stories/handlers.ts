@@ -36,7 +36,7 @@ const SCENARIOS: Record<string, Scenario> = {
   slow_media: { delayMs: 1000, count: 3, mediaDelayMs: 2000 },
   slow_media_timeout: { delayMs: 1000, count: 3, mediaDelayMs: 5000 },
   empty_stories: { delayMs: 500, count: 0 },
-  video_error: { delayMs: 500, count: 3, videoFailures: 2 },
+  video_error: { delayMs: 500, count: 3, mediaDelayMs: 2000, videoFailures: 2 },
 };
 
 const scenarioFor = (placement: string) =>
@@ -79,10 +79,12 @@ const withMediaDelay = (story: StoryAdDetail, ms: number): StoryAdDetail => {
   };
 };
 
-// The query parameter that marks the video the mock fails, and how many more
-// times it fails. Each ad response starts the count again.
+// The query parameter that marks the video the mock fails, how many more
+// times it fails, and how long its first request after the failures takes
+// (the placement's mediaDelayMs). Each ad response starts them again.
 const VIDEO_FAIL_PARAM = "video-fail";
 let videoFailuresLeft = 0;
+let videoRetryDelayMs = 0;
 
 const withFailingVideo = (story: StoryAdDetail): StoryAdDetail => {
   const url = new URL(story.media_url);
@@ -139,7 +141,10 @@ export const handlers = [
     const body: Record<string, unknown> = { request_id: "playground" };
     for (const [placement, { quantity, types }] of requested) {
       const { count, mediaDelayMs, videoFailures } = scenarioFor(placement);
-      if (videoFailures) videoFailuresLeft = videoFailures;
+      if (videoFailures) {
+        videoFailuresLeft = videoFailures;
+        videoRetryDelayMs = mediaDelayMs ?? 0;
+      }
       body[placement] = types.includes("story")
         ? mockStories
             .slice(0, Math.min(count, quantity))
@@ -162,13 +167,19 @@ export const handlers = [
     return passthrough();
   }),
 
-  // The marked video fails while it has failures left; the others, and it
-  // afterwards, go straight to the network.
-  http.get("https://samplelib.com/*", ({ request }) => {
+  // The marked video fails while it has failures left, then its next request
+  // waits for the media delay; the others, and its later requests, go
+  // straight to the network.
+  http.get("https://samplelib.com/*", async ({ request }) => {
     const failing = new URL(request.url).searchParams.has(VIDEO_FAIL_PARAM);
     if (failing && videoFailuresLeft > 0) {
       videoFailuresLeft -= 1;
       return new HttpResponse(null, { status: 404 });
+    }
+    if (failing && videoRetryDelayMs > 0) {
+      const ms = videoRetryDelayMs;
+      videoRetryDelayMs = 0;
+      await delay(ms);
     }
     return passthrough();
   }),
