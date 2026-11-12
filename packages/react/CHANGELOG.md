@@ -1,5 +1,21 @@
 # @vtex/ads-react
 
+## 0.6.0
+
+### Minor Changes
+
+- 6495795: Fix `require("@vtex/ads-react")`: the CommonJS build was emitted as `index.cjs.js`, which Node loads as an ES module in this `"type": "module"` package, so it returned no exports. It is now emitted as `index.cjs`.
+- Updated dependencies [6495795]
+- Updated dependencies [6495795]
+- Updated dependencies [3261876]
+- Updated dependencies [3261876]
+- Updated dependencies [b4350e7]
+- Updated dependencies [3261876]
+- Updated dependencies [3261876]
+- Updated dependencies [6495795]
+- Updated dependencies [e36dc60]
+  - @vtex/ads-core@0.6.0
+
 ## 0.5.3
 
 ### Patch Changes
