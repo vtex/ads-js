@@ -187,8 +187,11 @@ export class VtexAdsStoryCarouselElement extends LitElement {
    */
   declare private mediaLoading: boolean;
 
-  /** Tells which Stories' media the element is waiting for. */
-  private mediaRun = 0;
+  /**
+   * Cancels the wait for the cover in progress: when other Stories replace
+   * its Stories, or the element leaves the page.
+   */
+  private mediaWait?: AbortController;
 
   /**
    * Cancels the request in progress. Kept, already aborted, when leaving the
@@ -279,6 +282,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.request?.abort();
+    this.mediaWait?.abort();
   }
 
   protected willUpdate(changed: PropertyValues<this>) {
@@ -379,15 +383,18 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   }
 
   private async waitForFirstCover(stories: StoryAd[]) {
-    const run = ++this.mediaRun;
+    this.mediaWait?.abort();
+    const wait = new AbortController();
+    this.mediaWait = wait;
     const cover = httpUrl(stories[0]?.poster_url);
 
     this.mediaLoading = cover !== null;
     if (!cover) return;
 
-    await preloadImages([cover]);
-    // Other Stories came meanwhile: they wait for their own media.
-    if (run === this.mediaRun) this.mediaLoading = false;
+    await preloadImages([cover], wait.signal);
+    // Other Stories came meanwhile: they wait for their own media. Leaving
+    // the page ends the wait with the cards shown.
+    if (this.mediaWait === wait) this.mediaLoading = false;
   }
 
   /**
@@ -587,7 +594,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       <div
         class="root"
         ?data-loading=${loading}
-        ?data-requesting=${active === undefined}
+        ?data-requesting=${this.requesting}
       >
         ${active
           ? this.carousel.render(stories, this.renderSlide, this.labels)

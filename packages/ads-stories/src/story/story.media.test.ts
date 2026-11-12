@@ -213,6 +213,28 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
   });
 
+  it("stops waiting for the cover when the element leaves the page", async () => {
+    const el = await mount();
+    const timers = vi.getTimerCount();
+
+    el.remove();
+    await settle(el);
+
+    expect(vi.getTimerCount()).toBe(timers - 1);
+    expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+  });
+
+  it("stops waiting for the cover of Stories already replaced", async () => {
+    const el = await mount();
+    const timers = vi.getTimerCount();
+
+    getRawAdsMock.mockResolvedValue(rawAdsWith([mockStories[1]], "other"));
+    el.setAttribute("placement", "other");
+    await settle(el);
+
+    expect(vi.getTimerCount()).toBe(timers);
+  });
+
   it("ignores the images of Stories already replaced", async () => {
     const el = await mount();
     const stale = [...pendingDecodes];
