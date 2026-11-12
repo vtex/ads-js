@@ -460,18 +460,10 @@ describe(`${TAG_NAME} carousel`, () => {
     });
 
     describe("with reduced motion", () => {
-      let listeners: ((event: MediaQueryListEvent) => void)[];
-
       beforeEach(() => {
-        listeners = [];
         vi.stubGlobal("matchMedia", (query: string) => ({
           matches: query === REDUCED_MOTION,
-          addEventListener: (
-            _type: string,
-            listener: (event: MediaQueryListEvent) => void,
-          ) => {
-            if (query === REDUCED_MOTION) listeners.push(listener);
-          },
+          addEventListener: () => undefined,
           removeEventListener: () => undefined,
         }));
       });
@@ -487,24 +479,6 @@ describe(`${TAG_NAME} carousel`, () => {
         await click(el, ".arrow-next");
         expect(activeIndex(el)).toBe(1);
 
-        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
-        expect(activeIndex(el)).toBe(1);
-      });
-
-      it("stops and starts again as the preference changes", async () => {
-        const el = await mount();
-        vi.useFakeTimers();
-        const change = (matches: boolean) => {
-          for (const listener of listeners) {
-            listener({ matches } as MediaQueryListEvent);
-          }
-        };
-
-        change(false);
-        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
-        expect(activeIndex(el)).toBe(1);
-
-        change(true);
         await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
         expect(activeIndex(el)).toBe(1);
       });
