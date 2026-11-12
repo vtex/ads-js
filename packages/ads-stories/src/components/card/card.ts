@@ -183,7 +183,8 @@ function renderSoundButton(video: VideoController, options: CardOptions) {
 
 /**
  * A 9:16 card with the Story cover and, with a media_url, the video looping
- * muted over it (see renderMedia). A button with a play icon in the middle
+ * muted over it (see renderMedia), or a notice that it is unavailable if it
+ * can't load. A button with a play icon in the middle (not over the notice)
  * covers the card, and a sound button shows while the video plays. With a
  * product, its pill sits at the bottom (see renderProduct); with a link
  * destination, the call to action does (see renderCta). The sound, product
@@ -206,6 +207,7 @@ export function renderCard(
       ${renderMedia(story, video, {
         withVideo,
         autoplay: options.autoplay,
+        labels: options.labels,
       })}
       <button
         type="button"
@@ -214,7 +216,9 @@ export function renderCard(
         aria-label=${options.label}
         @click=${options.onSelect}
       >
-        <span class="play" aria-hidden="true">${icon("play")}</span>
+        ${withVideo && video.failed
+          ? nothing
+          : html`<span class="play" aria-hidden="true">${icon("play")}</span>`}
       </button>
       ${withVideo && hasVideo(story, video) && !video.paused
         ? renderSoundButton(video, options)

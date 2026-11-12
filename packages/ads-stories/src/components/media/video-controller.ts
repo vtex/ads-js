@@ -22,8 +22,10 @@ export class VideoController {
   paused = true;
   // The video always starts muted: that is what browsers allow to autoplay.
   muted = true;
-  /** The video could not load: only the cover is shown. */
+  /** The video could not load: the cover shows with a notice over it. */
   failed = false;
+  /** A failed video is loading again (see retry), until it loads or fails. */
+  retrying = false;
 
   private readyState!: Promise<boolean>;
   private settleReady!: (ready: boolean) => void;
@@ -51,7 +53,20 @@ export class VideoController {
     this.paused = true;
     this.muted = true;
     this.failed = false;
+    this.retrying = false;
     this.waitForReady();
+  }
+
+  /**
+   * Loads a failed video again: renderMedia renders a new <video> with a
+   * notice that it is loading, until it loads or fails. Resolves as `ready`
+   * does.
+   */
+  retry() {
+    this.reset();
+    this.retrying = true;
+    this.host.requestUpdate();
+    return this.ready;
   }
 
   play() {
@@ -134,11 +149,15 @@ export class VideoController {
   /** Listener for the video's loadeddata event. */
   readonly loaded = () => {
     this.settleReady(true);
+    if (!this.retrying) return;
+    this.retrying = false;
+    this.host.requestUpdate();
   };
 
   /** Listener for the video's error event. */
   readonly fail = () => {
     this.failed = true;
+    this.retrying = false;
     this.settleReady(false);
     this.host.requestUpdate();
   };

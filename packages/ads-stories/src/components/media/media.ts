@@ -1,5 +1,7 @@
 import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
+import type { StoryLabels } from "../../locales";
+import { icon } from "../icons";
 import type { StoryMedia } from "../../types";
 import { httpUrl } from "../../utils/safe-url";
 import type { VideoController } from "./video-controller";
@@ -11,9 +13,12 @@ export function prefersReducedMotion() {
   return globalThis.matchMedia?.(REDUCED_MOTION).matches ?? false;
 }
 
-/** Whether renderMedia shows a video for this Story right now. */
+/**
+ * Whether renderMedia shows a playable video for this Story right now: not
+ * one that failed or is loading again.
+ */
 export function hasVideo(story: StoryMedia, video: VideoController) {
-  return !video.failed && httpUrl(story.media_url) !== null;
+  return !video.failed && !video.retrying && httpUrl(story.media_url) !== null;
 }
 
 export interface MediaOptions {
@@ -28,23 +33,72 @@ export interface MediaOptions {
    * motion). Without it, the video loads in full but waits to be played.
    */
   autoplay?: boolean;
+  /**
+   * The texts of the notice over the cover when the video can't load.
+   * Without them, only the cover shows.
+   */
+  labels?: StoryLabels;
+  /**
+   * Offers to load a failed video again (see VideoController.retry), with a
+   * button in the notice. Without it, the notice only says the video is
+   * unavailable.
+   */
+  onRetry?: () => void;
+}
+
+// What the notice says, and the retry button when there is one.
+function renderFailed(labels: StoryLabels, onRetry?: () => void) {
+  return html`
+    <div class="media-status" role="status" ?data-retry=${!!onRetry}>
+      <span class="media-status-text">
+        ${icon("warning")}
+        ${onRetry ? labels.videoFailed : labels.videoUnavailable}
+      </span>
+      ${onRetry
+        ? html`
+            <button type="button" class="media-retry" @click=${onRetry}>
+              ${labels.retry}
+            </button>
+          `
+        : nothing}
+    </div>
+  `;
+}
+
+function renderVideoLoading(labels: StoryLabels) {
+  return html`
+    <div class="media-status" role="status">
+      <span class="media-status-text">
+        <span class="media-spinner" aria-hidden="true"></span>
+        ${labels.videoLoading}
+      </span>
+    </div>
+  `;
+}
+
+// The notice over the cover, if the video failed or is loading again.
+function renderStatus(
+  video: VideoController,
+  { labels, onRetry }: MediaOptions,
+) {
+  if (!labels) return nothing;
+  if (video.failed) return renderFailed(labels, onRetry);
+  if (video.retrying) return renderVideoLoading(labels);
+  return nothing;
 }
 
 /**
  * The Story cover and, with a media_url, the video looping muted over it. If
- * the video can't load, it is removed and the cover underneath stays. With
- * withVideo false, only the cover.
+ * the video can't load, it is removed and the cover underneath stays, with a
+ * notice over it when there are `labels` (and a retry button with
+ * `onRetry`). With withVideo false, only the cover.
  */
 export function renderMedia(
   story: StoryMedia,
   video: VideoController,
-  {
-    withVideo = true,
-    loop = true,
-    onEnded,
-    autoplay = true,
-  }: MediaOptions = {},
+  options: MediaOptions = {},
 ) {
+  const { withVideo = true, loop = true, onEnded, autoplay = true } = options;
   const posterUrl = httpUrl(story.poster_url);
   const mediaUrl = withVideo ? httpUrl(story.media_url) : null;
   const preload = autoplay ? "metadata" : "auto";
@@ -79,5 +133,6 @@ export function renderMedia(
           ></video>
         `
       : nothing}
+    ${mediaUrl ? renderStatus(video, options) : nothing}
   `;
 }

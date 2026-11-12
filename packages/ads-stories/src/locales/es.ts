@@ -20,6 +20,10 @@ export const es: StoryLabels = {
   unavailable: "Producto no disponible",
   soldOut: "Agotado",
   viewProduct: "Ver producto",
+  videoUnavailable: "Video no disponible",
+  videoFailed: "No se pudo cargar el video",
+  retry: "Intentar de nuevo",
+  videoLoading: "Cargando video",
   product: (name, price, listPrice) => {
     if (price && listPrice)
       return `${name}, antes ${listPrice}, ahora ${price}`;

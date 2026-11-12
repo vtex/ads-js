@@ -17,6 +17,14 @@ export interface StoryLabels {
   unavailable: string;
   soldOut: string;
   viewProduct: string;
+  /** Over the card's cover when its video can't load. */
+  videoUnavailable: string;
+  /** Over the player's cover when its video can't load. */
+  videoFailed: string;
+  /** While the player loads the video. */
+  videoLoading: string;
+  /** The player's button to load the video again. */
+  retry: string;
   /** The product button: "Tênis, de R$ 159,90 por R$ 129,90". */
   product: (name: string, price?: string, listPrice?: string) => string;
   /** Tells the cards apart: "Mostrar vídeo 2 de 4". */

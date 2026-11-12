@@ -138,6 +138,18 @@ export const SlowMedia: Story = {
   },
 };
 
+export const VideoError: Story = {
+  name: "Video error",
+  args: { placement: "video_error" },
+  parameters: {
+    note: html`The first Story's video fails twice. On the card, its cover shows
+      with <b>Video unavailable</b> over it. Opening it, it fails again and the
+      player offers <b>Try again</b>: a spinner shows with
+      <b>Loading video</b> while it loads, then it plays with the sound on.
+      Reload the story to see it fail again.`,
+  },
+};
+
 export const SlowMediaTimeout: Story = {
   name: "Slow media, past the time limit",
   args: { placement: "slow_media_timeout" },

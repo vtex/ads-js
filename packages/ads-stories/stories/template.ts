@@ -18,6 +18,7 @@ export const PLACEMENTS = [
   "slow_media",
   "slow_media_timeout",
   "empty_stories",
+  "video_error",
 ];
 export const ACCOUNTS = ["playground", "playground-slow", "playground-error"];
 

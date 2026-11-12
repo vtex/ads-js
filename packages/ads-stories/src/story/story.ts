@@ -10,7 +10,7 @@ import {
   type Slide,
 } from "../components/carousel";
 import { StoryEventsController, type ViewTarget } from "../components/events";
-import { VideoController } from "../components/media";
+import { mediaStyles, VideoController } from "../components/media";
 import {
   DEFAULT_LOCALE,
   priceFormatter,
@@ -216,6 +216,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       }
     `,
     cardStyles,
+    mediaStyles,
     productStyles,
     carouselStyles,
     carouselSkeletonStyles,
