@@ -79,7 +79,7 @@ export class StoryEventsController implements ReactiveController {
     );
     // Moved on the page: the cards rendered before are still there, but lit
     // hands their refs back only after the controllers connect.
-    void this.host.updateComplete.then(() => this.syncViewTargets());
+    this.host.updateComplete.then(() => this.syncViewTargets());
   }
 
   hostDisconnected() {
