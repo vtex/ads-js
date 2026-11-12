@@ -150,6 +150,13 @@ attributes, except
 Stories again; a new time limit applies to the next request, and a new
 `slide-duration` starts the highlighted Story's time over.
 
+For shoppers whose system asks for reduced motion
+(`prefers-reduced-motion: reduce`), the carousel holds still: the cards show
+only their cover, with no video playing, and the highlight doesn't advance on
+its own, whatever `slide-duration` or `inactive-autoplay` say. It moves only
+with the arrows, swipes and clicks. Opening a Story plays its video in the
+player as usual, since the shopper chose to watch it.
+
 ## Language
 
 The element's texts (buttons, "Esgotado", and the names screen readers read

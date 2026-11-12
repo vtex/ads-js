@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
 import type { StoryHydration } from "../src";
+import { REDUCED_MOTION } from "../src/components/media";
 import { mockStories } from "../src/story/story.mock";
 import { elementArgTypes, renderElement, type ElementArgs } from "./template";
 
@@ -66,6 +67,45 @@ export const NoAutomaticAdvance: Story = {
   parameters: {
     note: html`With <code>slide-duration="0"</code>, the highlight stays put: it
       moves only with the arrows, a swipe or a click on another card.`,
+  },
+};
+
+// Makes the page report a preference for reduced motion to scripts, until the
+// returned cleanup. CSS media queries still follow the real setting.
+function fakeReducedMotion() {
+  const matchMedia = window.matchMedia;
+  window.matchMedia = (query: string) =>
+    query === REDUCED_MOTION
+      ? ({
+          matches: true,
+          media: query,
+          onchange: null,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          dispatchEvent: () => false,
+        } satisfies MediaQueryList)
+      : matchMedia.call(window, query);
+  return () => {
+    window.matchMedia = matchMedia;
+  };
+}
+
+export const ReducedMotion: Story = {
+  name: "Reduced motion",
+  args: { placement: "three_stories", slideDuration: 2000 },
+  beforeEach: fakeReducedMotion,
+  parameters: {
+    note: html`For shoppers who prefer reduced motion: the cards stay on their
+      covers and the highlight doesn't move on its own, even with
+      <code>slide-duration="2000"</code>; only the arrows, a swipe or a click
+      move it. Opening a card plays its video in the player, and the expanded
+      player steps between Stories without the slide animation. This story fakes
+      the preference for the scripts only, so the CSS transitions still run. To
+      check those, or to switch the preference live on any story, open the
+      canvas in a new tab and, in Chrome DevTools, Rendering → Emulate CSS media
+      feature <code>prefers-reduced-motion</code>.`,
   },
 };
 

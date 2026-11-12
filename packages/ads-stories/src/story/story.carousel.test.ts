@@ -21,6 +21,7 @@ import {
   NARROW_SCREEN,
   RENDERED_SIDE,
 } from "../components/carousel";
+import { REDUCED_MOTION } from "../components/media";
 import {
   mockStories,
   mockStory,
@@ -456,6 +457,57 @@ describe(`${TAG_NAME} carousel`, () => {
       expect(activeIndex(el)).toBe(1);
 
       expect(getRawAdsMock).not.toHaveBeenCalled();
+    });
+
+    describe("with reduced motion", () => {
+      let listeners: ((event: MediaQueryListEvent) => void)[];
+
+      beforeEach(() => {
+        listeners = [];
+        vi.stubGlobal("matchMedia", (query: string) => ({
+          matches: query === REDUCED_MOTION,
+          addEventListener: (
+            _type: string,
+            listener: (event: MediaQueryListEvent) => void,
+          ) => {
+            if (query === REDUCED_MOTION) listeners.push(listener);
+          },
+          removeEventListener: () => undefined,
+        }));
+      });
+
+      afterEach(() => {
+        vi.unstubAllGlobals();
+      });
+
+      it("does not advance, the arrows still step", async () => {
+        const el = await mount();
+        vi.useFakeTimers();
+
+        await click(el, ".arrow-next");
+        expect(activeIndex(el)).toBe(1);
+
+        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
+        expect(activeIndex(el)).toBe(1);
+      });
+
+      it("stops and starts again as the preference changes", async () => {
+        const el = await mount();
+        vi.useFakeTimers();
+        const change = (matches: boolean) => {
+          for (const listener of listeners) {
+            listener({ matches } as MediaQueryListEvent);
+          }
+        };
+
+        change(false);
+        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
+        expect(activeIndex(el)).toBe(1);
+
+        change(true);
+        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
+        expect(activeIndex(el)).toBe(1);
+      });
     });
 
     it("does not run with a single Story", async () => {

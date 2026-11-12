@@ -9,6 +9,7 @@ import type { StoryLabels } from "../../locales";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
+import { REDUCED_MOTION } from "../media";
 
 export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
@@ -300,6 +301,8 @@ function tracker(elements: Map<Element, Slide>, slide: Slide) {
  * The highlight moves on its own every slide duration (AUTO_ADVANCE_MS by
  * default, never with zero), except while the pointer is over the carousel,
  * the keyboard focus is in it, it is locked, or the host is off the page.
+ * Never for people who prefer reduced motion: the highlight then moves only
+ * when they step it.
  */
 export class CarouselController implements ReactiveController {
   /**
@@ -312,6 +315,8 @@ export class CarouselController implements ReactiveController {
   private count = 0;
   private narrow = false;
   private media?: MediaQueryList;
+  private reducedMotion = false;
+  private motionMedia?: MediaQueryList;
   private connected = false;
   private hovered = false;
   private focused = false;
@@ -372,6 +377,9 @@ export class CarouselController implements ReactiveController {
     this.media = globalThis.matchMedia?.(NARROW_SCREEN.toString());
     this.media?.addEventListener("change", this.onMediaChange);
     this.narrow = this.media?.matches ?? false;
+    this.motionMedia = globalThis.matchMedia?.(REDUCED_MOTION);
+    this.motionMedia?.addEventListener("change", this.onMotionChange);
+    this.reducedMotion = this.motionMedia?.matches ?? false;
     this.syncTimer();
   }
 
@@ -379,6 +387,8 @@ export class CarouselController implements ReactiveController {
     this.connected = false;
     this.media?.removeEventListener("change", this.onMediaChange);
     this.media = undefined;
+    this.motionMedia?.removeEventListener("change", this.onMotionChange);
+    this.motionMedia = undefined;
     this.endSwipe();
     this.syncTimer();
   }
@@ -430,6 +440,7 @@ export class CarouselController implements ReactiveController {
   private get shouldAdvance() {
     return (
       this.slideDuration > 0 &&
+      !this.reducedMotion &&
       this.connected &&
       this.count > 1 &&
       !this.hovered &&
@@ -468,6 +479,11 @@ export class CarouselController implements ReactiveController {
 
     this.options.onLayoutChange?.();
     this.host.requestUpdate();
+  };
+
+  private readonly onMotionChange = (event: MediaQueryListEvent) => {
+    this.reducedMotion = event.matches;
+    this.syncTimer();
   };
 
   private readonly onPointerEnter = () => {
