@@ -61,7 +61,7 @@ export class StoryEventsController implements ReactiveController {
   private readonly watched = new Map<Element, Watched>();
 
   constructor(
-    host: ReactiveControllerHost,
+    private readonly host: ReactiveControllerHost,
     private readonly options: StoryEventsOptions,
   ) {
     host.addController(this);
@@ -77,8 +77,9 @@ export class StoryEventsController implements ReactiveController {
       "visibilitychange",
       this.onVisibilityChange,
     );
-    // Moved on the page: the cards rendered before are still there.
-    this.syncViewTargets();
+    // Moved on the page: the cards rendered before are still there, but lit
+    // hands their refs back only after the controllers connect.
+    void this.host.updateComplete.then(() => this.syncViewTargets());
   }
 
   hostDisconnected() {

@@ -353,6 +353,30 @@ describe(`${TAG_NAME} events`, () => {
       expect(observed()).toEqual([]);
     });
 
+    it("watches the cards again after the element moves on the page", async () => {
+      // Covers only: no video resumes and renders again on the move.
+      const covers = [story1, story2, story3].map((story) => ({
+        ...story,
+        media_url: "",
+      }));
+      const el = await mount(covers);
+      const shownCards = [
+        ...(el.shadowRoot?.querySelectorAll(
+          ".slide:not([data-hidden]) > .card",
+        ) ?? []),
+      ];
+
+      el.remove();
+      document.body.appendChild(el);
+      await el.updateComplete;
+      vi.useFakeTimers();
+
+      expect(observed()).toEqual(expect.arrayContaining(shownCards));
+      intersect(activeCard(el), 1);
+      vi.advanceTimersByTime(VIEW_DURATION_MS);
+      expect(beaconedOf("view")).toEqual([story1.view_url]);
+    });
+
     it("sends no view without IntersectionObserver", async () => {
       vi.stubGlobal("IntersectionObserver", undefined);
       await mount([story1]);

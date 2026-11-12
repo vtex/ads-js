@@ -245,6 +245,16 @@ export interface Slide {
   active: boolean;
   /** Kept in the DOM out of sight, so it can slide in. */
   hidden: boolean;
+  /**
+   * Pass to the card's element (renderCard's ref): the carousel then knows
+   * where each Story's card is (see visibleCards).
+   */
+  cardRef: (element?: Element) => void;
+  /**
+   * Pass to the card's element that takes the keyboard focus (renderCard's
+   * openRef; see focusActive).
+   */
+  focusRef: (element?: Element) => void;
 }
 
 /** Renders the card of one Story. */
@@ -252,6 +262,19 @@ export type RenderSlide<T> = (item: T, slide: Slide) => TemplateResult;
 
 const wrap = (value: number, count: number) =>
   ((value % count) + count) % count;
+
+// A ref callback that keeps `elements` up to date. Each render passes new
+// callbacks: lit calls the last render's with undefined, then the new one
+// with the element, so an element dropped by the rolling layout or the host
+// leaving the page leaves `elements`.
+function tracker(elements: Map<Element, Slide>, slide: Slide) {
+  let last: Element | undefined;
+  return (element?: Element) => {
+    if (last) elements.delete(last);
+    last = element;
+    if (element) elements.set(element, slide);
+  };
+}
 
 /**
  * The carousel around the Story cards: which Story has the highlight, the
@@ -278,6 +301,10 @@ export class CarouselController implements ReactiveController {
   private focused = false;
   private timer?: ReturnType<typeof setInterval>;
   private swipe?: { x: number; moved: boolean };
+  /** The rendered cards, as their cardRef reported them. */
+  private readonly cards = new Map<Element, Slide>();
+  /** The rendered cards' focus targets, as their focusRef reported them. */
+  private readonly focusTargets = new Map<Element, Slide>();
 
   constructor(
     private readonly host: ReactiveControllerHost,
@@ -300,6 +327,26 @@ export class CarouselController implements ReactiveController {
   get activeKey() {
     if (this.layout === "rolling") return this.position;
     return this.active;
+  }
+
+  /**
+   * The cards on screen, with the index of their Story: not the hidden ones
+   * kept for the slide in.
+   */
+  *visibleCards(): Generator<readonly [card: Element, index: number]> {
+    for (const [card, slide] of this.cards) {
+      if (!slide.hidden) yield [card, slide.index];
+    }
+  }
+
+  /** Moves the keyboard focus to the highlighted card, once rendered. */
+  focusActive() {
+    for (const [target, slide] of this.focusTargets) {
+      if (slide.active && target instanceof HTMLElement) {
+        target.focus();
+        return;
+      }
+    }
   }
 
   hostConnected() {
@@ -465,16 +512,29 @@ export class CarouselController implements ReactiveController {
     capture: true,
   };
 
+  private slide(fields: Omit<Slide, "cardRef" | "focusRef">): Slide {
+    const slide: Slide = {
+      ...fields,
+      cardRef: (element) => track(element),
+      focusRef: (element) => trackFocus(element),
+    };
+    const track = tracker(this.cards, slide);
+    const trackFocus = tracker(this.focusTargets, slide);
+    return slide;
+  }
+
   /** Pair: both Stories, each keyed by its index. */
   private pairSlides(): Slide[] {
     const { active } = this;
-    return [0, 1].map((index) => ({
-      key: index,
-      index,
-      offset: index - active,
-      active: index === active,
-      hidden: false,
-    }));
+    return [0, 1].map((index) =>
+      this.slide({
+        key: index,
+        index,
+        offset: index - active,
+        active: index === active,
+        hidden: false,
+      }),
+    );
   }
 
   /**
@@ -493,14 +553,18 @@ export class CarouselController implements ReactiveController {
 
     const slides: Slide[] = [];
     for (let offset = -RENDERED_SIDE; offset <= RENDERED_SIDE; offset += 1) {
-      slides.push({
-        key: this.position + offset,
-        index: wrap(this.position + offset, count),
-        offset,
-        active: offset === 0,
-        hidden:
-          Math.abs(offset) > VISIBLE_SIDE || offset < -before || offset > after,
-      });
+      slides.push(
+        this.slide({
+          key: this.position + offset,
+          index: wrap(this.position + offset, count),
+          offset,
+          active: offset === 0,
+          hidden:
+            Math.abs(offset) > VISIBLE_SIDE ||
+            offset < -before ||
+            offset > after,
+        }),
+      );
     }
     return slides;
   }
@@ -544,13 +608,16 @@ export class CarouselController implements ReactiveController {
     if (this.layout === "solo") {
       return html`
         <div class="carousel" data-layout="solo">
-          ${renderSlide(items[0], {
-            key: 0,
-            index: 0,
-            offset: 0,
-            active: true,
-            hidden: false,
-          })}
+          ${renderSlide(
+            items[0],
+            this.slide({
+              key: 0,
+              index: 0,
+              offset: 0,
+              active: true,
+              hidden: false,
+            }),
+          )}
         </div>
       `;
     }

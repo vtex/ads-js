@@ -644,6 +644,11 @@ export class PlayerController implements ReactiveController {
     return this.isOpen && this.expanded;
   }
 
+  /** The card with the video, while the player is open. */
+  get stageCard(): Element | undefined {
+    return this.isOpen ? this.stageCardRef.value : undefined;
+  }
+
   /** The product panel is open. Closed again on a step and on opening. */
   private productOpen = false;
   /** Switched modes at least once: only the first opening fades in. */
@@ -655,6 +660,7 @@ export class PlayerController implements ReactiveController {
   private readonly expandButton = createRef<HTMLButtonElement>();
   private readonly closeButton = createRef<HTMLButtonElement>();
   private readonly stage = createRef<HTMLElement>();
+  private readonly stageCardRef = createRef<HTMLElement>();
   private readonly dim = createRef<HTMLElement>();
 
   /** The covers beside the expanded video, by offset, as rendered. */
@@ -1091,7 +1097,7 @@ export class PlayerController implements ReactiveController {
     const { video, options } = this;
 
     return html`
-      <div class="card" @click=${this.onVideoClick}>
+      <div class="card" ${ref(this.stageCardRef)} @click=${this.onVideoClick}>
         ${renderMedia(story, video, {
           loop: !advances,
           onEnded: advances ? () => options.onStep?.(1) : undefined,

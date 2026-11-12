@@ -353,26 +353,18 @@ export class VtexAdsStoryCarouselElement extends LitElement {
    * player, a modal over the page, the cards are covered.
    */
   private *viewTargets(): Generator<ViewTarget> {
-    const root = this.renderRoot;
     const { stories } = this;
-    if (!stories.length) return;
 
     if (!this.player.isExpanded) {
-      const cards = root.querySelectorAll<HTMLElement>(
-        '.carousel[data-layout="solo"] > .card, .slide:not([data-hidden]) > .card',
-      );
-      for (const card of cards) {
-        const slide = card.parentElement?.closest<HTMLElement>(".slide");
-        const story = stories[slide ? Number(slide.dataset.index) : 0];
+      for (const [card, index] of this.carousel.visibleCards()) {
+        const story = stories[index];
         if (story) yield [card, story];
       }
     }
 
-    if (this.player.isOpen) {
-      const active = stories[this.carousel.active];
-      const playerCard = root.querySelector(".player .player-stage > .card");
-      if (playerCard && active) yield [playerCard, active];
-    }
+    const stageCard = this.player.stageCard;
+    const active = stories[this.carousel.active];
+    if (stageCard && active) yield [stageCard, active];
   }
 
   private videoFor(key: number) {
@@ -445,11 +437,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     // The highlighted card, and with inactive-autoplay the others, which may
     // have been highlighted and paused while the player stepped.
     for (const video of this.cardVideos.values()) video.resume();
-    this.renderRoot
-      .querySelector<HTMLElement>(
-        '.carousel[data-layout="solo"] .card-open, .slide[data-active] .card-open',
-      )
-      ?.focus();
+    this.carousel.focusActive();
   }
 
   // The formatter for the current language and currency, made again only
@@ -507,7 +495,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   // Hidden cards, out of sight, show only their cover.
   private readonly renderSlide = (
     story: StoryAd,
-    { key, index, offset, active, hidden }: Slide,
+    { key, index, offset, active, hidden, cardRef, focusRef }: Slide,
   ) =>
     renderCard(story, this.videoFor(key), {
       label: this.labels.position(
@@ -530,6 +518,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       cta: toCardCta(story),
       onCtaSelect: active ? undefined : () => this.carousel.step(offset),
       onPress: () => this.events.click(story),
+      ref: cardRef,
+      openRef: focusRef,
     });
 
   protected render() {
