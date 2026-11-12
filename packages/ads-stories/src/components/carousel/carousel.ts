@@ -11,7 +11,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
 
 export const STAGE_HEIGHT = css`500px`;
-export const SOLO_PADDING = css`24px`;
+const SOLO_PADDING = css`24px`;
 
 /** Time each Story stays highlighted before the next one, in milliseconds. */
 export const AUTO_ADVANCE_MS = 5000;

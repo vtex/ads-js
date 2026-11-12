@@ -592,10 +592,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         ${active
           ? this.carousel.render(stories, this.renderSlide, this.labels)
           : nothing}
-        ${renderCarouselSkeleton({
-          solo: active !== undefined && this.carousel.layout === "solo",
-          done: !loading,
-        })}
+        ${renderCarouselSkeleton({ done: !loading })}
       </div>
       ${active ? this.renderPlayer(active) : nothing}
     `;

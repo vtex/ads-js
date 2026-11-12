@@ -196,18 +196,23 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
   });
 
-  it("draws one placeholder card for a single Story", async () => {
+  it("draws the five placeholder cards for a single Story too", async () => {
     const el = await mount();
 
-    expect(skeleton(el)?.hasAttribute("data-solo")).toBe(true);
-    expect(skeleton(el)?.querySelectorAll(".skeleton-card")).toHaveLength(1);
+    expect(skeleton(el)?.querySelectorAll(".skeleton-card")).toHaveLength(5);
+  });
+
+  it("draws the five placeholder cards before the Stories arrive", async () => {
+    getRawAdsMock.mockReturnValue(deferred().promise);
+    const el = await mount();
+
+    expect(skeleton(el)?.querySelectorAll(".skeleton-card")).toHaveLength(5);
   });
 
   it("draws the rolling layout's placeholders for several Stories", async () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
     const el = await mount();
 
-    expect(skeleton(el)?.hasAttribute("data-solo")).toBe(false);
     expect(skeleton(el)?.querySelectorAll(".skeleton-card")).toHaveLength(5);
   });
 
