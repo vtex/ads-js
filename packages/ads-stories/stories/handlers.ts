@@ -10,12 +10,13 @@
  * The test Stories' impression, view and click beacons are accepted (202)
  * and logged to the console, so each event shows when it fires.
  */
-import { delay, http, HttpResponse } from "msw";
+import { delay, http, HttpResponse, passthrough } from "msw";
+import type { StoryAdDetail } from "@vtex/ads-core";
 import { MOCK_EVENTS_BASE, mockStories } from "../src/story/story.mock";
 
 const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/*";
 
-type Scenario = { delayMs: number; count: number };
+type Scenario = { delayMs: number; count: number; mediaDelayMs?: number };
 
 // How the mock answers each placement. Any other placement gets the default.
 // delayMs simulates the ad server latency; count is how many Stories the
@@ -26,6 +27,8 @@ const SCENARIOS: Record<string, Scenario> = {
   three_stories: { delayMs: 500, count: 3 },
   four_stories: { delayMs: 500, count: 4 },
   slow_stories: { delayMs: 3000, count: 1 },
+  slow_media: { delayMs: 1000, count: 3, mediaDelayMs: 2000 },
+  slow_media_timeout: { delayMs: 1000, count: 3, mediaDelayMs: 5000 },
   empty_stories: { delayMs: 500, count: 0 },
 };
 
@@ -46,6 +49,23 @@ type SearchEntry = {
   Price: number;
   ListPrice: number;
   Stock: number;
+};
+
+// The query parameter that tells the image mock how long to take. Past the
+// 3 s limit the skeleton gives way anyway.
+const MEDIA_DELAY_PARAM = "media-delay-ms";
+
+// The test Stories' covers and product photos, set to come after `ms`.
+const withMediaDelay = (story: StoryAdDetail, ms: number): StoryAdDetail => {
+  const slow = (url: string) => `${url}?${MEDIA_DELAY_PARAM}=${ms}`;
+  return {
+    ...story,
+    poster_url: slow(story.poster_url),
+    product: story.product && {
+      ...story.product,
+      image_url: story.product.image_url && slow(story.product.image_url),
+    },
+  };
 };
 
 // The catalog behind the mock, by SKU: what Intelligent Search sends for the
@@ -96,12 +116,24 @@ export const handlers = [
 
     const body: Record<string, unknown> = { request_id: "playground" };
     for (const [placement, { quantity, types }] of requested) {
-      const { count } = scenarioFor(placement);
+      const { count, mediaDelayMs } = scenarioFor(placement);
       body[placement] = types.includes("story")
-        ? mockStories.slice(0, Math.min(count, quantity))
+        ? mockStories
+            .slice(0, Math.min(count, quantity))
+            .map((story) =>
+              mediaDelayMs ? withMediaDelay(story, mediaDelayMs) : story,
+            )
         : [];
     }
     return HttpResponse.json(body);
+  }),
+
+  // The images with a delay answer after it; the others go straight to the
+  // network.
+  http.get("https://dummyimage.com/*", async ({ request }) => {
+    const ms = Number(new URL(request.url).searchParams.get(MEDIA_DELAY_PARAM));
+    if (ms > 0) await delay(ms);
+    return passthrough();
   }),
 
   http.post(`${MOCK_EVENTS_BASE}/:kind/:adId`, async ({ request, params }) => {

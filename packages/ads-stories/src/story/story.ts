@@ -3,8 +3,10 @@ import type { Channel } from "@vtex/ads-core";
 import { cardStyles, renderCard } from "../components/card";
 import {
   CarouselController,
+  carouselSkeletonStyles,
   carouselStyles,
   RENDERED_SIDE,
+  renderCarouselSkeleton,
   type Slide,
 } from "../components/carousel";
 import { StoryEventsController, type ViewTarget } from "../components/events";
@@ -30,6 +32,8 @@ import {
   type StoryProductDetails,
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
+import { httpUrl } from "../utils/http-url";
+import { preloadImages } from "../utils/preload-images";
 import { labelsFor, type StoryLabels } from "../locales";
 import { TAG_NAME } from "../tag-name";
 
@@ -101,6 +105,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     },
     stories: { state: true },
     products: { state: true },
+    requesting: { state: true },
+    mediaLoading: { state: true },
   };
 
   /** Required. The publisher the ads are requested for. */
@@ -169,6 +175,22 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   declare private products?: Map<string, StoryProductDetails> | "loading";
 
   /**
+   * The ad request is pending (and has what it needs to go out): a skeleton
+   * stands in for the carousel until the Stories arrive.
+   */
+  declare private requesting: boolean;
+
+  /**
+   * The first Story's cover is still loading: a skeleton covers the cards
+   * until it is ready (or MEDIA_TIMEOUT passes), so the first card doesn't
+   * show up piece by piece.
+   */
+  declare private mediaLoading: boolean;
+
+  /** Tells which Stories' media the element is waiting for. */
+  private mediaRun = 0;
+
+  /**
    * Cancels the request in progress. Kept, already aborted, when leaving the
    * page cancelled it, so connecting again requests once more.
    */
@@ -185,6 +207,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     cardStyles,
     productStyles,
     carouselStyles,
+    carouselSkeletonStyles,
     playerStyles,
   ];
 
@@ -234,6 +257,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     super();
     this.inactiveAutoplay = false;
     this.stories = [];
+    this.requesting = false;
+    this.mediaLoading = false;
   }
 
   // Lit keeps the card's DOM when the element is moved (removed and appended
@@ -288,6 +313,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
 
     // The Stories shown no longer match the request either.
     this.player.close();
+    this.requesting = false;
     this.showStories([]);
 
     // Off the page (an attribute changed just before the element was
@@ -297,6 +323,9 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       return;
     }
 
+    this.requesting = Boolean(
+      this.publisherId && this.sessionId && this.placement,
+    );
     const stories = await fetchStories(this, {
       signal: request.signal,
       timeout: this.timeout,
@@ -305,6 +334,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     // Cancelled meanwhile, by a newer request or by leaving the page: this
     // response is not shown.
     if (request.signal.aborted) return;
+    this.requesting = false;
 
     const hydration = this.activeHydration;
     if (!hydration || !stories.some((story) => story.product)) {
@@ -345,6 +375,19 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     this.carousel.reset(stories.length);
     this.stories = stories;
     this.events.impress(stories);
+    void this.waitForFirstCover(stories);
+  }
+
+  private async waitForFirstCover(stories: StoryAd[]) {
+    const run = ++this.mediaRun;
+    const cover = httpUrl(stories[0]?.poster_url);
+
+    this.mediaLoading = cover !== null;
+    if (!cover) return;
+
+    await preloadImages([cover]);
+    // Other Stories came meanwhile: they wait for their own media.
+    if (run === this.mediaRun) this.mediaLoading = false;
   }
 
   /**
@@ -355,7 +398,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   private *viewTargets(): Generator<ViewTarget> {
     const root = this.renderRoot;
     const { stories } = this;
-    if (!stories.length) return;
+    if (!stories.length || this.mediaLoading) return;
 
     if (!this.player.isExpanded) {
       const cards = root.querySelectorAll<HTMLElement>(
@@ -536,8 +579,31 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     const { stories } = this;
     const index = this.carousel.active;
     const active = stories[index];
-    if (!active) return nothing;
+    if (!active && !this.requesting) return nothing;
 
+    const loading = this.requesting || this.mediaLoading;
+
+    return html`
+      <div
+        class="root"
+        ?data-loading=${loading}
+        ?data-requesting=${active === undefined}
+      >
+        ${active
+          ? this.carousel.render(stories, this.renderSlide, this.labels)
+          : nothing}
+        ${renderCarouselSkeleton({
+          solo: active !== undefined && this.carousel.layout === "solo",
+          done: !loading,
+        })}
+      </div>
+      ${active ? this.renderPlayer(active) : nothing}
+    `;
+  }
+
+  private renderPlayer(active: StoryAd) {
+    const { stories } = this;
+    const index = this.carousel.active;
     const neighbors = neighborOffsets(stories.length, index).map((offset) => {
       const neighbor = (index + offset + stories.length) % stories.length;
       return {
@@ -547,19 +613,14 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       };
     });
 
-    return html`
-      <div class="root">
-        ${this.carousel.render(stories, this.renderSlide, this.labels)}
-      </div>
-      ${this.player.render(active, {
-        labels: this.labels,
-        navigation: stories.length > 1,
-        neighbors,
-        product: this.productOf(active),
-        cta: toCardCta(active),
-        onDestinationPress: () => this.events.click(active),
-      })}
-    `;
+    return this.player.render(active, {
+      labels: this.labels,
+      navigation: stories.length > 1,
+      neighbors,
+      product: this.productOf(active),
+      cta: toCardCta(active),
+      onDestinationPress: () => this.events.click(active),
+    });
   }
 }
 

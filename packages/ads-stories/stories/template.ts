@@ -15,6 +15,8 @@ export const PLACEMENTS = [
   "three_stories",
   "four_stories",
   "slow_stories",
+  "slow_media",
+  "slow_media_timeout",
   "empty_stories",
 ];
 export const ACCOUNTS = ["playground", "playground-slow", "playground-error"];

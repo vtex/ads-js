@@ -7,6 +7,10 @@ export {
   SWIPE_DISTANCE,
   VISIBLE_SIDE,
 } from "./carousel";
+export {
+  carouselSkeletonStyles,
+  renderCarouselSkeleton,
+} from "./carousel-skeleton";
 export type {
   CarouselLayout,
   CarouselOptions,

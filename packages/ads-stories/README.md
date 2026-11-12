@@ -137,9 +137,11 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
 | `hydration-timeout`  | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
-The element renders nothing while the request is pending, when a required
-attribute is missing, when the request fails or takes longer than `timeout`,
-or when the placement has no Story. Changing any of these attributes, except
+While the request is pending, and then while the first Story's cover loads (up
+to 3 seconds), the element shows a skeleton of the carousel. It renders nothing
+when a required attribute is missing, when the request fails or takes longer
+than `timeout`, or when the placement has no Story. Changing any of these
+attributes, except
 `timeout`, `hydration-timeout`, `inactive-autoplay`, `currency`,
 `label-add-to-cart` and `label-view-product`, requests the Stories again; a
 new time limit applies to the next request.

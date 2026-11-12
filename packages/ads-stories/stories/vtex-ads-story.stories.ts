@@ -55,8 +55,8 @@ export const SlowAdServer: Story = {
   name: "Slow ad server",
   args: { placement: "slow_stories" },
   parameters: {
-    note: html`The response takes 3 s, longer than the default 2 s timeout, so
-    nothing renders below.`,
+    note: html`The response takes 3 s, longer than the default 2 s timeout: a
+    skeleton shows for 2 s, then nothing renders below.`,
   },
 };
 
@@ -66,6 +66,27 @@ export const SlowAdServerLongerTimeout: Story = {
   parameters: {
     note: html`Same 3 s response, with <code>timeout="5000"</code>: the card
       shows up after 3 s.`,
+  },
+};
+
+export const SlowMedia: Story = {
+  name: "Slow media",
+  args: { placement: "slow_media" },
+  parameters: {
+    note: html`A skeleton pulses where the cards will be, first while the ad
+    server answers (1 s), then while the first Story's cover loads (2 s). Then
+    it fades out and the cards show; the other images, also 2 s, arrive as the
+    cards render. Past 3 s the cards would show anyway.`,
+  },
+};
+
+export const SlowMediaTimeout: Story = {
+  name: "Slow media, past the time limit",
+  args: { placement: "slow_media_timeout" },
+  parameters: {
+    note: html`The images take 5 s, longer than the 3 s the skeleton waits for
+    the first Story's cover: after 3 s it fades out and the cards show without
+    their images, which fill in at 5 s.`,
   },
 };
 
@@ -158,6 +179,7 @@ export const ProductHydrationCustomStrategy: Story = {
 export const NoStory: Story = {
   args: { placement: "empty_stories" },
   parameters: {
-    note: html`The placement comes back empty, so nothing renders below.`,
+    note: html`The placement comes back empty: the skeleton shows while the
+    request runs, then nothing renders below.`,
   },
 };
