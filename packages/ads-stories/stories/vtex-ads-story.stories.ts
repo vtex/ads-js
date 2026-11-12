@@ -73,8 +73,8 @@ export const NoAutomaticAdvance: Story = {
 // Makes the page report a preference for reduced motion to scripts, until the
 // returned cleanup. CSS media queries still follow the real setting.
 function fakeReducedMotion() {
-  const matchMedia = window.matchMedia;
-  window.matchMedia = (query: string) =>
+  const matchMedia = globalThis.matchMedia;
+  globalThis.matchMedia = (query: string) =>
     query === REDUCED_MOTION
       ? ({
           matches: true,
@@ -86,9 +86,9 @@ function fakeReducedMotion() {
           removeListener: () => undefined,
           dispatchEvent: () => false,
         } satisfies MediaQueryList)
-      : matchMedia.call(window, query);
+      : matchMedia.call(globalThis, query);
   return () => {
-    window.matchMedia = matchMedia;
+    globalThis.matchMedia = matchMedia;
   };
 }
 
