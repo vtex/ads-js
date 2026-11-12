@@ -1,4 +1,4 @@
-import { httpUrl } from "../components/media";
+import { httpUrl } from "./http-url";
 import { TAG_NAME } from "../tag-name";
 
 /** Who the event is for: the same session sent in the ad request. */

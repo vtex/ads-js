@@ -7,11 +7,11 @@ import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
 import {
   hasVideo,
-  httpUrl,
   prefersReducedMotion,
   renderMedia,
   VideoController,
 } from "../media";
+import { httpUrl } from "../../utils/http-url";
 import {
   renderCta,
   renderExpandableProduct,

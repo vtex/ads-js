@@ -134,6 +134,7 @@ describe(`${TAG_NAME} events`, () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     document.body.replaceChildren();
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -308,7 +309,6 @@ describe(`${TAG_NAME} events`, () => {
       document.dispatchEvent(new Event("visibilitychange"));
       vi.advanceTimersByTime(VIEW_DURATION_MS);
       expect(beaconedOf("view")).toEqual([story1.view_url]);
-      hidden.mockRestore();
     });
 
     it("watches only the cards on screen, not the hidden ones", async () => {

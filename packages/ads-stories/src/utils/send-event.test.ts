@@ -20,6 +20,7 @@ describe("sendEvent", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -84,7 +85,6 @@ describe("sendEvent", () => {
       "[vtex-ads-story-carousel] Event request failed",
       { url: URL, error },
     );
-    consoleError.mockRestore();
   });
 
   it.each([undefined, "", "/v1/beacon/click", "javascript:alert(1)", "nope"])(
