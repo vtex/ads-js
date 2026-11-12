@@ -98,6 +98,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     labelViewProduct: { attribute: "label-view-product" },
     hydration: { converter: hydrationConverter },
     hydrationTimeout: { type: Number, attribute: "hydration-timeout" },
+    slideDuration: { type: Number, attribute: "slide-duration" },
     inactiveAutoplay: {
       type: Boolean,
       attribute: "inactive-autoplay",
@@ -164,6 +165,12 @@ export class VtexAdsStoryCarouselElement extends LitElement {
    * only the highlighted card plays.
    */
   declare inactiveAutoplay: boolean;
+  /**
+   * With more than one Story, how long each one stays highlighted before the
+   * next, in milliseconds (default 5000). Zero: the highlight moves only by
+   * hand. A change starts the time over; it doesn't request again.
+   */
+  declare slideDuration?: number;
 
   /** The Stories shown: none while loading, on error or with none. */
   declare private stories: StoryAd[];
@@ -243,6 +250,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     },
     // The player shows the highlighted Story: the highlight stays on it.
     locked: () => this.player.isOpen || this.mediaLoading,
+    slideDuration: () => this.slideDuration,
   });
 
   private readonly player = new PlayerController(this, {

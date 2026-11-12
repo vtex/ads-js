@@ -5,6 +5,7 @@ export {
   NARROW_SCREEN,
   RENDERED_SIDE,
   SWIPE_DISTANCE,
+  toSlideDuration,
   VISIBLE_SIDE,
 } from "./carousel";
 export {

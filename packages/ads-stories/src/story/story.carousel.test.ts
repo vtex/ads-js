@@ -384,6 +384,80 @@ describe(`${TAG_NAME} carousel`, () => {
       expect(activeIndex(el)).toBe(0);
     });
 
+    it("moves the highlight every slide-duration ms", async () => {
+      const el = await mount({
+        ...REQUIRED_ATTRIBUTES,
+        "slide-duration": "8000",
+      });
+      vi.useFakeTimers();
+      await click(el, ".arrow-next");
+      await click(el, ".arrow-previous");
+
+      await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
+      expect(activeIndex(el)).toBe(0);
+
+      await vi.advanceTimersByTimeAsync(8000 - AUTO_ADVANCE_MS);
+      expect(activeIndex(el)).toBe(1);
+    });
+
+    it("does not advance with slide-duration 0, the arrows still step", async () => {
+      const el = await mount({ ...REQUIRED_ATTRIBUTES, "slide-duration": "0" });
+      vi.useFakeTimers();
+
+      await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS * 4);
+      expect(activeIndex(el)).toBe(0);
+
+      await click(el, ".arrow-next");
+      expect(activeIndex(el)).toBe(1);
+
+      await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS * 4);
+      expect(activeIndex(el)).toBe(1);
+    });
+
+    it.each(["-1", "abc"])(
+      "uses the default with slide-duration %s",
+      async (value) => {
+        const el = await mount({
+          ...REQUIRED_ATTRIBUTES,
+          "slide-duration": value,
+        });
+        vi.useFakeTimers();
+        await click(el, ".arrow-next");
+        await click(el, ".arrow-previous");
+
+        await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1);
+        expect(activeIndex(el)).toBe(0);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(activeIndex(el)).toBe(1);
+      },
+    );
+
+    it("starts the time over when slide-duration changes, without requesting again", async () => {
+      const el = await mount();
+      vi.useFakeTimers();
+      await click(el, ".arrow-next");
+      await click(el, ".arrow-previous");
+      getRawAdsMock.mockClear();
+
+      await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1000);
+      el.setAttribute("slide-duration", "3000");
+      await el.updateComplete;
+
+      await vi.advanceTimersByTimeAsync(3000 - 1);
+      expect(activeIndex(el)).toBe(0);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(activeIndex(el)).toBe(1);
+
+      el.setAttribute("slide-duration", "0");
+      await el.updateComplete;
+      await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS * 4);
+      expect(activeIndex(el)).toBe(1);
+
+      expect(getRawAdsMock).not.toHaveBeenCalled();
+    });
+
     it("does not run with a single Story", async () => {
       getRawAdsMock.mockResolvedValue(rawAdsWith([mockStory]));
       const el = await mount();

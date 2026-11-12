@@ -51,6 +51,24 @@ export const FourStories: Story = {
   },
 };
 
+export const CustomSlideDuration: Story = {
+  name: "Custom slide duration",
+  args: { placement: "three_stories", slideDuration: 2000 },
+  parameters: {
+    note: html`With <code>slide-duration="2000"</code>, the highlight moves
+      every 2 s instead of 5 s. Change the control to try other values.`,
+  },
+};
+
+export const NoAutomaticAdvance: Story = {
+  name: "No automatic advance",
+  args: { placement: "three_stories", slideDuration: 0 },
+  parameters: {
+    note: html`With <code>slide-duration="0"</code>, the highlight stays put: it
+      moves only with the arrows, a swipe or a click on another card.`,
+  },
+};
+
 export const SlowAdServer: Story = {
   name: "Slow ad server",
   args: { placement: "slow_stories" },

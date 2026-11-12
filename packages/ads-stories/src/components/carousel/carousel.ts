@@ -13,8 +13,19 @@ import { icon } from "../icons";
 export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
 
-/** Time each Story stays highlighted before the next one, in milliseconds. */
+/**
+ * Default time each Story stays highlighted before the next one, in
+ * milliseconds.
+ */
 export const AUTO_ADVANCE_MS = 5000;
+
+/**
+ * The time each Story stays highlighted: `ms` when it is a number from zero
+ * up (zero: no automatic advance), AUTO_ADVANCE_MS when it is missing,
+ * negative or not a number.
+ */
+export const toSlideDuration = (ms?: number) =>
+  ms !== undefined && Number.isFinite(ms) && ms >= 0 ? ms : AUTO_ADVANCE_MS;
 
 /** How far a pointer must move, in pixels, to count as a swipe. */
 export const SWIPE_DISTANCE = 40;
@@ -227,6 +238,11 @@ export interface CarouselOptions {
    * example, while the player shows the highlighted Story).
    */
   locked?: () => boolean;
+  /**
+   * How long each Story stays highlighted before the next one, in
+   * milliseconds (see toSlideDuration). Read whenever the host updates.
+   */
+  slideDuration?: () => number | undefined;
 }
 
 /** One rendered card. */
@@ -281,9 +297,9 @@ function tracker(elements: Map<Element, Slide>, slide: Slide) {
  * layout, the arrows, swipes and the automatic advance. Call reset() when
  * the Stories change, and render() from the host's render.
  *
- * The highlight moves on its own every AUTO_ADVANCE_MS, except while the
- * pointer is over the carousel, the keyboard focus is in it, it is locked,
- * or the host is off the page.
+ * The highlight moves on its own every slide duration (AUTO_ADVANCE_MS by
+ * default, never with zero), except while the pointer is over the carousel,
+ * the keyboard focus is in it, it is locked, or the host is off the page.
  */
 export class CarouselController implements ReactiveController {
   /**
@@ -300,6 +316,8 @@ export class CarouselController implements ReactiveController {
   private hovered = false;
   private focused = false;
   private timer?: ReturnType<typeof setInterval>;
+  /** The interval the running timer was started with. */
+  private timerMs = 0;
   private swipe?: { x: number; moved: boolean };
   /** The rendered cards, as their cardRef reported them. */
   private readonly cards = new Map<Element, Slide>();
@@ -365,8 +383,8 @@ export class CarouselController implements ReactiveController {
     this.syncTimer();
   }
 
-  // Whatever the host changed (the player opening, new Stories) may start or
-  // stop the automatic advance.
+  // Whatever the host changed (the player opening, new Stories, the slide
+  // duration) may start, stop or restart the automatic advance.
   hostUpdated() {
     this.syncTimer();
   }
@@ -405,8 +423,13 @@ export class CarouselController implements ReactiveController {
     this.restartTimer();
   }
 
+  private get slideDuration() {
+    return toSlideDuration(this.options.slideDuration?.());
+  }
+
   private get shouldAdvance() {
     return (
+      this.slideDuration > 0 &&
       this.connected &&
       this.count > 1 &&
       !this.hovered &&
@@ -416,8 +439,13 @@ export class CarouselController implements ReactiveController {
   }
 
   private syncTimer() {
+    const ms = this.slideDuration;
+    // A new duration starts over, with the full new time.
+    if (this.timer && this.timerMs !== ms) this.stopTimer();
+
     if (this.shouldAdvance && !this.timer) {
-      this.timer = setInterval(() => this.step(1), AUTO_ADVANCE_MS);
+      this.timerMs = ms;
+      this.timer = setInterval(() => this.step(1), ms);
     } else if (!this.shouldAdvance && this.timer) {
       this.stopTimer();
     }
