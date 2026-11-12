@@ -10,7 +10,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
 
-const STAGE_HEIGHT = css`500px`;
+export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
 
 /** Time each Story stays highlighted before the next one, in milliseconds. */

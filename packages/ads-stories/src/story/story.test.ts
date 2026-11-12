@@ -420,11 +420,12 @@ describe(TAG_NAME, () => {
       expect(el.shadowRoot?.querySelector(".card")).toBeNull();
     });
 
-    it("renders nothing while the request is pending", async () => {
+    it("renders no card while the request is pending", async () => {
       getRawAdsMock.mockReturnValue(deferred().promise);
       const el = await mount();
 
       expect(el.shadowRoot?.querySelector(".card")).toBeNull();
+      expect(el.shadowRoot?.querySelector(".skeleton")).not.toBeNull();
     });
 
     it("requests again when an attribute changes", async () => {

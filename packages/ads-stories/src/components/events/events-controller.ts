@@ -56,6 +56,7 @@ export class StoryEventsController implements ReactiveController {
   };
 
   private pendingImpressions: readonly StoryAd[] = [];
+  private connected = false;
 
   private observer?: IntersectionObserver;
   private readonly watched = new Map<Element, Watched>();
@@ -68,6 +69,7 @@ export class StoryEventsController implements ReactiveController {
   }
 
   hostConnected() {
+    this.connected = true;
     if (typeof IntersectionObserver === "function") {
       this.observer = new IntersectionObserver(this.onIntersect, {
         threshold: VIEW_THRESHOLD,
@@ -78,11 +80,17 @@ export class StoryEventsController implements ReactiveController {
       this.onVisibilityChange,
     );
     // Moved on the page: the cards rendered before are still there, but lit
-    // hands their refs back only after the controllers connect.
-    this.host.updateComplete.then(() => this.syncViewTargets());
+    // hands their refs back only after the controllers connect. Impressions
+    // that came while off the page go out now.
+    this.host.updateComplete.then(() => {
+      if (!this.connected) return;
+      this.sendImpressions();
+      this.syncViewTargets();
+    });
   }
 
   hostDisconnected() {
+    this.connected = false;
     globalThis.document?.removeEventListener(
       "visibilitychange",
       this.onVisibilityChange,
@@ -91,27 +99,29 @@ export class StoryEventsController implements ReactiveController {
     this.observer = undefined;
     for (const watched of this.watched.values()) clearTimeout(watched.timer);
     this.watched.clear();
-    // Stories that never rendered were never seen.
-    this.pendingImpressions = [];
   }
 
   hostUpdated() {
-    const stories = this.pendingImpressions;
-    if (stories.length && this.options.identity().sessionId) {
-      this.pendingImpressions = [];
-      for (const story of stories) this.send("impression", story);
-    }
-
+    if (!this.connected) return;
+    this.sendImpressions();
     this.syncViewTargets();
   }
 
   /**
-   * The Stories the host renders next: their impressions go out once that
-   * render is done, or, without a session yet, after the first render that
-   * has one. Replaces Stories passed before and not sent yet.
+   * The Stories the host shows next: their impressions go out once that
+   * render is done, on the page, with a session (or after the first render
+   * that has both). Replaces Stories passed before and not sent yet.
    */
   impress(stories: readonly StoryAd[]) {
     this.pendingImpressions = stories;
+  }
+
+  private sendImpressions() {
+    const stories = this.pendingImpressions;
+    if (!stories.length || !this.options.identity().sessionId) return;
+
+    this.pendingImpressions = [];
+    for (const story of stories) this.send("impression", story);
   }
 
   /** A touch on the Story: its click goes out, the first time only. */

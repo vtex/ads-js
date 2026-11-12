@@ -22,6 +22,11 @@ export interface MediaOptions {
   loop?: boolean;
   /** Called when a video that doesn't loop reaches its end. */
   onEnded?: () => void;
+  /**
+   * Whether the video plays on its own (default true; never with reduced
+   * motion). Without it, the video loads in full but waits to be played.
+   */
+  autoplay?: boolean;
 }
 
 /**
@@ -32,10 +37,16 @@ export interface MediaOptions {
 export function renderMedia(
   story: StoryMedia,
   video: VideoController,
-  { withVideo = true, loop = true, onEnded }: MediaOptions = {},
+  {
+    withVideo = true,
+    loop = true,
+    onEnded,
+    autoplay = true,
+  }: MediaOptions = {},
 ) {
   const posterUrl = httpUrl(story.poster_url);
   const mediaUrl = withVideo ? httpUrl(story.media_url) : null;
+  const preload = autoplay ? "metadata" : "auto";
 
   // Muted and inline is what browsers, iOS included, allow to autoplay. The
   // muted attribute and property are both set, since browsers differ on
@@ -52,15 +63,16 @@ export function renderMedia(
             muted
             playsinline
             ?loop=${loop}
-            preload="metadata"
+            preload=${preload}
             .muted=${true}
-            ?autoplay=${!prefersReducedMotion()}
+            ?autoplay=${autoplay && !prefersReducedMotion()}
             poster=${posterUrl ?? nothing}
             src=${mediaUrl}
             ${ref(video.ref)}
             @play=${video.sync}
             @pause=${video.sync}
             @volumechange=${video.sync}
+            @loadeddata=${video.loaded}
             @error=${video.fail}
             @ended=${onEnded}
           ></video>

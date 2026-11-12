@@ -21,7 +21,13 @@ function setup(identity: Partial<EventIdentity>) {
     identity: () => identity,
     viewTargets: () => [],
   });
-  return { events, render: () => controller?.hostUpdated?.() };
+  controller?.hostConnected?.();
+  return {
+    events,
+    render: () => controller?.hostUpdated?.(),
+    disconnect: () => controller?.hostDisconnected?.(),
+    connect: () => controller?.hostConnected?.(),
+  };
 }
 
 describe("StoryEventsController", () => {
@@ -59,5 +65,19 @@ describe("StoryEventsController", () => {
     render();
 
     expect(beaconed()).toEqual([stories[2].impression_url]);
+  });
+
+  it("sends nothing off the page, and the impressions once it is back", async () => {
+    const { events, render, disconnect, connect } = setup({ sessionId: "s-1" });
+
+    disconnect();
+    events.impress([stories[0]]);
+    render();
+    expect(beaconed()).toEqual([]);
+
+    connect();
+    await vi.waitFor(() =>
+      expect(beaconed()).toEqual([stories[0].impression_url]),
+    );
   });
 });
