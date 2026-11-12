@@ -46,6 +46,12 @@ export class VideoController {
     return !!video && video.isConnected && !video.paused;
   }
 
+  /** The rendered <video> is on the page and playing. */
+  get playing() {
+    const video = this.ref.value;
+    return !!video && video.isConnected && !video.paused;
+  }
+
   /** For a new <video>, such as each time the player opens. */
   reset() {
     this.paused = true;
