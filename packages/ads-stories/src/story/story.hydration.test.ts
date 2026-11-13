@@ -30,7 +30,10 @@ import {
   rawAdsWith,
   REQUIRED_ATTRIBUTES,
 } from "./story.mock";
-import type { StoryHydration } from "../utils/hydrate-products";
+import {
+  hydrateStoryProducts,
+  type StoryHydration,
+} from "../utils/hydrate-products";
 
 vi.mock("@vtex/ads-core", () => ({
   getRawAds: vi.fn(),
@@ -328,11 +331,15 @@ describe(`${TAG_NAME} product hydration`, () => {
     },
   );
 
-  it("drops a list price that isn't an amount above the price", async () => {
+  it.each([
+    ["NaN", Number.NaN],
+    ["the price", 50],
+    ["below the price", 40],
+  ])("drops a list price that is %s", async (_, listPrice) => {
     const strategy: StoryHydration = {
       fetcher: vi.fn(),
       matcher: vi.fn(),
-      price: () => ({ price: 50, listPrice: Number.NaN }),
+      price: () => ({ price: 50, listPrice }),
     };
 
     const el = await mount(REQUIRED_ATTRIBUTES, (element) => {
@@ -341,6 +348,38 @@ describe(`${TAG_NAME} product hydration`, () => {
 
     expect(priceOf(el)).toBe("R$ 50,00");
     expect(pill(el)?.querySelector(".product-list-price")).toBeNull();
+  });
+
+  it("keeps the other products when the strategy throws for one", async () => {
+    const error = new Error("broken reader");
+    const strategy: StoryHydration = {
+      fetcher: vi.fn(),
+      matcher: vi.fn(),
+      price: vi
+        .fn()
+        .mockImplementationOnce(() => {
+          throw error;
+        })
+        .mockReturnValue({ price: 50 }),
+      available: () => true,
+    };
+
+    const products = await hydrateStoryProducts(
+      REQUIRED_ATTRIBUTES.placement,
+      mockStories,
+      strategy,
+      {} as Parameters<typeof hydrateStoryProducts>[3],
+    );
+
+    expect(products.has(mockStories[0].ad_id)).toBe(false);
+    expect(products.get(mockStories[1].ad_id)).toEqual({
+      price: { price: 50 },
+      available: true,
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      `[${TAG_NAME}] Product details failed`,
+      error,
+    );
   });
 
   it("shows a price of 0 as the strategy returns it", async () => {

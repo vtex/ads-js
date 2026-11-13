@@ -235,4 +235,15 @@ describe("renderMedia failed video notice", () => {
     expect(container.querySelector(".media-spinner")).toBeNull();
     expect(container.querySelector(".media-retry")).not.toBeNull();
   });
+  it("settles every caller of a retry still loading", async () => {
+    const { container, video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+
+    const first = video.retry();
+    const second = video.retry();
+    container.querySelector("video")?.dispatchEvent(new Event("loadeddata"));
+
+    await expect(first).resolves.toBe(true);
+    await expect(second).resolves.toBe(true);
+  });
 });

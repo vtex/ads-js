@@ -19,9 +19,10 @@ const STORE_BASE = "https://store.invalid";
 function storePath(value: string) {
   try {
     const url = new URL(value, STORE_BASE);
-    return url.origin === STORE_BASE
-      ? `${url.pathname}${url.search}${url.hash}`
-      : null;
+    if (url.origin !== STORE_BASE || url.pathname.startsWith("//")) {
+      return null;
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return null;
   }

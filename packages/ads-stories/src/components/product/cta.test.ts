@@ -52,6 +52,10 @@ describe("toCardCta", () => {
       "/\\evil.com",
       "/\t/evil.com",
       "/\n/evil.com",
+      "/\r/evil.com",
+      "/\r\n/evil.com",
+      "/.//evil.com",
+      "/a/..//evil.com",
       "campaign",
     ]) {
       expect(toCardCta(storyWith({ destination_url }))).toBeUndefined();

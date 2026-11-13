@@ -67,7 +67,7 @@ export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
 // open.
 export const renderElement = (
   { theme, ...args }: ElementArgs,
-  { parameters }: Pick<StoryContext, "parameters">,
+  { parameters, globals }: Pick<StoryContext, "parameters" | "globals">,
 ) => html`
   <div class="story-container">
     ${(parameters as Parameters).note
@@ -75,7 +75,7 @@ export const renderElement = (
       : nothing}
     <div style=${styleMap(theme ?? {})}>
       ${keyed(
-        JSON.stringify(args),
+        JSON.stringify({ ...args, adApi: globals.adApi }),
         html`<vtex-ads-story-carousel
           publisher-id=${args.publisherId}
           session-id="playground-session"

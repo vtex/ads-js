@@ -63,6 +63,7 @@ export class VideoController {
    * does.
    */
   retry() {
+    if (this.retrying) return this.ready;
     this.reset();
     this.retrying = true;
     this.host.requestUpdate();

@@ -543,6 +543,18 @@ describe("PlayerController", () => {
       expect(player.querySelector(".media-spinner")).toBeNull();
       expect(player.querySelector(".media-retry")).not.toBeNull();
     });
+
+    it("keeps the focus in the player when the retry button goes", async () => {
+      const { player, video } = await setupWithVideo();
+      video?.dispatchEvent(new Event("error"));
+      const retry = player.querySelector<HTMLButtonElement>(".media-retry");
+      retry?.focus();
+
+      retry?.click();
+
+      expect(retry?.isConnected).toBe(false);
+      expect(document.activeElement).toBe(player);
+    });
   });
 
   describe("navigation", () => {

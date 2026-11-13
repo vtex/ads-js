@@ -920,6 +920,7 @@ export class PlayerController implements ReactiveController {
    */
   private readonly retryVideo = async (event?: Event) => {
     event?.stopPropagation();
+    this.dialog.value?.focus();
     const story = this.rendered?.story;
     const loaded = await this.video.retry();
     if (loaded && this.isOpen && this.rendered?.story === story) {

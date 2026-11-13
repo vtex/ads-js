@@ -84,12 +84,16 @@ export async function hydrateStoryProducts(
 
     for (const { story, product, offer } of hydrated.stories[placement] ?? []) {
       if (!product || !offer) continue;
-      const price = toShownPrice(hydration.price(product, offer));
-      const available = hydration.available?.(product, offer);
-      products.set(story.ad_id, {
-        ...(price && { price }),
-        ...(available !== undefined && { available }),
-      });
+      try {
+        const price = toShownPrice(hydration.price(product, offer));
+        const available = hydration.available?.(product, offer);
+        products.set(story.ad_id, {
+          ...(price && { price }),
+          ...(available !== undefined && { available }),
+        });
+      } catch (error) {
+        console.error(`[${TAG_NAME}] Product details failed`, error);
+      }
     }
   } catch (error) {
     // As for the Story request: a cancelled or timed out request needs no
