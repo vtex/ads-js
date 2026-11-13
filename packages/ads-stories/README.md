@@ -327,18 +327,19 @@ The element has no cart of its own: it tells the store with Custom Events. They
 bubble and are `composed`, so the store can listen on the element, the document
 or any ancestor.
 
-| Event                        | `detail`            | When                                  |
-| ---------------------------- | ------------------- | ------------------------------------- |
-| `vtex-ads-story:add-to-cart` | `{ sku, quantity }` | Add to cart is clicked, in the player |
+| Event                        | `detail`                    | When                                  |
+| ---------------------------- | --------------------------- | ------------------------------------- |
+| `vtex-ads-story:add-to-cart` | `{ sku, seller, quantity }` | Add to cart is clicked, in the player |
 
 - **`vtex-ads-story:add-to-cart`**: `sku` is the Story product's
-  `product_sku`, as the ad API returned it; `quantity` is always `1`. It has
-  no default action: the store adds the item. The player stays open.
+  `product_sku` and `seller` its `seller_id`, as the ad API returned them
+  (`seller` is left out when the ad API sends none); `quantity` is always `1`.
+  It has no default action: the store adds the item. The player stays open.
 
 ```js
 document.addEventListener("vtex-ads-story:add-to-cart", (event) => {
-  const { sku, quantity } = event.detail;
-  addToMyCart(sku, quantity);
+  const { sku, seller, quantity } = event.detail;
+  addToMyCart(sku, quantity, seller);
 });
 ```
 
@@ -353,7 +354,7 @@ import {
   type StoryAddToCartDetail,
 } from "@vtex/ads-stories";
 
-function addToMyCart({ sku, quantity }: StoryAddToCartDetail) {
+function addToMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
   // ...
 }
 

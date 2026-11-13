@@ -649,6 +649,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
 
     const product = this.productOf(active);
     const sku = product?.sku;
+    const seller = product?.seller;
 
     return this.player.render(active, {
       labels: this.labels,
@@ -658,7 +659,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       cta: toCardCta(active),
       // The store adds it: the element only tells, from itself.
       onAddToCart: sku
-        ? () => this.dispatchEvent(addToCartEvent(sku))
+        ? () => this.dispatchEvent(addToCartEvent({ sku, seller }))
         : undefined,
       onPress: () => this.events.click(active),
     });

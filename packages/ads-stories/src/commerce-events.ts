@@ -10,19 +10,30 @@ export const ADD_TO_CART_EVENT = "vtex-ads-story:add-to-cart";
 export interface StoryAddToCartDetail {
   /** The Story product's SKU, from the ad API (`product.product_sku`). */
   sku: string;
+  /**
+   * The product's seller, from the ad API (`product.seller_id`). Missing
+   * when the ad API doesn't send one.
+   */
+  seller?: string;
   /** How many to add. Always 1 for now. */
   quantity: number;
 }
 
+/** The product an event is about: its SKU and, when known, its seller. */
+export type StoryCartItem = Pick<StoryAddToCartDetail, "sku" | "seller">;
+
 export type StoryAddToCartEvent = CustomEvent<StoryAddToCartDetail>;
 
 /**
- * The add to cart event for `sku`, bubbling and composed, to dispatch from
+ * The add to cart event for `item`, bubbling and composed, to dispatch from
  * the element. `quantity` defaults to 1.
  */
-export function addToCartEvent(sku: string, quantity = 1): StoryAddToCartEvent {
+export function addToCartEvent(
+  { sku, seller }: StoryCartItem,
+  quantity = 1,
+): StoryAddToCartEvent {
   return new CustomEvent<StoryAddToCartDetail>(ADD_TO_CART_EVENT, {
-    detail: { sku, quantity },
+    detail: { sku, ...(seller && { seller }), quantity },
     bubbles: true,
     composed: true,
   });
