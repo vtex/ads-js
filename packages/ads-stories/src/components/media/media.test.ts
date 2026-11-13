@@ -133,8 +133,6 @@ describe("VideoController", () => {
     expect(video.paused).toBe(true);
 
     video.toggleMuted();
-    // jsdom fires volumechange later, as browsers do.
-    element?.dispatchEvent(new Event("volumechange"));
     expect(element?.muted).toBe(false);
     expect(video.muted).toBe(false);
   });

@@ -520,7 +520,6 @@ describe(`${TAG_NAME} carousel`, () => {
       const video = slideVideo(el, index);
       video?.play();
       if (video) video.muted = false;
-      video?.dispatchEvent(new Event("volumechange"));
       await el.updateComplete;
     }
 
@@ -590,7 +589,6 @@ describe(`${TAG_NAME} carousel`, () => {
       highlightedVideo()?.play();
       const first = highlightedVideo();
       if (first) first.muted = false;
-      first?.dispatchEvent(new Event("volumechange"));
       await el.updateComplete;
 
       query(el, ".arrow-next")?.click();
