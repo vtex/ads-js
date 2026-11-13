@@ -245,10 +245,11 @@ product without a SKU has no add to cart.
 
 Once added, a stepper takes add to cart's place: minus, the quantity and plus.
 With one left, minus is a trash that removes it, and add to cart comes back.
-The quantity counts what was added and removed, for each SKU, since the player
-opened: the element doesn't read the store's cart, so an item added or removed
-elsewhere, or a failed add, doesn't change it. Opening the player again starts
-the count over, with add to cart; the store's cart keeps what was added.
+The quantity counts what was added and removed, for each SKU and seller, since
+the player opened: the element doesn't read the store's cart, so an item added
+or removed elsewhere, or a failed add, doesn't change it. Opening the player
+again starts the count over, with add to cart; the store's cart keeps what was
+added.
 
 Prices are formatted in the element's language (see [Language](#language))
 and in `currency`.

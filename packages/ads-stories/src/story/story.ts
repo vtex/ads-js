@@ -86,6 +86,10 @@ const hydrationConverter = {
     value === "none" ? ("none" as const) : undefined,
 };
 
+// A cart line is a SKU from a seller: the stepper counts each pair apart.
+const cartKey = ({ sku, seller }: StoryCartItem) =>
+  JSON.stringify([sku, seller ?? ""]);
+
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
 export class VtexAdsStoryCarouselElement extends LitElement {
@@ -229,10 +233,10 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   ];
 
   /**
-   * How many of each SKU were added since the player opened, for its
-   * stepper. It doesn't read the store's cart: it counts the add and remove
-   * events sent, and starts over each time the player opens, as the cart may
-   * have changed meanwhile.
+   * How many of each SKU, from each seller (see cartKey), were added since
+   * the player opened, for its stepper. It doesn't read the store's cart: it
+   * counts the add and remove events sent, and starts over each time the
+   * player opens, as the cart may have changed meanwhile.
    */
   private readonly cartQuantities = new Map<string, number>();
 
@@ -665,7 +669,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       neighbors,
       product,
       cta: toCardCta(active),
-      cartQuantity: sku ? this.cartQuantities.get(sku) : undefined,
+      cartQuantity: item ? this.cartQuantities.get(cartKey(item)) : undefined,
       onAddToCart: item ? () => this.changeCart(item, 1) : undefined,
       onRemoveFromCart: item ? () => this.changeCart(item, -1) : undefined,
       onPress: () => this.events.click(active),
@@ -678,12 +682,13 @@ export class VtexAdsStoryCarouselElement extends LitElement {
    * and the stepper swap places, the focus moves to the one now shown.
    */
   private changeCart(item: StoryCartItem, delta: 1 | -1) {
-    const before = this.cartQuantities.get(item.sku) ?? 0;
+    const key = cartKey(item);
+    const before = this.cartQuantities.get(key) ?? 0;
     const after = Math.max(0, before + delta);
     if (after === before) return;
 
-    if (after > 0) this.cartQuantities.set(item.sku, after);
-    else this.cartQuantities.delete(item.sku);
+    if (after > 0) this.cartQuantities.set(key, after);
+    else this.cartQuantities.delete(key);
     this.requestUpdate();
 
     this.dispatchEvent(
