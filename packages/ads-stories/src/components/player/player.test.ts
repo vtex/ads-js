@@ -244,6 +244,7 @@ describe("PlayerController", () => {
       price: "R$ 129,90",
       listPrice: "R$ 159,90",
       url: "https://www.example.com/tenis/p",
+      sku: "sku-1",
       label: "Tênis, de R$ 159,90 por R$ 129,90",
     };
     const withVideo = { ...story, media_url: "https://example.com/story.mp4" };
@@ -252,10 +253,16 @@ describe("PlayerController", () => {
       openOptions?: Parameters<PlayerController["open"]>[0],
       storyToPlay: StoryMedia = withVideo,
     ) {
-      const result = await setup(storyToPlay, { product }, openOptions);
+      const onAddToCart = vi.fn();
+      const result = await setup(
+        storyToPlay,
+        { product, onAddToCart },
+        openOptions,
+      );
       const { player } = result;
       return {
         ...result,
+        onAddToCart,
         pill: () => player.querySelector<HTMLElement>(".card .card-product"),
         summary: () =>
           player.querySelector<HTMLButtonElement>(".product-summary"),
@@ -306,6 +313,41 @@ describe("PlayerController", () => {
       expect(view?.href).toBe(product.url);
       expect(view?.target).toBe("_blank");
       expect(view?.rel).toBe("noopener noreferrer");
+    });
+
+    it("calls onAddToCart and stays open, the panel too", async () => {
+      const { player, pill, onAddToCart, onClose, video } =
+        await setupWithProduct({ productOpen: true });
+
+      player.querySelector<HTMLButtonElement>(".product-add-to-cart")?.click();
+
+      expect(onAddToCart).toHaveBeenCalledTimes(1);
+      expect(onClose).not.toHaveBeenCalled();
+      expect(player.isConnected).toBe(true);
+      expect(pill()?.hasAttribute("data-open")).toBe(true);
+      expect(video?.paused).toBe(false);
+    });
+
+    it("shows the stepper with cartQuantity and calls onRemoveFromCart", async () => {
+      const onRemoveFromCart = vi.fn();
+      const { player, onClose } = await setup(
+        withVideo,
+        { product, cartQuantity: 1, onRemoveFromCart },
+        { productOpen: true },
+      );
+
+      expect(
+        player.querySelector(".product-quantity")?.textContent?.trim(),
+      ).toBe("1");
+      player
+        .querySelector<HTMLButtonElement>(".product-stepper-remove")
+        ?.click();
+
+      expect(onRemoveFromCart).toHaveBeenCalledTimes(1);
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        player.querySelector(".card-product")?.hasAttribute("data-open"),
+      ).toBe(true);
     });
 
     it("opens with the panel open when asked", async () => {

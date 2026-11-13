@@ -239,7 +239,17 @@ opens a panel with an add to cart button and a view product link (the product
 page, in a new tab). Clicking the product on the highlighted card opens the
 player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
-Adding to the cart does nothing yet.
+Add to cart dispatches an event for the store to handle (see
+[Commerce events](#commerce-events)); the player and the panel stay open. A
+product without a SKU has no add to cart.
+
+Once added, a stepper takes add to cart's place: minus, the quantity and plus.
+With one left, minus is a trash that removes it, and add to cart comes back.
+The quantity counts what was added and removed, for each SKU and seller, since
+the player opened: the element doesn't read the store's cart, so an item added
+or removed elsewhere, or a failed add, doesn't change it. Opening the player
+again starts the count over, with add to cart; the store's cart keeps what was
+added.
 
 Prices are formatted in the element's language (see [Language](#language))
 and in `currency`.
@@ -318,6 +328,67 @@ muted if the browser blocks it. With more than one Story:
 - **Keyboard**: with the focus in the player, the left and right arrow keys step
   too (not with a modifier key held). Elsewhere on the page they keep working as
   usual.
+
+## Commerce events
+
+The element has no cart of its own: it tells the store with Custom Events. They
+bubble and are `composed`, so the store can listen on the element, the document
+or any ancestor.
+
+| Event                             | `detail`                    | When                                                         |
+| --------------------------------- | --------------------------- | ------------------------------------------------------------ |
+| `vtex-ads-story:add-to-cart`      | `{ sku, seller, quantity }` | Add to cart, or the stepper's plus, is clicked in the player |
+| `vtex-ads-story:remove-from-cart` | `{ sku, seller, quantity }` | The stepper's minus, or its trash, is clicked in the player  |
+
+- **`vtex-ads-story:add-to-cart`**: `sku` is the Story product's
+  `product_sku` and `seller` its `seller_id`, as the ad API returned them
+  (`seller` is left out when the ad API sends none); `quantity` is always `1`.
+  It has no default action: the store adds the item. The player stays open.
+- **`vtex-ads-story:remove-from-cart`**: the same `detail`, where `quantity`
+  is how many to remove, always `1`. No default action: the store removes the
+  item, or lowers its quantity by one.
+
+```js
+document.addEventListener("vtex-ads-story:add-to-cart", (event) => {
+  const { sku, seller, quantity } = event.detail;
+  addToMyCart(sku, quantity, seller);
+});
+
+document.addEventListener("vtex-ads-story:remove-from-cart", (event) => {
+  const { sku, seller, quantity } = event.detail;
+  removeFromMyCart(sku, quantity, seller);
+});
+```
+
+In TypeScript, the listeners' events are typed as `StoryAddToCartEvent` and
+`StoryRemoveFromCartEvent` once the package is imported, on any element,
+`document` and `window`. `ADD_TO_CART_EVENT` and `REMOVE_FROM_CART_EVENT` hold
+the events' names, and `StoryAddToCartDetail` types their `detail`:
+
+```ts
+import {
+  ADD_TO_CART_EVENT,
+  REMOVE_FROM_CART_EVENT,
+  type StoryAddToCartDetail,
+} from "@vtex/ads-stories";
+
+function addToMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
+  // ...
+}
+
+function removeFromMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
+  // ...
+}
+
+// `event` is a StoryAddToCartEvent: no cast needed.
+document.addEventListener(ADD_TO_CART_EVENT, (event) => {
+  addToMyCart(event.detail);
+});
+
+document.addEventListener(REMOVE_FROM_CART_EVENT, (event) => {
+  removeFromMyCart(event.detail);
+});
+```
 
 ## Ad events
 
