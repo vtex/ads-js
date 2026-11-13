@@ -41,7 +41,6 @@ const preview: Preview = {
           `
         : story(),
   ],
-  args: { publisherId: "7082a92d-9ff7-48a3-9c12-6ae3d64e405e" },
   initialGlobals: { adApi: "mock" },
   loaders: [
     async (context) => {
