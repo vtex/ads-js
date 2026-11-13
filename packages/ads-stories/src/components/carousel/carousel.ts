@@ -20,13 +20,18 @@ const SOLO_PADDING = css`24px`;
  */
 export const AUTO_ADVANCE_MS = 5000;
 
+/** Longest time a Story can stay highlighted, in milliseconds. */
+export const MAX_SLIDE_DURATION_MS = 120_000;
+
 /**
  * The time each Story stays highlighted: `ms` when it is a number from zero
- * up (zero: no automatic advance), AUTO_ADVANCE_MS when it is missing,
- * negative or not a number.
+ * up (zero: no automatic advance), capped at MAX_SLIDE_DURATION_MS,
+ * AUTO_ADVANCE_MS when it is missing, negative or not a number.
  */
 export const toSlideDuration = (ms?: number) =>
-  ms !== undefined && Number.isFinite(ms) && ms >= 0 ? ms : AUTO_ADVANCE_MS;
+  ms !== undefined && Number.isFinite(ms) && ms >= 0
+    ? Math.min(ms, MAX_SLIDE_DURATION_MS)
+    : AUTO_ADVANCE_MS;
 
 /** How far a pointer must move, in pixels, to count as a swipe. */
 export const SWIPE_DISTANCE = 40;

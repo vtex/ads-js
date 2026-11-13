@@ -471,18 +471,15 @@ describe("PlayerController", () => {
 
     it("turns the sound off and on", async () => {
       const { video, sound } = await setupWithVideo();
-      video?.dispatchEvent(new Event("volumechange"));
       expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
 
       sound()?.click();
-      video?.dispatchEvent(new Event("volumechange"));
       expect(video?.muted).toBe(true);
       expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
       // The click stays on the sound button: it does not also pause the video.
       expect(video?.paused).toBe(false);
 
       sound()?.click();
-      video?.dispatchEvent(new Event("volumechange"));
       expect(video?.muted).toBe(false);
       expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
     });
@@ -1138,7 +1135,6 @@ describe("PlayerController", () => {
       const { controller, player } = await setupWithNavigation();
       const first = player.querySelector("video");
       if (first) first.muted = false;
-      first?.dispatchEvent(new Event("volumechange"));
       // The video fails: the next Story gets a new one, created muted.
       first?.dispatchEvent(new Event("error"));
       await vi.waitFor(() => expect(player.querySelector("video")).toBeNull());
