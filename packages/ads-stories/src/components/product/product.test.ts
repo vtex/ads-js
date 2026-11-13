@@ -324,9 +324,10 @@ describe("renderExpandableProduct", () => {
     labels: en,
   };
 
-  function mount(item: CardProduct, open: boolean) {
+  function mount(item: CardProduct, open: boolean, cartQuantity?: number) {
     const onToggle = vi.fn();
     const onAddToCart = vi.fn();
+    const onRemoveFromCart = vi.fn();
     const container = document.createElement("div");
     document.body.append(container);
     render(
@@ -334,12 +335,84 @@ describe("renderExpandableProduct", () => {
         ...options,
         open,
         onToggle,
+        cartQuantity,
         onAddToCart,
+        onRemoveFromCart,
       }),
       container,
     );
-    return { container, onToggle, onAddToCart };
+    return { container, onToggle, onAddToCart, onRemoveFromCart };
   }
+
+  describe("stepper", () => {
+    const query = (container: HTMLElement, selector: string) =>
+      container.querySelector<HTMLButtonElement>(selector);
+
+    it("takes add to cart's place once the product is in the cart", () => {
+      const { container } = mount(product, true, 2);
+
+      const stepper = container.querySelector(".product-stepper");
+      expect(stepper?.getAttribute("role")).toBe("group");
+      expect(stepper?.getAttribute("aria-label")).toBe("Quantity in cart");
+      expect(
+        container.querySelector(".product-quantity")?.textContent?.trim(),
+      ).toBe("2");
+      expect(container.querySelector(".product-add-to-cart")).toBeNull();
+      expect(container.querySelector(".product-view")).not.toBeNull();
+    });
+
+    it("has minus above one, and a trash that removes with one left", () => {
+      const two = mount(product, true, 2).container;
+      const one = mount(product, true, 1).container;
+
+      const minus = query(two, ".product-stepper-remove");
+      const trash = query(one, ".product-stepper-remove");
+      expect(minus?.getAttribute("aria-label")).toBe("Decrease quantity");
+      expect(trash?.getAttribute("aria-label")).toBe("Remove from cart");
+      expect(minus?.innerHTML).not.toBe(trash?.innerHTML);
+      expect(
+        query(two, ".product-stepper-add")?.getAttribute("aria-label"),
+      ).toBe("Increase quantity");
+    });
+
+    it("calls onAddToCart from plus and onRemoveFromCart from minus", () => {
+      const { container, onAddToCart, onRemoveFromCart, onToggle } = mount(
+        product,
+        true,
+        1,
+      );
+
+      query(container, ".product-stepper-add")?.click();
+      query(container, ".product-stepper-remove")?.click();
+
+      expect(onAddToCart).toHaveBeenCalledTimes(1);
+      expect(onRemoveFromCart).toHaveBeenCalledTimes(1);
+      expect(onToggle).not.toHaveBeenCalled();
+    });
+
+    it("shows add to cart with none in the cart", () => {
+      const { container } = mount(product, true, 0);
+
+      expect(container.querySelector(".product-stepper")).toBeNull();
+      expect(container.querySelector(".product-add-to-cart")).not.toBeNull();
+    });
+
+    it("gives way to the unavailable button when sold out", () => {
+      const { container } = mount({ ...product, soldOut: "Sold out" }, true, 2);
+
+      expect(container.querySelector(".product-stepper")).toBeNull();
+      expect(container.querySelector(".product-unavailable")).not.toBeNull();
+    });
+
+    it("gives way to the placeholder while the product loads", () => {
+      const { container } = mount({ ...product, isLoading: true }, true, 2);
+
+      expect(container.querySelector(".product-stepper")).toBeNull();
+      expect(
+        container.querySelector(".product-add-to-cart-loading"),
+      ).not.toBeNull();
+    });
+  });
 
   it("calls onAddToCart from add to cart", () => {
     const { container, onAddToCart, onToggle } = mount(product, true);

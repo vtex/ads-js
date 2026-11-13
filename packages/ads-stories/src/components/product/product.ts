@@ -167,16 +167,59 @@ export interface ExpandableProductOptions {
   panelId: string;
   /** The texts: add to cart, its disabled "unavailable" and view product. */
   labels: StoryLabels;
-  /** Called by add to cart. */
+  /**
+   * How many of the product were added from the element. Above 0, a stepper
+   * shows in place of add to cart.
+   */
+  cartQuantity?: number;
+  /** Called by add to cart and the stepper's plus. */
   onAddToCart?: () => void;
+  /** Called by the stepper's minus, a trash with one left. */
+  onRemoveFromCart?: () => void;
 }
 
-// Add to cart: its placeholder while the product loads, and a disabled
-// button when sold out. Nothing without a SKU.
+// In the cart: minus (a trash with one left), the quantity and plus, in the
+// add to cart button's place.
+function renderStepper(
+  quantity: number,
+  { labels, onAddToCart, onRemoveFromCart }: ExpandableProductOptions,
+) {
+  const last = quantity === 1;
+
+  return html`
+    <div
+      class="product-action product-stepper"
+      role="group"
+      aria-label=${labels.cartQuantity}
+    >
+      <button
+        type="button"
+        class="product-stepper-button product-stepper-remove"
+        aria-label=${last ? labels.removeFromCart : labels.decreaseQuantity}
+        @click=${onRemoveFromCart}
+      >
+        ${icon(last ? "trash" : "minus")}
+      </button>
+      <span class="product-quantity" role="status">${quantity}</span>
+      <button
+        type="button"
+        class="product-stepper-button product-stepper-add"
+        aria-label=${labels.increaseQuantity}
+        @click=${onAddToCart}
+      >
+        ${icon("plus")}
+      </button>
+    </div>
+  `;
+}
+
+// Add to cart: its placeholder while the product loads, a disabled button
+// when sold out, and the stepper once in the cart. Nothing without a SKU.
 function renderAddToCart(
   { isLoading, soldOut, sku }: CardProduct,
-  { labels, onAddToCart }: ExpandableProductOptions,
+  options: ExpandableProductOptions,
 ) {
+  const { labels, onAddToCart, cartQuantity = 0 } = options;
   if (!sku) return nothing;
   if (isLoading) return addToCartSkeleton;
   if (soldOut) {
@@ -186,6 +229,7 @@ function renderAddToCart(
       </button>
     `;
   }
+  if (cartQuantity > 0) return renderStepper(cartQuantity, options);
   return html`
     <button
       type="button"
@@ -204,7 +248,9 @@ function renderAddToCart(
  * and "Ver produto" (the product page, in a new tab; only with a URL). Open,
  * the pill turns white.
  *
- * Add to cart calls `onAddToCart` and leaves the panel open.
+ * Add to cart calls `onAddToCart` and leaves the panel open. With
+ * `cartQuantity` above 0, a stepper takes its place: minus (a trash with one
+ * left) calls `onRemoveFromCart`, plus `onAddToCart`.
  */
 export function renderExpandableProduct(
   product: CardProduct,

@@ -35,7 +35,11 @@ import { fetchStories } from "../utils/fetch-story";
 import { httpUrl } from "../utils/safe-url";
 import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
-import { addToCartEvent } from "../commerce-events";
+import {
+  addToCartEvent,
+  removeFromCartEvent,
+  type StoryCartItem,
+} from "../commerce-events";
 import { TAG_NAME } from "../tag-name";
 
 export { TAG_NAME } from "../tag-name";
@@ -223,6 +227,14 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     carouselSkeletonStyles,
     playerStyles,
   ];
+
+  /**
+   * How many of each SKU were added since the player opened, for its
+   * stepper. It doesn't read the store's cart: it counts the add and remove
+   * events sent, and starts over each time the player opens, as the cart may
+   * have changed meanwhile.
+   */
+  private readonly cartQuantities = new Map<string, number>();
 
   /**
    * One per rendered card, by its key (see Slide): a Story can show in more
@@ -506,6 +518,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   private openPlayer({ productOpen = false } = {}) {
     if (this.player.isOpen) return;
 
+    this.cartQuantities.clear();
     // While the player is open, the card behind it stops on its cover.
     this.activeVideo?.pause();
     void this.player.open({ productOpen });
@@ -644,7 +657,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
 
     const product = this.productOf(active);
     const sku = product?.sku;
-    const seller = product?.seller;
+    const item = sku ? { sku, seller: product.seller } : undefined;
 
     return this.player.render(active, {
       labels: this.labels,
@@ -652,12 +665,40 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       neighbors,
       product,
       cta: toCardCta(active),
-      // The store adds it: the element only tells, from itself.
-      onAddToCart: sku
-        ? () => this.dispatchEvent(addToCartEvent({ sku, seller }))
-        : undefined,
+      cartQuantity: sku ? this.cartQuantities.get(sku) : undefined,
+      onAddToCart: item ? () => this.changeCart(item, 1) : undefined,
+      onRemoveFromCart: item ? () => this.changeCart(item, -1) : undefined,
       onPress: () => this.events.click(active),
     });
+  }
+
+  /**
+   * Adds one of `item` to the stepper's count, or removes one, and tells the
+   * store, which changes its cart: the element has none. When add to cart
+   * and the stepper swap places, the focus moves to the one now shown.
+   */
+  private changeCart(item: StoryCartItem, delta: 1 | -1) {
+    const before = this.cartQuantities.get(item.sku) ?? 0;
+    const after = Math.max(0, before + delta);
+    if (after === before) return;
+
+    if (after > 0) this.cartQuantities.set(item.sku, after);
+    else this.cartQuantities.delete(item.sku);
+    this.requestUpdate();
+
+    this.dispatchEvent(
+      delta > 0 ? addToCartEvent(item) : removeFromCartEvent(item),
+    );
+
+    const swapped =
+      before === 0
+        ? ".player .product-stepper-add"
+        : after === 0 && ".player .product-add-to-cart";
+    if (swapped) {
+      void this.updateComplete.then(() =>
+        this.shadowRoot?.querySelector<HTMLElement>(swapped)?.focus(),
+      );
+    }
   }
 }
 
