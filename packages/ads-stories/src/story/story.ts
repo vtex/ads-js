@@ -695,7 +695,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         ? ".player .product-stepper-add"
         : after === 0 && ".player .product-add-to-cart";
     if (swapped) {
-      void this.updateComplete.then(() =>
+      this.updateComplete.then(() =>
         this.shadowRoot?.querySelector<HTMLElement>(swapped)?.focus(),
       );
     }
