@@ -15,6 +15,8 @@ export interface CardProduct {
   listPrice?: string;
   /** The product page, opened by view product link button. */
   url?: string;
+  /** The SKU added to the cart. Without one, there is no add to cart. */
+  sku?: string;
   /** Accessible name of the product button: name and prices. */
   label: string;
   /**
@@ -60,6 +62,7 @@ export function toCardProduct(
     name,
     imageUrl: httpUrl(product.image_url) ?? undefined,
     url: destinationUrl(story.destination_url) ?? undefined,
+    sku: product.product_sku?.trim() || undefined,
   };
 
   if (fetched === "loading") {
@@ -161,14 +164,17 @@ export interface ExpandableProductOptions {
   panelId: string;
   /** The texts: add to cart, its disabled "unavailable" and view product. */
   labels: StoryLabels;
+  /** Called by add to cart. */
+  onAddToCart?: () => void;
 }
 
 // Add to cart: its placeholder while the product loads, and a disabled
-// button when sold out.
+// button when sold out. Nothing without a SKU.
 function renderAddToCart(
-  { isLoading, soldOut }: CardProduct,
-  { labels }: ExpandableProductOptions,
+  { isLoading, soldOut, sku }: CardProduct,
+  { labels, onAddToCart }: ExpandableProductOptions,
 ) {
+  if (!sku) return nothing;
   if (isLoading) return addToCartSkeleton;
   if (soldOut) {
     return html`
@@ -178,7 +184,11 @@ function renderAddToCart(
     `;
   }
   return html`
-    <button type="button" class="product-action product-add-to-cart">
+    <button
+      type="button"
+      class="product-action product-add-to-cart"
+      @click=${onAddToCart}
+    >
       ${labels.addToCart}
     </button>
   `;
@@ -191,8 +201,7 @@ function renderAddToCart(
  * and "Ver produto" (the product page, in a new tab; only with a URL). Open,
  * the pill turns white.
  *
- * Adding to the cart does nothing yet: it will emit an event for the store
- * to handle.
+ * Add to cart calls `onAddToCart` and leaves the panel open.
  */
 export function renderExpandableProduct(
   product: CardProduct,

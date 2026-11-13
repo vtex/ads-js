@@ -35,6 +35,7 @@ import { fetchStories } from "../utils/fetch-story";
 import { httpUrl } from "../utils/safe-url";
 import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
+import { addToCartEvent } from "../commerce-events";
 import { TAG_NAME } from "../tag-name";
 
 export { TAG_NAME } from "../tag-name";
@@ -647,8 +648,15 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       neighbors,
       product: this.productOf(active),
       cta: toCardCta(active),
+      onAddToCart: () => this.addToCart(active),
       onPress: () => this.events.click(active),
     });
+  }
+
+  // The store adds it: the element only tells, from itself.
+  private addToCart(story: StoryAd) {
+    const sku = story.product?.product_sku?.trim();
+    if (sku) this.dispatchEvent(addToCartEvent(sku));
   }
 }
 

@@ -455,6 +455,8 @@ export interface PlayerRenderOptions {
   product?: CardProduct;
   /** The Story's call to action, for a link destination (no product). */
   cta?: CardCta;
+  /** Called by the product's add to cart. The player stays open. */
+  onAddToCart?: () => void;
   /**
    * Called by any click on the video's card (the video, its play and sound
    * buttons, the product and the call to action), before what that click
@@ -465,7 +467,10 @@ export interface PlayerRenderOptions {
 }
 
 // What shows at the bottom of the video: one or the other.
-type StoryDestination = Pick<PlayerRenderOptions, "product" | "cta" | "labels">;
+type StoryDestination = Pick<
+  PlayerRenderOptions,
+  "product" | "cta" | "labels" | "onAddToCart"
+>;
 
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
@@ -942,7 +947,12 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({ product, cta, labels }: StoryDestination) {
+  private renderDestination({
+    product,
+    cta,
+    labels,
+    onAddToCart,
+  }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
@@ -950,6 +960,7 @@ export class PlayerController implements ReactiveController {
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",
         labels,
+        onAddToCart,
       });
     } else if (cta) {
       content = renderCta(cta);
@@ -1153,6 +1164,7 @@ export class PlayerController implements ReactiveController {
       neighbors = [],
       product,
       cta,
+      onAddToCart,
       onPress,
     }: PlayerRenderOptions,
   ) {
@@ -1200,6 +1212,7 @@ export class PlayerController implements ReactiveController {
               product,
               cta,
               labels,
+              onAddToCart,
             })}
             <span class="player-dim" aria-hidden="true" ${ref(this.dim)}></span>
           </div>

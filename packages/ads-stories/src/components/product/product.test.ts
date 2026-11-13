@@ -44,6 +44,7 @@ describe("toCardProduct", () => {
       price: "$15.00",
       listPrice: "$20.00",
       url: "https://example.com/destination/p",
+      sku: "sku-1",
       label: "Shoe | $20.00 | $15.00",
     });
   });
@@ -275,6 +276,7 @@ describe("renderExpandableProduct", () => {
     name: "Shoe",
     price: "$15.00",
     url: "https://example.com/shoe/p",
+    sku: "sku-1",
     label: "Shoe, $15.00",
   };
   const options = {
@@ -284,14 +286,36 @@ describe("renderExpandableProduct", () => {
 
   function mount(item: CardProduct, open: boolean) {
     const onToggle = vi.fn();
+    const onAddToCart = vi.fn();
     const container = document.createElement("div");
     document.body.append(container);
     render(
-      renderExpandableProduct(item, { ...options, open, onToggle }),
+      renderExpandableProduct(item, {
+        ...options,
+        open,
+        onToggle,
+        onAddToCart,
+      }),
       container,
     );
-    return { container, onToggle };
+    return { container, onToggle, onAddToCart };
   }
+
+  it("calls onAddToCart from add to cart", () => {
+    const { container, onAddToCart, onToggle } = mount(product, true);
+
+    container.querySelector<HTMLButtonElement>(".product-add-to-cart")?.click();
+
+    expect(onAddToCart).toHaveBeenCalledTimes(1);
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("has no add to cart without a SKU", () => {
+    const { container } = mount({ ...product, sku: undefined }, true);
+
+    expect(container.querySelector(".product-add-to-cart")).toBeNull();
+    expect(container.querySelector(".product-view")).not.toBeNull();
+  });
 
   it("toggles from its button", () => {
     const { container, onToggle } = mount(product, false);

@@ -239,7 +239,9 @@ opens a panel with an add to cart button and a view product link (the product
 page, in a new tab). Clicking the product on the highlighted card opens the
 player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
-Adding to the cart does nothing yet.
+Add to cart dispatches an event for the store to handle (see
+[Commerce events](#commerce-events)); the player and the panel stay open. A
+product without a SKU has no add to cart.
 
 Prices are formatted in the element's language (see [Language](#language))
 and in `currency`.
@@ -318,6 +320,48 @@ muted if the browser blocks it. With more than one Story:
 - **Keyboard**: with the focus in the player, the left and right arrow keys step
   too (not with a modifier key held). Elsewhere on the page they keep working as
   usual.
+
+## Commerce events
+
+The element has no cart of its own: it tells the store with Custom Events. They
+bubble and are `composed`, so the store can listen on the element, the document
+or any ancestor.
+
+| Event                        | `detail`            | When                                  |
+| ---------------------------- | ------------------- | ------------------------------------- |
+| `vtex-ads-story:add-to-cart` | `{ sku, quantity }` | Add to cart is clicked, in the player |
+
+- **`vtex-ads-story:add-to-cart`**: `sku` is the Story product's
+  `product_sku`, as the ad API returned it; `quantity` is always `1`. It has
+  no default action: the store adds the item. The player stays open.
+
+```js
+document.addEventListener("vtex-ads-story:add-to-cart", (event) => {
+  const { sku, quantity } = event.detail;
+  addToMyCart(sku, quantity);
+});
+```
+
+In TypeScript, the listener's event is typed as `StoryAddToCartEvent` once the
+package is imported, on any element, `document` and `window`.
+`ADD_TO_CART_EVENT` holds the event's name, and `StoryAddToCartDetail` types
+its `detail`:
+
+```ts
+import {
+  ADD_TO_CART_EVENT,
+  type StoryAddToCartDetail,
+} from "@vtex/ads-stories";
+
+function addToMyCart({ sku, quantity }: StoryAddToCartDetail) {
+  // ...
+}
+
+// `event` is a StoryAddToCartEvent: no cast needed.
+document.addEventListener(ADD_TO_CART_EVENT, (event) => {
+  addToMyCart(event.detail);
+});
+```
 
 ## Ad events
 
