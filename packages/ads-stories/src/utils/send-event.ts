@@ -1,4 +1,4 @@
-import { httpUrl } from "./http-url";
+import { httpUrl } from "./safe-url";
 import { TAG_NAME } from "../tag-name";
 
 // A CORS-safelisted type: the browser sends the event without a preflight

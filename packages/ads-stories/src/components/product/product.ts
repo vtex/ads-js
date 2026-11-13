@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import type { StoryLabels } from "../../locales";
 import { icon } from "../icons";
-import { httpUrl } from "../../utils/http-url";
+import { destinationUrl, httpUrl } from "../../utils/safe-url";
 import type { StoryAd } from "../../types";
 import type { StoryProductDetails } from "../../utils/hydrate-products";
 import { readProductPrice } from "./price";
@@ -23,8 +23,9 @@ export interface CardProduct {
    */
   isLoading?: boolean;
   /**
-   * The text shown in place of the price ("Esgotado") when the fetched
-   * product can't be bought. Add to cart then becomes a disabled button.
+   * Set when the fetched product can't be bought: add to cart becomes a
+   * disabled button, and without a price this text ("Esgotado") shows in its
+   * place.
    */
   soldOut?: string;
 }
@@ -42,7 +43,8 @@ export type FetchedProduct = StoryProductDetails | "loading" | undefined;
  *
  * The price is the fetched one when there is one; while the product loads,
  * none; and otherwise the ad server's, from `product_metadata`. A fetched
- * product that can't be bought shows `labels.soldOut` instead.
+ * product that can't be bought still shows its price, or `labels.soldOut`
+ * when it has none.
  */
 export function toCardProduct(
   story: Pick<StoryAd, "product" | "destination_url">,
@@ -57,30 +59,24 @@ export function toCardProduct(
   const base = {
     name,
     imageUrl: httpUrl(product.image_url) ?? undefined,
-    url: httpUrl(story.destination_url) ?? undefined,
+    url: destinationUrl(story.destination_url) ?? undefined,
   };
 
   if (fetched === "loading") {
     return { ...base, label: labels.product(name), isLoading: true };
   }
-  if (fetched?.available === false) {
-    return {
-      ...base,
-      label: labels.product(name, labels.soldOut),
-      soldOut: labels.soldOut,
-    };
-  }
-
   const amounts = fetched?.price ?? readProductPrice(product.product_metadata);
   const price = amounts && format(amounts.price);
   const listPrice =
     amounts?.listPrice === undefined ? undefined : format(amounts.listPrice);
+  const soldOut = fetched?.available === false ? labels.soldOut : undefined;
 
   return {
     ...base,
     price,
     listPrice,
-    label: labels.product(name, price, listPrice),
+    soldOut,
+    label: labels.product(name, price, listPrice, soldOut),
   };
 }
 
@@ -101,14 +97,15 @@ const addToCartSkeleton = html`
 `;
 
 // The price and, on sale, the "from" price struck through beside it. While
-// the product loads, its placeholder; sold out, the sold out text; without a
-// price, nothing.
+// the product loads, its placeholder; sold out without a price, the sold out
+// text; otherwise without a price, nothing.
 function renderPrice({ isLoading, soldOut, price, listPrice }: CardProduct) {
   if (isLoading) return priceSkeleton;
-  if (soldOut) {
-    return html`<span class="product-price product-sold-out">${soldOut}</span>`;
+  if (!price) {
+    return soldOut
+      ? html`<span class="product-price product-sold-out">${soldOut}</span>`
+      : nothing;
   }
-  if (!price) return nothing;
 
   return html`
     <span class="product-price">

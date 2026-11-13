@@ -19,6 +19,7 @@ import pause from "./assets/pause-fill.svg?raw";
 import play from "./assets/play-fill.svg?raw";
 import soundOff from "./assets/speaker-x-fill.svg?raw";
 import soundOn from "./assets/speaker-high-fill.svg?raw";
+import warning from "./assets/warning-circle-fill.svg?raw";
 
 export const icons = {
   caretUp,
@@ -31,6 +32,7 @@ export const icons = {
   previous,
   soundOff,
   soundOn,
+  warning,
 };
 
 export type IconName = keyof typeof icons;

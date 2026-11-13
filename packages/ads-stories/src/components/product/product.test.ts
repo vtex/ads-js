@@ -9,8 +9,12 @@ import {
 import { en } from "../../locales";
 
 const format = (amount: number) => `$${amount.toFixed(2)}`;
-const label = (name: string, price?: string, listPrice?: string) =>
-  [name, listPrice, price].filter(Boolean).join(" | ");
+const label = (
+  name: string,
+  price?: string,
+  listPrice?: string,
+  soldOut?: string,
+) => [name, listPrice, price, soldOut].filter(Boolean).join(" | ");
 const labels = { ...en, product: label };
 
 const storyWith = (product: Record<string, unknown> | null) =>
@@ -90,13 +94,10 @@ describe("toCardProduct", () => {
     }
   });
 
-  it("shows the sold out text, not a price, when the product can't be bought", () => {
-    const product = toCardProduct(
-      storyWith({ product_metadata: { price: 20 } }),
-      format,
-      labels,
-      { price: { price: 12 }, available: false },
-    );
+  it("shows the sold out text when the product can't be bought and has no price", () => {
+    const product = toCardProduct(storyWith({}), format, labels, {
+      available: false,
+    });
 
     expect(product).toMatchObject({
       soldOut: "Sold out",
@@ -104,6 +105,37 @@ describe("toCardProduct", () => {
     });
     expect(product?.price).toBeUndefined();
     expect(product?.listPrice).toBeUndefined();
+  });
+
+  it("keeps the fetched price when the product can't be bought", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 12, listPrice: 15 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      price: "$12.00",
+      listPrice: "$15.00",
+      soldOut: "Sold out",
+      label: "Shoe | $15.00 | $12.00 | Sold out",
+    });
+  });
+
+  it("keeps the ad server's price when the product can't be bought", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { available: false },
+    );
+
+    expect(product).toMatchObject({
+      price: "$20.00",
+      soldOut: "Sold out",
+      label: "Shoe | $20.00 | Sold out",
+    });
   });
 
   it("shows the price when the product can be bought", () => {
@@ -140,7 +172,17 @@ describe("toCardProduct", () => {
     expect(product?.url).toBe("https://example.com/destination/p");
   });
 
-  it("has no URL when the destination isn't an absolute http(s) URL", () => {
+  it("keeps a path on the store as the URL", () => {
+    const product = toCardProduct(
+      { ...storyWith({}), destination_url: "/path-to-product/product-112" },
+      format,
+      labels,
+    );
+
+    expect(product?.url).toBe("/path-to-product/product-112");
+  });
+
+  it("has no URL when the destination isn't an http(s) URL or a store path", () => {
     const product = toCardProduct(
       { ...storyWith({}), destination_url: "javascript:alert(1)" },
       format,
@@ -211,6 +253,20 @@ describe("renderProduct", () => {
       "Sold out",
     );
     expect(button?.querySelector(".product-list-price")).toBeNull();
+  });
+
+  it("shows the price, not the sold out text, when sold out with a price", () => {
+    const { button } = mount({
+      name: "Shoe",
+      price: "$12.00",
+      soldOut: "Sold out",
+      label: "Shoe | $12.00",
+    });
+
+    expect(button?.querySelector(".product-price span")?.textContent).toBe(
+      "$12.00",
+    );
+    expect(button?.querySelector(".product-sold-out")).toBeNull();
   });
 
   it("calls onSelect when clicked", () => {

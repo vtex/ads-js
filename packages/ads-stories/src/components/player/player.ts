@@ -11,7 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
-import { httpUrl } from "../../utils/http-url";
+import { httpUrl } from "../../utils/safe-url";
 import {
   renderCta,
   renderExpandableProduct,
@@ -654,6 +654,11 @@ export class PlayerController implements ReactiveController {
   private switched = false;
   /** The dialog is showing, in the mode `expanded` says. */
   private shown = false;
+  /**
+   * Bumped on each step and on close: a retry started before either doesn't
+   * play once its video loads.
+   */
+  private retryGeneration = 0;
 
   private readonly dialog = createRef<HTMLDialogElement>();
   private readonly expandButton = createRef<HTMLButtonElement>();
@@ -724,6 +729,7 @@ export class PlayerController implements ReactiveController {
   close() {
     if (!this.isOpen) return;
 
+    this.retryGeneration++;
     document.removeEventListener("keydown", this.onKeyDown);
     this.cancelAnimations();
     const dialog = this.dialog.value;
@@ -744,7 +750,8 @@ export class PlayerController implements ReactiveController {
     // Read before the render: a Story without a video, or a video that
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
-    this.video.failed = false;
+    this.retryGeneration++;
+    this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
     this.host.requestUpdate();
@@ -910,6 +917,21 @@ export class PlayerController implements ReactiveController {
   private readonly toggleProduct = () => {
     this.productOpen = !this.productOpen;
     this.host.requestUpdate();
+  };
+
+  /**
+   * Loads the failed video again and, once it loads, plays it with the sound
+   * on (muted if the browser blocks it). Not if the player closed or stepped
+   * meanwhile, even back to the same Story.
+   */
+  private readonly retryVideo = async (event?: Event) => {
+    event?.stopPropagation();
+    this.dialog.value?.focus();
+    const generation = this.retryGeneration;
+    const loaded = await this.video.retry();
+    if (loaded && generation === this.retryGeneration) {
+      this.video.playWithSound();
+    }
   };
 
   /**
@@ -1093,6 +1115,8 @@ export class PlayerController implements ReactiveController {
         ${renderMedia(story, video, {
           loop: !advances,
           onEnded: advances ? () => options.onStep?.(1) : undefined,
+          labels: destination.labels,
+          onRetry: this.retryVideo,
         })}
         ${hasVideo(story, video)
           ? this.renderVideoControls(destination.labels)

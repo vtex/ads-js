@@ -16,7 +16,13 @@ import { MOCK_EVENTS_BASE, mockStories } from "../src/story/story.mock";
 
 const AD_SERVER = "https://newtail-media.newtail.com.br/v1/rma/*";
 
-type Scenario = { delayMs: number; count: number; mediaDelayMs?: number };
+type Scenario = {
+  delayMs: number;
+  count: number;
+  mediaDelayMs?: number;
+  /** The first Story's video fails this many times before it loads. */
+  videoFailures?: number;
+};
 
 // How the mock answers each placement. Any other placement gets the default.
 // delayMs simulates the ad server latency; count is how many Stories the
@@ -30,6 +36,7 @@ const SCENARIOS: Record<string, Scenario> = {
   slow_media: { delayMs: 1000, count: 3, mediaDelayMs: 2000 },
   slow_media_timeout: { delayMs: 1000, count: 3, mediaDelayMs: 5000 },
   empty_stories: { delayMs: 500, count: 0 },
+  video_error: { delayMs: 500, count: 3, mediaDelayMs: 2000, videoFailures: 2 },
 };
 
 const scenarioFor = (placement: string) =>
@@ -70,6 +77,19 @@ const withMediaDelay = (story: StoryAdDetail, ms: number): StoryAdDetail => {
       image_url: story.product.image_url && slow(story.product.image_url),
     },
   };
+};
+
+// The query parameter that marks the video the mock fails, how many more
+// times it fails, and how long its first request after the failures takes
+// (the placement's mediaDelayMs). Each ad response starts them again.
+const VIDEO_FAIL_PARAM = "video-fail";
+let videoFailuresLeft = 0;
+let videoRetryDelayMs = 0;
+
+const withFailingVideo = (story: StoryAdDetail): StoryAdDetail => {
+  const url = new URL(story.media_url);
+  url.searchParams.set(VIDEO_FAIL_PARAM, "1");
+  return { ...story, media_url: url.toString() };
 };
 
 // The catalog behind the mock, by SKU: what Intelligent Search sends for the
@@ -120,12 +140,19 @@ export const handlers = [
 
     const body: Record<string, unknown> = { request_id: "playground" };
     for (const [placement, { quantity, types }] of requested) {
-      const { count, mediaDelayMs } = scenarioFor(placement);
+      const { count, mediaDelayMs, videoFailures } = scenarioFor(placement);
+      if (videoFailures) {
+        videoFailuresLeft = videoFailures;
+        videoRetryDelayMs = mediaDelayMs ?? 0;
+      }
       body[placement] = types.includes("story")
         ? mockStories
             .slice(0, Math.min(count, quantity))
             .map((story) =>
               mediaDelayMs ? withMediaDelay(story, mediaDelayMs) : story,
+            )
+            .map((story, index) =>
+              videoFailures && index === 0 ? withFailingVideo(story) : story,
             )
         : [];
     }
@@ -137,6 +164,23 @@ export const handlers = [
   http.get("https://dummyimage.com/*", async ({ request }) => {
     const ms = Number(new URL(request.url).searchParams.get(MEDIA_DELAY_PARAM));
     if (ms > 0) await delay(ms);
+    return passthrough();
+  }),
+
+  // The marked video fails while it has failures left, then its next request
+  // waits for the media delay; the others, and its later requests, go
+  // straight to the network.
+  http.get("https://samplelib.com/*", async ({ request }) => {
+    const failing = new URL(request.url).searchParams.has(VIDEO_FAIL_PARAM);
+    if (failing && videoFailuresLeft > 0) {
+      videoFailuresLeft -= 1;
+      return new HttpResponse(null, { status: 404 });
+    }
+    if (failing && videoRetryDelayMs > 0) {
+      const ms = videoRetryDelayMs;
+      videoRetryDelayMs = 0;
+      await delay(ms);
+    }
     return passthrough();
   }),
 

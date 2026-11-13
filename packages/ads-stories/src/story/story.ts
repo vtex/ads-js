@@ -10,7 +10,7 @@ import {
   type Slide,
 } from "../components/carousel";
 import { StoryEventsController, type ViewTarget } from "../components/events";
-import { VideoController } from "../components/media";
+import { mediaStyles, VideoController } from "../components/media";
 import {
   DEFAULT_LOCALE,
   priceFormatter,
@@ -32,7 +32,7 @@ import {
   type StoryProductDetails,
 } from "../utils/hydrate-products";
 import { fetchStories } from "../utils/fetch-story";
-import { httpUrl } from "../utils/http-url";
+import { httpUrl } from "../utils/safe-url";
 import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
 import { TAG_NAME } from "../tag-name";
@@ -216,6 +216,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       }
     `,
     cardStyles,
+    mediaStyles,
     productStyles,
     carouselStyles,
     carouselSkeletonStyles,

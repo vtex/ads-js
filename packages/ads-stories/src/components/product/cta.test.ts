@@ -44,10 +44,16 @@ describe("toCardCta", () => {
     }
   });
 
-  it("is undefined without an absolute http(s) destination", () => {
-    for (const destination_url of ["", "javascript:alert(1)", "/campaign"]) {
+  it("is undefined without an http(s) or same-store path destination", () => {
+    for (const destination_url of ["", "javascript:alert(1)", "//evil.com"]) {
       expect(toCardCta(storyWith({ destination_url }))).toBeUndefined();
     }
+  });
+
+  it("keeps a path on the store as the destination", () => {
+    expect(
+      toCardCta(storyWith({ destination_url: "/campaign?a=1" }))?.url,
+    ).toBe("/campaign?a=1");
   });
 });
 

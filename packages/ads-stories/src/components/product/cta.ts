@@ -1,6 +1,6 @@
 import { html } from "lit";
 import { icon } from "../icons";
-import { httpUrl } from "../../utils/http-url";
+import { destinationUrl } from "../../utils/safe-url";
 import type { StoryAd } from "../../types";
 
 /** The call to action of a Story whose destination is a link. */
@@ -14,7 +14,7 @@ export interface CardCta {
 /**
  * The call to action of a Story without a product (its destination is a
  * link), with the text set in the campaign. Undefined when the Story has a
- * product, no text or no http(s) destination.
+ * product, no text or no http(s) or same-store path destination.
  */
 export function toCardCta(
   story: Pick<StoryAd, "product" | "destination_url" | "call_to_action">,
@@ -22,7 +22,7 @@ export function toCardCta(
   if (story.product) return undefined;
 
   const label = story.call_to_action?.trim();
-  const url = httpUrl(story.destination_url);
+  const url = destinationUrl(story.destination_url);
 
   return label && url ? { label, url } : undefined;
 }

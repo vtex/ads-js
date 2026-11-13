@@ -22,8 +22,7 @@ export class VideoController {
   paused = true;
   // The video always starts muted: that is what browsers allow to autoplay.
   muted = true;
-  /** The video could not load: only the cover is shown. */
-  failed = false;
+  private status: "playable" | "failed" | "retrying" = "playable";
 
   private readyState!: Promise<boolean>;
   private settleReady!: (ready: boolean) => void;
@@ -40,6 +39,16 @@ export class VideoController {
     return this.readyState;
   }
 
+  /** The video could not load: the cover shows with a notice over it. */
+  get failed() {
+    return this.status === "failed";
+  }
+
+  /** A failed video is loading again (see retry), until it loads or fails. */
+  get retrying() {
+    return this.status === "retrying";
+  }
+
   /** The rendered <video> is on the page and playing. */
   get playing() {
     const video = this.ref.value;
@@ -50,8 +59,31 @@ export class VideoController {
   reset() {
     this.paused = true;
     this.muted = true;
-    this.failed = false;
+    this.status = "playable";
     this.waitForReady();
+  }
+
+  /**
+   * For the next Story's <video>: neither failed nor loading again. Unlike
+   * reset, it keeps the playback and sound state.
+   */
+  clearFailure() {
+    this.status = "playable";
+    this.host.requestUpdate();
+  }
+
+  /**
+   * Loads a failed video again: renderMedia renders a new <video> with a
+   * notice that it is loading, until it loads or fails. Resolves as `ready`
+   * does, or false at once for a video that didn't fail.
+   */
+  retry() {
+    if (this.retrying) return this.ready;
+    if (!this.failed) return Promise.resolve(false);
+    this.reset();
+    this.status = "retrying";
+    this.host.requestUpdate();
+    return this.ready;
   }
 
   play() {
@@ -134,11 +166,14 @@ export class VideoController {
   /** Listener for the video's loadeddata event. */
   readonly loaded = () => {
     this.settleReady(true);
+    if (!this.retrying) return;
+    this.status = "playable";
+    this.host.requestUpdate();
   };
 
   /** Listener for the video's error event. */
   readonly fail = () => {
-    this.failed = true;
+    this.status = "failed";
     this.settleReady(false);
     this.host.requestUpdate();
   };

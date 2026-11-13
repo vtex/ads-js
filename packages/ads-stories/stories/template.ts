@@ -18,10 +18,12 @@ export const PLACEMENTS = [
   "slow_media",
   "slow_media_timeout",
   "empty_stories",
+  "video_error",
 ];
 export const ACCOUNTS = ["playground", "playground-slow", "playground-error"];
 
 export type ElementArgs = {
+  publisherId: string;
   placement: string;
   accountName?: string;
   timeout?: number;
@@ -39,11 +41,15 @@ export type ElementArgs = {
 export type Parameters = { note?: TemplateResult };
 
 export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
-  placement: { control: "select", options: PLACEMENTS },
+  publisherId: { name: "publisher-id", control: "text" },
+  placement: {
+    control: "text",
+    description: `The mock answers: ${PLACEMENTS.join(", ")}. Any other gets the default Story.`,
+  },
   accountName: {
     name: "account-name",
-    control: "select",
-    options: [undefined, ...ACCOUNTS],
+    control: "text",
+    description: `The Intelligent Search mock answers: ${ACCOUNTS.join(", ")}. Empty: no Intelligent Search hydration.`,
   },
   timeout: { control: "number" },
   hydrationTimeout: { name: "hydration-timeout", control: "number" },
@@ -61,7 +67,7 @@ export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
 // open.
 export const renderElement = (
   { theme, ...args }: ElementArgs,
-  { parameters }: Pick<StoryContext, "parameters">,
+  { parameters, globals }: Pick<StoryContext, "parameters" | "globals">,
 ) => html`
   <div class="story-container">
     ${(parameters as Parameters).note
@@ -69,12 +75,12 @@ export const renderElement = (
       : nothing}
     <div style=${styleMap(theme ?? {})}>
       ${keyed(
-        JSON.stringify(args),
+        JSON.stringify({ ...args, adApi: globals.adApi }),
         html`<vtex-ads-story-carousel
-          publisher-id="playground-publisher"
+          publisher-id=${args.publisherId}
           session-id="playground-session"
           placement=${args.placement}
-          account-name=${ifDefined(args.accountName)}
+          account-name=${ifDefined(args.accountName?.trim() || undefined)}
           timeout=${ifDefined(args.timeout)}
           hydration-timeout=${ifDefined(args.hydrationTimeout)}
           lang=${ifDefined(args.lang)}

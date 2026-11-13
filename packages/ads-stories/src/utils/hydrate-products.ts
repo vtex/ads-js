@@ -41,6 +41,23 @@ export interface StoryProductDetails {
   available?: boolean;
 }
 
+// A price the card can show: an amount (0 included, as the strategy says),
+// with the "from" price only when it is above it, as intelligentSearchPrice
+// reads them. A store's own reader may return anything (a missing amount,
+// NaN, a string): then the ad server's price shows instead.
+function toShownPrice(
+  value: ProductPrice | undefined,
+): ProductPrice | undefined {
+  const isAmount = (amount: unknown): amount is number =>
+    typeof amount === "number" && Number.isFinite(amount) && amount >= 0;
+
+  if (!isAmount(value?.price)) return undefined;
+  const { price, listPrice } = value;
+  return isAmount(listPrice) && listPrice > price
+    ? { price, listPrice }
+    : { price };
+}
+
 export interface HydrateProductsOptions {
   signal?: AbortSignal;
   timeout?: number;
@@ -67,12 +84,16 @@ export async function hydrateStoryProducts(
 
     for (const { story, product, offer } of hydrated.stories[placement] ?? []) {
       if (!product || !offer) continue;
-      const price = hydration.price(product, offer);
-      const available = hydration.available?.(product, offer);
-      products.set(story.ad_id, {
-        ...(price && { price }),
-        ...(available !== undefined && { available }),
-      });
+      try {
+        const price = toShownPrice(hydration.price(product, offer));
+        const available = hydration.available?.(product, offer);
+        products.set(story.ad_id, {
+          ...(price && { price }),
+          ...(available !== undefined && { available }),
+        });
+      } catch (error) {
+        console.error(`[${TAG_NAME}] Product details failed`, error);
+      }
     }
   } catch (error) {
     // As for the Story request: a cancelled or timed out request needs no
