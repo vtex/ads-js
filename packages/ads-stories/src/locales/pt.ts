@@ -24,9 +24,11 @@ export const pt: StoryLabels = {
   videoFailed: "Não foi possível carregar o vídeo",
   retry: "Tentar de novo",
   videoLoading: "Carregando vídeo",
-  product: (name, price, listPrice) => {
-    if (price && listPrice) return `${name}, de ${listPrice} por ${price}`;
-    return price ? `${name}, ${price}` : name;
+  product: (name, price, listPrice, soldOut) => {
+    let text = name;
+    if (price && listPrice) text = `${name}, de ${listPrice} por ${price}`;
+    else if (price) text = `${name}, ${price}`;
+    return soldOut ? `${text}, ${soldOut}` : text;
   },
   position: (label, index, count) =>
     count > 1 ? `${label} ${index + 1} de ${count}` : label,

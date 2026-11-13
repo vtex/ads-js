@@ -76,10 +76,7 @@ export function toCardProduct(
     price,
     listPrice,
     soldOut,
-    label:
-      soldOut && !price
-        ? labels.product(name, soldOut)
-        : labels.product(name, price, listPrice),
+    label: labels.product(name, price, listPrice, soldOut),
   };
 }
 

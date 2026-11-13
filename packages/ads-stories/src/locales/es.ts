@@ -24,10 +24,12 @@ export const es: StoryLabels = {
   videoFailed: "No se pudo cargar el video",
   retry: "Intentar de nuevo",
   videoLoading: "Cargando video",
-  product: (name, price, listPrice) => {
+  product: (name, price, listPrice, soldOut) => {
+    let text = name;
     if (price && listPrice)
-      return `${name}, antes ${listPrice}, ahora ${price}`;
-    return price ? `${name}, ${price}` : name;
+      text = `${name}, antes ${listPrice}, ahora ${price}`;
+    else if (price) text = `${name}, ${price}`;
+    return soldOut ? `${text}, ${soldOut}` : text;
   },
   position: (label, index, count) =>
     count > 1 ? `${label} ${index + 1} de ${count}` : label,

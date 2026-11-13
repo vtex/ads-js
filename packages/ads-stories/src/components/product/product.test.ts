@@ -9,8 +9,12 @@ import {
 import { en } from "../../locales";
 
 const format = (amount: number) => `$${amount.toFixed(2)}`;
-const label = (name: string, price?: string, listPrice?: string) =>
-  [name, listPrice, price].filter(Boolean).join(" | ");
+const label = (
+  name: string,
+  price?: string,
+  listPrice?: string,
+  soldOut?: string,
+) => [name, listPrice, price, soldOut].filter(Boolean).join(" | ");
 const labels = { ...en, product: label };
 
 const storyWith = (product: Record<string, unknown> | null) =>
@@ -115,7 +119,7 @@ describe("toCardProduct", () => {
       price: "$12.00",
       listPrice: "$15.00",
       soldOut: "Sold out",
-      label: "Shoe | $15.00 | $12.00",
+      label: "Shoe | $15.00 | $12.00 | Sold out",
     });
   });
 
@@ -127,7 +131,11 @@ describe("toCardProduct", () => {
       { available: false },
     );
 
-    expect(product).toMatchObject({ price: "$20.00", soldOut: "Sold out" });
+    expect(product).toMatchObject({
+      price: "$20.00",
+      soldOut: "Sold out",
+      label: "Shoe | $20.00 | Sold out",
+    });
   });
 
   it("shows the price when the product can be bought", () => {

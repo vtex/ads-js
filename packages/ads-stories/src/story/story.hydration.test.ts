@@ -279,7 +279,7 @@ describe(`${TAG_NAME} product hydration`, () => {
     expect(pill(el)?.querySelector(".product-sold-out")).toBeNull();
     expect(priceOf(el)).toBe("R$ 99,90");
     expect(pill(el)?.getAttribute("aria-label")?.replace(/\s/g, " ")).toBe(
-      `${mockStory.product?.product_name}, R$ 99,90`,
+      `${mockStory.product?.product_name}, R$ 99,90, Esgotado`,
     );
 
     const panel = await openPanel(el);

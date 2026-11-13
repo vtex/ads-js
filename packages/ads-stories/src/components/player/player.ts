@@ -751,8 +751,7 @@ export class PlayerController implements ReactiveController {
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
     this.retryGeneration++;
-    this.video.failed = false;
-    this.video.retrying = false;
+    this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
     this.host.requestUpdate();

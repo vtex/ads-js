@@ -33,11 +33,8 @@ export interface MediaOptions {
    * motion). Without it, the video loads in full but waits to be played.
    */
   autoplay?: boolean;
-  /**
-   * The texts of the notice over the cover when the video can't load.
-   * Without them, only the cover shows.
-   */
-  labels?: StoryLabels;
+  /** The texts of the notice over the cover when the video can't load. */
+  labels: StoryLabels;
   /**
    * Offers to load a failed video again (see VideoController.retry), with a
    * button in the notice. Without it, the notice only says the video is
@@ -81,7 +78,6 @@ function renderStatus(
   video: VideoController,
   { labels, onRetry }: MediaOptions,
 ) {
-  if (!labels) return nothing;
   if (video.failed) return renderFailed(labels, onRetry);
   if (video.retrying) return renderVideoLoading(labels);
   return nothing;
@@ -90,13 +86,13 @@ function renderStatus(
 /**
  * The Story cover and, with a media_url, the video looping muted over it. If
  * the video can't load, it is removed and the cover underneath stays, with a
- * notice over it when there are `labels` (and a retry button with
- * `onRetry`). With withVideo false, only the cover.
+ * notice over it (and a retry button with `onRetry`). With withVideo false,
+ * only the cover.
  */
 export function renderMedia(
   story: StoryMedia,
   video: VideoController,
-  options: MediaOptions = {},
+  options: MediaOptions,
 ) {
   const { withVideo = true, loop = true, onEnded, autoplay = true } = options;
   const posterUrl = httpUrl(story.poster_url);

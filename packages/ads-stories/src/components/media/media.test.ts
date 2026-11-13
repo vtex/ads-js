@@ -9,7 +9,7 @@ import type { StoryMedia } from "../../types";
 function mount(story: StoryMedia) {
   const { container, controller: video } = mountHost(
     (host) => new VideoController(host),
-    (video) => renderMedia(story, video),
+    (video) => renderMedia(story, video, { labels: en }),
   );
   return { container, video };
 }
@@ -97,8 +97,6 @@ describe("renderMedia video", () => {
     expect(video.failed).toBe(true);
     expect(container.querySelector("video")).toBeNull();
     expect(container.querySelector(".poster")).not.toBeNull();
-    // Without labels, no notice.
-    expect(container.querySelector(".media-status")).toBeNull();
   });
 
   it.each([
@@ -174,7 +172,7 @@ describe("renderMedia failed video notice", () => {
     installMediaMocks();
   });
 
-  function mountWith(options: MediaOptions) {
+  function mountWith(options: Partial<MediaOptions>) {
     const { container, controller: video } = mountHost(
       (host) => new VideoController(host),
       (video) => renderMedia(story, video, { labels: en, ...options }),
@@ -245,5 +243,14 @@ describe("renderMedia failed video notice", () => {
 
     await expect(first).resolves.toBe(true);
     await expect(second).resolves.toBe(true);
+  });
+
+  it("doesn't load again a video that didn't fail", async () => {
+    const { container, video } = mountWith({ onRetry: vi.fn() });
+    const rendered = container.querySelector("video");
+
+    await expect(video.retry()).resolves.toBe(false);
+    expect(video.retrying).toBe(false);
+    expect(container.querySelector("video")).toBe(rendered);
   });
 });
