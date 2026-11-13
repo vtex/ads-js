@@ -134,6 +134,7 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `label-add-to-cart`  | No       | The add to cart button's text. Missing or blank: the default in the element's language (see [Language](#language))                                                                      |
 | `label-view-product` | No       | The view product button's text. Missing or blank: the default in the element's language                                                                                                 |
 | `inactive-autoplay`  | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover |
+| `slide-duration`     | No       | With more than one Story, how long each one stays highlighted before the next, in milliseconds. Default `5000`. `0`: no automatic advance. Maximum `120000`: larger values are capped.  |
 | `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](#product-hydration))                                   |
 | `hydration-timeout`  | No       | Time limit for the product request, in milliseconds. Default `5000`                                                                                                                     |
 
@@ -144,9 +145,17 @@ leaves. It renders nothing
 when a required attribute is missing, when the request fails or takes longer
 than `timeout`, or when the placement has no Story. Changing any of these
 attributes, except
-`timeout`, `hydration-timeout`, `inactive-autoplay`, `currency`,
-`label-add-to-cart` and `label-view-product`, requests the Stories again; a
-new time limit applies to the next request.
+`timeout`, `hydration-timeout`, `inactive-autoplay`, `slide-duration`,
+`currency`, `label-add-to-cart` and `label-view-product`, requests the
+Stories again; a new time limit applies to the next request, and a new
+`slide-duration` starts the highlighted Story's time over.
+
+For shoppers whose system asks for reduced motion
+(`prefers-reduced-motion: reduce`), the carousel holds still: the cards show
+only their cover, with no video playing, and the highlight doesn't advance on
+its own, whatever `slide-duration` or `inactive-autoplay` say. It moves only
+with the arrows, swipes and clicks. Opening a Story plays its video in the
+player as usual, since the shopper chose to watch it.
 
 ## Language
 
@@ -294,7 +303,8 @@ highlight, as the card does. Without a text, there is no button.
 ### Player
 
 Clicking the highlighted card opens it in the mini player, at the bottom right
-of the screen, which can be expanded. With more than one Story:
+of the screen, which can be expanded. Its video plays with the sound on, or
+muted if the browser blocks it. With more than one Story:
 
 - **Mini player**: previous and next buttons above its top left change the video
   in the player, and the carousel highlight follows. The carousel's own advance

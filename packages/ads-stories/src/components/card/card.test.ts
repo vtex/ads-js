@@ -76,13 +76,11 @@ describe("renderCard sound button", () => {
     expect(sound()?.querySelectorAll("svg.icon")).toHaveLength(1);
 
     sound()?.click();
-    video?.dispatchEvent(new Event("volumechange"));
     expect(video?.muted).toBe(false);
     expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
     expect(sound()?.querySelectorAll("svg.icon")).toHaveLength(1);
 
     sound()?.click();
-    video?.dispatchEvent(new Event("volumechange"));
     expect(video?.muted).toBe(true);
     expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
   });

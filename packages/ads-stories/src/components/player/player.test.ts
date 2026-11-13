@@ -420,10 +420,10 @@ describe("PlayerController", () => {
       expect(player.hasAttribute("data-paused")).toBe(false);
     });
 
-    it("plays muted when it opens", async () => {
+    it("plays with the sound on when it opens", async () => {
       const { player, video, toggle } = await setupWithVideo();
 
-      expect(video?.muted).toBe(true);
+      expect(video?.muted).toBe(false);
       expect(video?.paused).toBe(false);
       expect(player.hasAttribute("data-paused")).toBe(false);
       expect(toggle()?.getAttribute("aria-label")).toBe("Pausar vídeo");
@@ -452,21 +452,36 @@ describe("PlayerController", () => {
       expect(video?.paused).toBe(false);
     });
 
-    it("turns the sound on and off", async () => {
+    it("plays muted when the browser blocks the sound", async () => {
+      const play = vi
+        .spyOn(HTMLMediaElement.prototype, "play")
+        .mockImplementationOnce(() =>
+          Promise.reject(new DOMException("Blocked", "NotAllowedError")),
+        );
+      try {
+        const { video, sound } = await setupWithVideo();
+
+        await vi.waitFor(() => expect(video?.paused).toBe(false));
+        expect(video?.muted).toBe(true);
+        expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
+      } finally {
+        play.mockRestore();
+      }
+    });
+
+    it("turns the sound off and on", async () => {
       const { video, sound } = await setupWithVideo();
-      expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
+      expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
 
       sound()?.click();
-      video?.dispatchEvent(new Event("volumechange"));
-      expect(video?.muted).toBe(false);
-      expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
+      expect(video?.muted).toBe(true);
+      expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
       // The click stays on the sound button: it does not also pause the video.
       expect(video?.paused).toBe(false);
 
       sound()?.click();
-      video?.dispatchEvent(new Event("volumechange"));
-      expect(video?.muted).toBe(true);
-      expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
+      expect(video?.muted).toBe(false);
+      expect(sound()?.getAttribute("aria-label")).toBe("Desativar som");
     });
 
     it("removes the controls when the video fails, leaving the cover", async () => {
@@ -1071,7 +1086,6 @@ describe("PlayerController", () => {
       const { controller, player } = await setupWithNavigation();
       const first = player.querySelector("video");
       if (first) first.muted = false;
-      first?.dispatchEvent(new Event("volumechange"));
       // The video fails: the next Story gets a new one, created muted.
       first?.dispatchEvent(new Event("error"));
       await vi.waitFor(() => expect(player.querySelector("video")).toBeNull());
