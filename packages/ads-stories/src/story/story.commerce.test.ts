@@ -102,7 +102,7 @@ describe(`${TAG_NAME} add to cart`, () => {
     vi.unstubAllGlobals();
   });
 
-  it("dispatches the product's SKU and a quantity of 1 from the element", async () => {
+  it("dispatches the product's SKU, seller and a quantity of 1 from the element", async () => {
     const el = await mount([story1]);
     const events = listen(el);
     await openPanel(el);
@@ -113,11 +113,30 @@ describe(`${TAG_NAME} add to cart`, () => {
     const [event] = events;
     expect(event.detail).toEqual({
       sku: story1.product?.product_sku,
+      seller: story1.product?.seller_id,
       quantity: 1,
     });
     expect(event.target).toBe(el);
     expect(event.bubbles).toBe(true);
     expect(event.composed).toBe(true);
+  });
+
+  it("leaves the seller out when the product has none", async () => {
+    const withoutSeller = {
+      ...story1,
+      product: story1.product && { ...story1.product, seller_id: undefined },
+    };
+    const el = await mount([withoutSeller]);
+    const events = listen(el);
+    await openPanel(el);
+
+    await click(el, ".player .product-add-to-cart");
+
+    expect(events[0]?.detail).toEqual({
+      sku: story1.product?.product_sku,
+      quantity: 1,
+    });
+    expect(events[0]?.detail).not.toHaveProperty("seller");
   });
 
   it("reaches the document", async () => {

@@ -11,4 +11,5 @@ export {
   ADD_TO_CART_EVENT,
   type StoryAddToCartDetail,
   type StoryAddToCartEvent,
+  type StoryCartItem,
 } from "./commerce-events";

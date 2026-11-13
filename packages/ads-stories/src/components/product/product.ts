@@ -17,6 +17,8 @@ export interface CardProduct {
   url?: string;
   /** The SKU added to the cart. Without one, there is no add to cart. */
   sku?: string;
+  /** The product's seller, sent with the SKU when known. */
+  seller?: string;
   /** Accessible name of the product button: name and prices. */
   label: string;
   /**
@@ -63,6 +65,7 @@ export function toCardProduct(
     imageUrl: httpUrl(product.image_url) ?? undefined,
     url: destinationUrl(story.destination_url) ?? undefined,
     sku: product.product_sku?.trim() || undefined,
+    seller: product.seller_id?.trim() || undefined,
   };
 
   if (fetched === "loading") {

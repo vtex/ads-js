@@ -63,6 +63,22 @@ describe("toCardProduct", () => {
     expect(product?.sku).toBeUndefined();
   });
 
+  it("has the product's seller, trimmed, or none", () => {
+    const withSeller = toCardProduct(
+      storyWith({ seller_id: " 1 " }),
+      format,
+      labels,
+    );
+    const withoutSeller = toCardProduct(
+      storyWith({ seller_id: " " }),
+      format,
+      labels,
+    );
+
+    expect(withSeller?.seller).toBe("1");
+    expect(withoutSeller?.seller).toBeUndefined();
+  });
+
   it("trims the SKU", () => {
     const product = toCardProduct(
       storyWith({ product_sku: " sku-1 " }),
