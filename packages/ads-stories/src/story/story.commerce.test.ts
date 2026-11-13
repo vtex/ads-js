@@ -62,10 +62,15 @@ async function click(el: VtexAdsStoryCarouselElement, selector: string) {
 const openPanel = (el: VtexAdsStoryCarouselElement) =>
   click(el, ".card-product");
 
+// Aborted after each test: the listeners on the document go with it.
+let listeners = new AbortController();
+
 function listen(target: EventTarget = document) {
   const events: StoryAddToCartEvent[] = [];
-  target.addEventListener(ADD_TO_CART_EVENT, (event) =>
-    events.push(event as StoryAddToCartEvent),
+  target.addEventListener(
+    ADD_TO_CART_EVENT,
+    (event) => events.push(event as StoryAddToCartEvent),
+    { signal: listeners.signal },
   );
   return events;
 }
@@ -90,6 +95,8 @@ describe(`${TAG_NAME} add to cart`, () => {
   });
 
   afterEach(() => {
+    listeners.abort();
+    listeners = new AbortController();
     vi.restoreAllMocks();
     document.body.replaceChildren();
     vi.unstubAllGlobals();
