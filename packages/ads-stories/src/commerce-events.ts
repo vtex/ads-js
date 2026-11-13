@@ -16,6 +16,10 @@ export interface StoryAddToCartDetail {
 
 export type StoryAddToCartEvent = CustomEvent<StoryAddToCartDetail>;
 
+/**
+ * The add to cart event for `sku`, bubbling and composed, to dispatch from
+ * the element. `quantity` defaults to 1.
+ */
 export function addToCartEvent(sku: string, quantity = 1): StoryAddToCartEvent {
   return new CustomEvent<StoryAddToCartDetail>(ADD_TO_CART_EVENT, {
     detail: { sku, quantity },
