@@ -24,7 +24,7 @@ to open its panel: the panel, its buttons and the "from" price take the colors.`
 
 const meta: Meta<Args> = {
   title: "Custom CSS",
-  args: { placement: "home_stories", inactiveAutoplay: false },
+  args: { placement: "four_stories", inactiveAutoplay: false },
   argTypes: {
     ...Object.fromEntries(
       Object.entries(VARIABLES).map(([name, control]) => [
