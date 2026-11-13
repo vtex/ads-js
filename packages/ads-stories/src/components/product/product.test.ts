@@ -49,6 +49,30 @@ describe("toCardProduct", () => {
     });
   });
 
+  it.each([
+    ["blank", " "],
+    ["empty", ""],
+  ])("has no SKU when the product's is %s", (_, productSku) => {
+    const product = toCardProduct(
+      storyWith({ product_sku: productSku }),
+      format,
+      labels,
+    );
+
+    expect(product).toBeDefined();
+    expect(product?.sku).toBeUndefined();
+  });
+
+  it("trims the SKU", () => {
+    const product = toCardProduct(
+      storyWith({ product_sku: " sku-1 " }),
+      format,
+      labels,
+    );
+
+    expect(product?.sku).toBe("sku-1");
+  });
+
   it("uses the fetched price over the metadata's", () => {
     const product = toCardProduct(
       storyWith({ product_metadata: { price: 20, promotional_price: 15 } }),

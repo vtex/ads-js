@@ -642,21 +642,21 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       };
     });
 
+    const product = this.productOf(active);
+    const sku = product?.sku;
+
     return this.player.render(active, {
       labels: this.labels,
       navigation: stories.length > 1,
       neighbors,
-      product: this.productOf(active),
+      product,
       cta: toCardCta(active),
-      onAddToCart: () => this.addToCart(active),
+      // The store adds it: the element only tells, from itself.
+      onAddToCart: sku
+        ? () => this.dispatchEvent(addToCartEvent(sku))
+        : undefined,
       onPress: () => this.events.click(active),
     });
-  }
-
-  // The store adds it: the element only tells, from itself.
-  private addToCart(story: StoryAd) {
-    const sku = story.product?.product_sku?.trim();
-    if (sku) this.dispatchEvent(addToCartEvent(sku));
   }
 }
 
