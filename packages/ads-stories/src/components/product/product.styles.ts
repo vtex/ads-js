@@ -201,6 +201,52 @@ export const productStyles = css`
     );
   }
 
+  /* In the cart: the add to cart button's pill, with minus and plus at its
+     ends and the quantity between them. */
+  .product-stepper {
+    justify-content: space-between;
+    padding: 0;
+    background: var(--vtex-ads-story-color-accent, #1b75a8);
+    color: var(--vtex-ads-story-color-accent-contrast, #fff);
+    cursor: auto;
+  }
+
+  .product-stepper-button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .product-stepper-button .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .product-stepper-button:hover {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .product-stepper-button:focus-visible {
+    outline: 2px solid var(--vtex-ads-story-color-accent-contrast, #fff);
+    outline-offset: -4px;
+  }
+
+  .product-quantity {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    text-align: center;
+  }
+
   /* Sold out: add to cart, disabled and grayed. */
   .product-unavailable {
     border-color: transparent;

@@ -328,6 +328,28 @@ describe("PlayerController", () => {
       expect(video?.paused).toBe(false);
     });
 
+    it("shows the stepper with cartQuantity and calls onRemoveFromCart", async () => {
+      const onRemoveFromCart = vi.fn();
+      const { player, onClose } = await setup(
+        withVideo,
+        { product, cartQuantity: 1, onRemoveFromCart },
+        { productOpen: true },
+      );
+
+      expect(
+        player.querySelector(".product-quantity")?.textContent?.trim(),
+      ).toBe("1");
+      player
+        .querySelector<HTMLButtonElement>(".product-stepper-remove")
+        ?.click();
+
+      expect(onRemoveFromCart).toHaveBeenCalledTimes(1);
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        player.querySelector(".card-product")?.hasAttribute("data-open"),
+      ).toBe(true);
+    });
+
     it("opens with the panel open when asked", async () => {
       const { pill } = await setupWithProduct({ productOpen: true });
 

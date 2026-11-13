@@ -14,6 +14,10 @@ export interface StoryLabels {
   soundOn: string;
   soundOff: string;
   addToCart: string;
+  cartQuantity: string;
+  decreaseQuantity: string;
+  removeFromCart: string;
+  increaseQuantity: string;
   unavailable: string;
   soldOut: string;
   viewProduct: string;
