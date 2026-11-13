@@ -138,10 +138,13 @@ describe(`${TAG_NAME} add to cart`, () => {
     expect(event.composed).toBe(true);
   });
 
-  it("leaves the seller out when the product has none", async () => {
+  it.each([
+    ["none", undefined],
+    ["a blank one", " "],
+  ])("leaves the seller out when the product has %s", async (_, sellerId) => {
     const withoutSeller = {
       ...story1,
-      product: story1.product && { ...story1.product, seller_id: undefined },
+      product: story1.product && { ...story1.product, seller_id: sellerId },
     };
     const el = await mount([withoutSeller]);
     const events = listen(el);
@@ -297,6 +300,39 @@ describe(`${TAG_NAME} add to cart`, () => {
       await click(el, ".player-previous");
       await click(el, ".player .product-summary");
       expect(quantityShown(el)).toBe("2");
+    });
+
+    it("counts the same SKU from another seller apart", async () => {
+      const sameSkuOtherSeller = {
+        ...story2,
+        product: story2.product && {
+          ...story2.product,
+          product_sku: story1.product?.product_sku ?? "",
+          seller_id: "seller-2",
+        },
+      };
+      const el = await mount([story1, sameSkuOtherSeller]);
+      const events = listenCart(el);
+      await click(el, ".slide[data-active] .card-open");
+      await click(el, ".player .product-summary");
+      await click(el, ".player .product-add-to-cart");
+      await click(el, ".player .product-stepper-add");
+
+      await click(el, ".player-next");
+      await click(el, ".player .product-summary");
+      expect(query(el, ".player .product-add-to-cart")).not.toBeNull();
+      await click(el, ".player .product-add-to-cart");
+      await click(el, ".player .product-stepper-remove");
+
+      await click(el, ".player-previous");
+      await click(el, ".player .product-summary");
+      expect(quantityShown(el)).toBe("2");
+      expect(events.map((event) => event.detail)).toEqual([
+        { ...item1, quantity: 1 },
+        { ...item1, quantity: 1 },
+        { sku: item1.sku, seller: "seller-2", quantity: 1 },
+        { sku: item1.sku, seller: "seller-2", quantity: 1 },
+      ]);
     });
 
     it("starts over when the player opens again", async () => {
