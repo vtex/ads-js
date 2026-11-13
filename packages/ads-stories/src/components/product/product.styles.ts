@@ -16,7 +16,7 @@ export const productStyles = css`
     box-sizing: border-box;
     padding: 8px;
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--vtex-ads-story-radius, 16px);
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(5px);
     color: #fff;
@@ -174,7 +174,7 @@ export const productStyles = css`
     height: 48px;
     padding: 0 16px;
     border: 1px solid var(--vtex-ads-story-color-accent, #1b75a8);
-    border-radius: 50px;
+    border-radius: var(--vtex-ads-story-radius, 50px);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
@@ -219,7 +219,7 @@ export const productStyles = css`
     height: 46px;
     padding: 0;
     border: 0;
-    border-radius: 50%;
+    border-radius: var(--vtex-ads-story-radius, 50%);
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -336,11 +336,12 @@ export const productStyles = css`
     }
   }
 
+  /* Its corners follow the pill's, 8px in from them: 8px by default. */
   .product-image {
     flex: none;
     width: 60px;
     height: 60px;
-    border-radius: 8px;
+    border-radius: max(0px, calc(var(--vtex-ads-story-radius, 16px) - 8px));
     background: #fff;
     object-fit: contain;
   }
@@ -404,7 +405,7 @@ export const productStyles = css`
   .product-add-to-cart-loading {
     display: block;
     height: 48px;
-    border-radius: 50px;
+    border-radius: var(--vtex-ads-story-radius, 50px);
   }
 
   @media (prefers-reduced-motion: reduce) {

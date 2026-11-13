@@ -249,7 +249,7 @@ export const playerStyles = css`
     padding: 0;
     overflow: hidden;
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--vtex-ads-story-radius, 16px);
     background: #111;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
     cursor: pointer;

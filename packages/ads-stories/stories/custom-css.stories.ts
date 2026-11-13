@@ -24,7 +24,7 @@ to open its panel: the panel, its buttons and the "from" price take the colors.`
 
 const meta: Meta<Args> = {
   title: "Custom CSS",
-  args: { placement: "home_stories", inactiveAutoplay: false },
+  args: { placement: "four_stories", inactiveAutoplay: false },
   argTypes: {
     ...Object.fromEntries(
       Object.entries(VARIABLES).map(([name, control]) => [
@@ -66,7 +66,16 @@ export const Brand: Story = {
     "--vtex-ads-story-color-surface": "#fff4f7",
     "--vtex-ads-story-color-accent": "#e31c57",
     "--vtex-ads-story-color-accent-contrast": "#fff",
-    "--vtex-ads-story-radius": "40px",
+    "--vtex-ads-story-radius": "24px",
+  },
+};
+
+export const Square: Story = {
+  args: { "--vtex-ads-story-radius": "0" },
+  parameters: {
+    note: html`<code>--vtex-ads-story-radius: 0</code>: the cards, the pills and
+      the panel's buttons are square; the round icon buttons on the video stay
+      round. ${OPEN_THE_PANEL}`,
   },
 };
 
