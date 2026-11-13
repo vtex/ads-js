@@ -49,7 +49,7 @@ export const mediaStyles = css`
     min-height: 36px;
     padding: 0 16px;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--vtex-ads-story-radius, 999px);
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(4px);
     box-shadow: inset 0 0 3px rgba(255, 255, 255, 0.42);

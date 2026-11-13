@@ -195,15 +195,15 @@ vtex-ads-story-carousel {
 }
 ```
 
-| Variable                                 | Default                            | Used for                                                                                  |
-| ---------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| `--vtex-ads-story-font-family`           | inherited                          | All text                                                                                  |
-| `--vtex-ads-story-color-text`            | inherited (`#242424` in the panel) | All text off the video, such as the open product panel's                                  |
-| `--vtex-ads-story-color-muted`           | `#6b6b6b`                          | The panel's "from" price and its disabled add to cart                                     |
-| `--vtex-ads-story-color-surface`         | `#fff` (`#fafafa` behind the card) | The open product panel, the view product button, and the background behind a single Story |
-| `--vtex-ads-story-color-accent`          | `#1b75a8`                          | The product panel's buttons                                                               |
-| `--vtex-ads-story-color-accent-contrast` | `#fff`                             | Text on the add to cart button                                                            |
-| `--vtex-ads-story-radius`                | `20px`                             | Card and background corners                                                               |
+| Variable                                 | Default                            | Used for                                                                                                                                        |
+| ---------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--vtex-ads-story-font-family`           | inherited                          | All text                                                                                                                                        |
+| `--vtex-ads-story-color-text`            | inherited (`#242424` in the panel) | All text off the video, such as the open product panel's                                                                                        |
+| `--vtex-ads-story-color-muted`           | `#6b6b6b`                          | The panel's "from" price and its disabled add to cart                                                                                           |
+| `--vtex-ads-story-color-surface`         | `#fff` (`#fafafa` behind the card) | The open product panel, the view product button, and the background behind a single Story                                                       |
+| `--vtex-ads-story-color-accent`          | `#1b75a8`                          | The product panel's buttons                                                                                                                     |
+| `--vtex-ads-story-color-accent-contrast` | `#fff`                             | Text on the add to cart button                                                                                                                  |
+| `--vtex-ads-story-radius`                | Each element's own                 | The cards, the product and call to action pills, and the panel's buttons; `0` makes them square. The round icon buttons on the video stay round |
 
 Text over the video stays white: it sits on the video, not on a store color.
 
