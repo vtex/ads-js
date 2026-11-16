@@ -17,11 +17,14 @@ import {
 } from "../components/media";
 import {
   DEFAULT_LOCALE,
+  focusCartAction,
   priceFormatter,
   productStyles,
   toCardCta,
   toCardProduct,
+  type CardProduct,
   type FetchedProduct,
+  type ProductCartActions,
 } from "../components/product";
 import {
   neighborOffsets,
@@ -665,8 +668,6 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     });
 
     const product = this.productOf(active);
-    const sku = product?.sku;
-    const item = sku ? { sku, seller: product.seller } : undefined;
 
     return this.player.render(active, {
       labels: this.labels,
@@ -674,11 +675,23 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       neighbors,
       product,
       cta: toCardCta(active),
-      cartQuantity: item ? this.cartQuantities.get(cartKey(item)) : undefined,
-      onAddToCart: item ? () => this.changeCart(item, 1) : undefined,
-      onRemoveFromCart: item ? () => this.changeCart(item, -1) : undefined,
+      productActions: this.cartActionsFor(product),
       onPress: () => this.events.click(active),
     });
+  }
+
+  private cartActionsFor(
+    product?: CardProduct,
+  ): ProductCartActions | undefined {
+    const sku = product?.sku;
+    if (!sku) return undefined;
+
+    const item = { sku, seller: product.seller };
+    return {
+      cartQuantity: this.cartQuantities.get(cartKey(item)),
+      onAddToCart: () => this.changeCart(item, 1),
+      onRemoveFromCart: () => this.changeCart(item, -1),
+    };
   }
 
   /**
@@ -700,15 +713,15 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       delta > 0 ? addToCartEvent(item) : removeFromCartEvent(item),
     );
 
-    const swapped =
-      before === 0
-        ? ".player .product-stepper-add"
-        : after === 0 && ".player .product-add-to-cart";
-    if (swapped) {
-      this.updateComplete.then(() =>
-        this.shadowRoot?.querySelector<HTMLElement>(swapped)?.focus(),
-      );
-    }
+    let swapped: "stepper" | "add" | undefined;
+    if (before === 0) swapped = "stepper";
+    else if (after === 0) swapped = "add";
+    if (!swapped) return;
+
+    const action = swapped;
+    this.updateComplete
+      .then(() => this.shadowRoot && focusCartAction(this.shadowRoot, action))
+      .catch(() => undefined);
   }
 }
 

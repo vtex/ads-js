@@ -17,6 +17,7 @@ import {
   renderExpandableProduct,
   type CardCta,
   type CardProduct,
+  type ProductCartActions,
 } from "../product";
 import type { StoryMedia } from "../../types";
 
@@ -456,14 +457,10 @@ export interface PlayerRenderOptions {
   /** The Story's call to action, for a link destination (no product). */
   cta?: CardCta;
   /**
-   * How many of the product were added from the element: above 0, its
-   * stepper shows in place of add to cart.
+   * What the product's panel does with the cart: add to cart and plus keep
+   * the player open; minus is a trash with one left.
    */
-  cartQuantity?: number;
-  /** Called by the product's add to cart and plus. The player stays open. */
-  onAddToCart?: () => void;
-  /** Called by the product's minus (a trash with one left). */
-  onRemoveFromCart?: () => void;
+  productActions?: ProductCartActions;
   /**
    * Called by any click on the video's card (the video, its play and sound
    * buttons, the product and the call to action), before what that click
@@ -476,12 +473,7 @@ export interface PlayerRenderOptions {
 // What shows at the bottom of the video: one or the other.
 type StoryDestination = Pick<
   PlayerRenderOptions,
-  | "product"
-  | "cta"
-  | "labels"
-  | "cartQuantity"
-  | "onAddToCart"
-  | "onRemoveFromCart"
+  "product" | "cta" | "labels" | "productActions"
 >;
 
 /**
@@ -955,11 +947,17 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({ product, cta, ...cart }: StoryDestination) {
+  private renderDestination({
+    product,
+    cta,
+    labels,
+    productActions,
+  }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
-        ...cart,
+        ...productActions,
+        labels,
         open: this.productOpen,
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",
