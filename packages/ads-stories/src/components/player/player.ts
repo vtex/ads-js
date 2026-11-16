@@ -654,11 +654,6 @@ export class PlayerController implements ReactiveController {
   private switched = false;
   /** The dialog is showing, in the mode `expanded` says. */
   private shown = false;
-  /**
-   * Bumped on each step and on close: a retry started before either doesn't
-   * play once its video loads.
-   */
-  private retryGeneration = 0;
 
   private readonly dialog = createRef<HTMLDialogElement>();
   private readonly expandButton = createRef<HTMLButtonElement>();
@@ -729,7 +724,6 @@ export class PlayerController implements ReactiveController {
   close() {
     if (!this.isOpen) return;
 
-    this.retryGeneration++;
     document.removeEventListener("keydown", this.onKeyDown);
     this.cancelAnimations();
     const dialog = this.dialog.value;
@@ -750,7 +744,6 @@ export class PlayerController implements ReactiveController {
     // Read before the render: a Story without a video, or a video that
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
-    this.retryGeneration++;
     this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
@@ -922,15 +915,12 @@ export class PlayerController implements ReactiveController {
   /**
    * Loads the failed video again and, once it loads, plays it with the sound
    * on (muted if the browser blocks it). Not if the player closed or stepped
-   * meanwhile, even back to the same Story.
+   * meanwhile, even back to the same Story: the retry then resolves false.
    */
   private readonly retryVideo = () => {
     this.dialog.value?.focus();
-    const generation = this.retryGeneration;
     void this.video.retry().then((loaded) => {
-      if (loaded && generation === this.retryGeneration) {
-        this.video.playWithSound();
-      }
+      if (loaded) this.video.playWithSound();
     });
   };
 

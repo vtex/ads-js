@@ -293,6 +293,31 @@ describe("renderMedia failed video notice", () => {
     await expect(second).resolves.toBe(true);
   });
 
+  it("resolves a retry still loading false when the failure is cleared", async () => {
+    const { container, video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+    const retried = video.retry();
+
+    video.clearFailure();
+    const next = video.ready;
+    container.querySelector("video")?.dispatchEvent(new Event("loadeddata"));
+
+    await expect(retried).resolves.toBe(false);
+    await expect(next).resolves.toBe(true);
+    expect(video.retrying).toBe(false);
+  });
+
+  it("resolves a retry still loading false on reset", async () => {
+    const { video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+    const retried = video.retry();
+
+    video.reset();
+
+    await expect(retried).resolves.toBe(false);
+    expect(video.retrying).toBe(false);
+  });
+
   it("doesn't load again a video that didn't fail", async () => {
     const { container, video } = mountWith({ onRetry: vi.fn() });
     const rendered = container.querySelector("video");
