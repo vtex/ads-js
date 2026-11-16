@@ -469,6 +469,7 @@ export class CarouselController implements ReactiveController {
   private stopTimer() {
     clearInterval(this.timer);
     this.timer = undefined;
+    this.timerMs = 0;
   }
 
   private restartTimer() {
