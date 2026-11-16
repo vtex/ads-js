@@ -22,10 +22,7 @@ export class VideoController {
   paused = true;
   // The video always starts muted: that is what browsers allow to autoplay.
   muted = true;
-  /** The video could not load: the cover shows with a notice over it. */
-  failed = false;
-  /** A failed video is loading again (see retry), until it loads or fails. */
-  retrying = false;
+  private status: "playable" | "failed" | "retrying" = "playable";
 
   private readyState!: Promise<boolean>;
   private settleReady!: (ready: boolean) => void;
@@ -42,30 +39,59 @@ export class VideoController {
     return this.readyState;
   }
 
+  /** The video could not load: the cover shows with a notice over it. */
+  get failed() {
+    return this.status === "failed";
+  }
+
+  /** A failed video is loading again (see retry), until it loads or fails. */
+  get retrying() {
+    return this.status === "retrying";
+  }
+
   /** The rendered <video> is on the page and playing. */
   get playing() {
     const video = this.ref.value;
     return !!video && video.isConnected && !video.paused;
   }
 
-  /** For a new <video>, such as each time the player opens. */
+  /**
+   * For a new <video>, such as each time the player opens. A retry still
+   * loading resolves false.
+   */
   reset() {
+    this.cancelRetry();
     this.paused = true;
     this.muted = true;
-    this.failed = false;
-    this.retrying = false;
+    this.status = "playable";
     this.waitForReady();
+  }
+
+  /**
+   * For the next Story's <video>: neither failed nor loading again (a retry
+   * still loading resolves false). Unlike reset, it keeps the playback and
+   * sound state.
+   */
+  clearFailure() {
+    if (this.retrying) {
+      this.cancelRetry();
+      this.waitForReady();
+    }
+    this.status = "playable";
+    this.host.requestUpdate();
   }
 
   /**
    * Loads a failed video again: renderMedia renders a new <video> with a
    * notice that it is loading, until it loads or fails. Resolves as `ready`
-   * does.
+   * does: false too if the video is replaced first (see reset and
+   * clearFailure), and at once for a video that didn't fail.
    */
   retry() {
     if (this.retrying) return this.ready;
+    if (!this.failed) return Promise.resolve(false);
     this.reset();
-    this.retrying = true;
+    this.status = "retrying";
     this.host.requestUpdate();
     return this.ready;
   }
@@ -151,17 +177,21 @@ export class VideoController {
   readonly loaded = () => {
     this.settleReady(true);
     if (!this.retrying) return;
-    this.retrying = false;
+    this.status = "playable";
     this.host.requestUpdate();
   };
 
   /** Listener for the video's error event. */
   readonly fail = () => {
-    this.failed = true;
-    this.retrying = false;
+    this.status = "failed";
     this.settleReady(false);
     this.host.requestUpdate();
   };
+
+  // The video loading again is replaced: its retry resolves false.
+  private cancelRetry() {
+    if (this.retrying) this.settleReady(false);
+  }
 
   private waitForReady() {
     this.readyState = new Promise((settle) => (this.settleReady = settle));

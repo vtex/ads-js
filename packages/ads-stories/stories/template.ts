@@ -22,8 +22,11 @@ export const PLACEMENTS = [
 ];
 export const ACCOUNTS = ["playground", "playground-slow", "playground-error"];
 
+// Sent without a publisher-id: the mock answers any publisher.
+const MOCK_PUBLISHER_ID = "mock-publisher";
+
 export type ElementArgs = {
-  publisherId: string;
+  publisherId?: string;
   placement: string;
   accountName?: string;
   timeout?: number;
@@ -41,7 +44,11 @@ export type ElementArgs = {
 export type Parameters = { note?: TemplateResult };
 
 export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
-  publisherId: { name: "publisher-id", control: "text" },
+  publisherId: {
+    name: "publisher-id",
+    control: "text",
+    description: `Needed with the toolbar's Production ad API. Empty: "${MOCK_PUBLISHER_ID}", which only the mock answers.`,
+  },
   placement: {
     control: "text",
     description: `The mock answers: ${PLACEMENTS.join(", ")}. Any other gets the default Story.`,
@@ -77,7 +84,7 @@ export const renderElement = (
       ${keyed(
         JSON.stringify({ ...args, adApi: globals.adApi }),
         html`<vtex-ads-story-carousel
-          publisher-id=${args.publisherId}
+          publisher-id=${args.publisherId?.trim() || MOCK_PUBLISHER_ID}
           session-id="playground-session"
           placement=${args.placement}
           account-name=${ifDefined(args.accountName?.trim() || undefined)}

@@ -9,7 +9,7 @@ import type { StoryMedia } from "../../types";
 function mount(story: StoryMedia) {
   const { container, controller: video } = mountHost(
     (host) => new VideoController(host),
-    (video) => renderMedia(story, video),
+    (video) => renderMedia(story, video, { labels: en }),
   );
   return { container, video };
 }
@@ -97,8 +97,6 @@ describe("renderMedia video", () => {
     expect(video.failed).toBe(true);
     expect(container.querySelector("video")).toBeNull();
     expect(container.querySelector(".poster")).not.toBeNull();
-    // Without labels, no notice.
-    expect(container.querySelector(".media-status")).toBeNull();
   });
 
   it.each([
@@ -174,7 +172,7 @@ describe("renderMedia failed video notice", () => {
     installMediaMocks();
   });
 
-  function mountWith(options: MediaOptions) {
+  function mountWith(options: Partial<MediaOptions>) {
     const { container, controller: video } = mountHost(
       (host) => new VideoController(host),
       (video) => renderMedia(story, video, { labels: en, ...options }),
@@ -193,6 +191,54 @@ describe("renderMedia failed video notice", () => {
     const status = container.querySelector(".media-status");
     expect(status?.textContent?.trim()).toBe("Video unavailable");
     expect(container.querySelector(".media-retry")).toBeNull();
+  });
+
+  it("shows the notice in a live region there before it", () => {
+    const { container, fail } = mountWith({});
+    const notice = container.querySelector(".media-notice");
+    expect(notice?.getAttribute("role")).toBe("status");
+    expect(notice?.getAttribute("aria-hidden")).toBeNull();
+    expect(notice?.textContent?.trim()).toBe("");
+
+    fail();
+
+    expect(container.querySelector(".media-notice")).toBe(notice);
+    expect(notice?.textContent?.trim()).toBe("Video unavailable");
+  });
+
+  it("hides the notice from screen readers with announce false", () => {
+    const { container, fail } = mountWith({ announce: false });
+    fail();
+
+    const notice = container.querySelector(".media-notice");
+    expect(notice?.getAttribute("role")).toBeNull();
+    expect(notice?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("stops the retry button's click from reaching what holds it", () => {
+    const onRetry = vi.fn();
+    const { container, fail } = mountWith({ onRetry });
+    const outer = vi.fn();
+    container.addEventListener("click", outer);
+    fail();
+
+    container.querySelector<HTMLButtonElement>(".media-retry")?.click();
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(outer).not.toHaveBeenCalled();
+  });
+
+  it("says it in Portuguese without options", () => {
+    const { container, controller: video } = mountHost(
+      (host) => new VideoController(host),
+      (video) => renderMedia(story, video),
+    );
+    container.querySelector("video")?.dispatchEvent(new Event("error"));
+
+    expect(video.failed).toBe(true);
+    expect(container.querySelector(".media-status")?.textContent?.trim()).toBe(
+      "Vídeo indisponível",
+    );
   });
 
   it("has no notice for a cover without a video", () => {
@@ -245,5 +291,39 @@ describe("renderMedia failed video notice", () => {
 
     await expect(first).resolves.toBe(true);
     await expect(second).resolves.toBe(true);
+  });
+
+  it("resolves a retry still loading false when the failure is cleared", async () => {
+    const { container, video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+    const retried = video.retry();
+
+    video.clearFailure();
+    const next = video.ready;
+    container.querySelector("video")?.dispatchEvent(new Event("loadeddata"));
+
+    await expect(retried).resolves.toBe(false);
+    await expect(next).resolves.toBe(true);
+    expect(video.retrying).toBe(false);
+  });
+
+  it("resolves a retry still loading false on reset", async () => {
+    const { video, fail } = mountWith({ onRetry: vi.fn() });
+    fail();
+    const retried = video.retry();
+
+    video.reset();
+
+    await expect(retried).resolves.toBe(false);
+    expect(video.retrying).toBe(false);
+  });
+
+  it("doesn't load again a video that didn't fail", async () => {
+    const { container, video } = mountWith({ onRetry: vi.fn() });
+    const rendered = container.querySelector("video");
+
+    await expect(video.retry()).resolves.toBe(false);
+    expect(video.retrying).toBe(false);
+    expect(container.querySelector("video")).toBe(rendered);
   });
 });

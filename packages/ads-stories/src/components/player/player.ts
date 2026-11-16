@@ -761,8 +761,7 @@ export class PlayerController implements ReactiveController {
     // Read before the render: a Story without a video, or a video that
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
-    this.video.failed = false;
-    this.video.retrying = false;
+    this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
     this.host.requestUpdate();
@@ -932,17 +931,14 @@ export class PlayerController implements ReactiveController {
 
   /**
    * Loads the failed video again and, once it loads, plays it with the sound
-   * on (muted if the browser blocks it). Not if the player closed or moved to
-   * another Story meanwhile.
+   * on (muted if the browser blocks it). Not if the player closed or stepped
+   * meanwhile, even back to the same Story: the retry then resolves false.
    */
-  private readonly retryVideo = async (event?: Event) => {
-    event?.stopPropagation();
+  private readonly retryVideo = () => {
     this.dialog.value?.focus();
-    const story = this.rendered?.story;
-    const loaded = await this.video.retry();
-    if (loaded && this.isOpen && this.rendered?.story === story) {
-      this.video.playWithSound();
-    }
+    void this.video.retry().then((loaded) => {
+      if (loaded) this.video.playWithSound();
+    });
   };
 
   /**
