@@ -6,10 +6,11 @@ sidebar_position: 1
 
 The VTEX Ads SDK are JavaScript libraries designed to integrate VTEX's advertising platform into your storefront. It provides tools to request, fetch, and display sponsored products and banners with minimal effort.
 
-The VTEX Ads SDK consists of two main packages:
+The VTEX Ads SDK consists of three packages:
 
 - **`@vtex/ads-core`** - Core functionality for any JavaScript environment
 - **`@vtex/ads-react`** - React-specific components and hooks
+- **`@vtex/ads-stories`** - A web component that shows Story ads, ready to drop into any page
 
 ## Core Concepts
 
@@ -18,6 +19,7 @@ The VTEX Ads SDK consists of two main packages:
 The SDK supports different types of advertisements:
 
 - **Sponsored Products** - Product listings with sponsored placement
+- **Stories** - Short videos, each with a product or a call to action, shown with `@vtex/ads-stories`
 - **Banners** - Display advertisements (coming soon)
 - **Sponsored Brands** - Brand-focused advertisements (coming soon)
 
@@ -48,3 +50,4 @@ A key concept in the VTEX Ads SDK is **hydration**, the process of enriching ad 
 
 - [Installing @vtex/ads-core](./ads-core/quickstart) - Learn how to use the core functionality for any JavaScript environment.
 - [Installing @vtex/ads-react](./ads-react/quickstart) - Explore the React-specific components and hooks.
+- [Installing @vtex/ads-stories](./ads-stories/quickstart) - Show Story ads on any page with a web component.

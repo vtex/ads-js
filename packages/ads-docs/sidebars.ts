@@ -33,6 +33,17 @@ const sidebars: SidebarsConfig = {
       label: "React Library",
       items: ["ads-react/quickstart"],
     },
+    {
+      type: "category",
+      label: "Stories",
+      items: [
+        "ads-stories/quickstart",
+        "ads-stories/configuration",
+        "ads-stories/layout-and-player",
+        "ads-stories/product-hydration",
+        "ads-stories/events",
+      ],
+    },
   ],
   adsCore: [
     {
