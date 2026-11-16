@@ -193,6 +193,54 @@ describe("renderMedia failed video notice", () => {
     expect(container.querySelector(".media-retry")).toBeNull();
   });
 
+  it("shows the notice in a live region there before it", () => {
+    const { container, fail } = mountWith({});
+    const notice = container.querySelector(".media-notice");
+    expect(notice?.getAttribute("role")).toBe("status");
+    expect(notice?.getAttribute("aria-hidden")).toBeNull();
+    expect(notice?.textContent?.trim()).toBe("");
+
+    fail();
+
+    expect(container.querySelector(".media-notice")).toBe(notice);
+    expect(notice?.textContent?.trim()).toBe("Video unavailable");
+  });
+
+  it("hides the notice from screen readers with announce false", () => {
+    const { container, fail } = mountWith({ announce: false });
+    fail();
+
+    const notice = container.querySelector(".media-notice");
+    expect(notice?.getAttribute("role")).toBeNull();
+    expect(notice?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("stops the retry button's click from reaching what holds it", () => {
+    const onRetry = vi.fn();
+    const { container, fail } = mountWith({ onRetry });
+    const outer = vi.fn();
+    container.addEventListener("click", outer);
+    fail();
+
+    container.querySelector<HTMLButtonElement>(".media-retry")?.click();
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(outer).not.toHaveBeenCalled();
+  });
+
+  it("says it in Portuguese without options", () => {
+    const { container, controller: video } = mountHost(
+      (host) => new VideoController(host),
+      (video) => renderMedia(story, video),
+    );
+    container.querySelector("video")?.dispatchEvent(new Event("error"));
+
+    expect(video.failed).toBe(true);
+    expect(container.querySelector(".media-status")?.textContent?.trim()).toBe(
+      "Vídeo indisponível",
+    );
+  });
+
   it("has no notice for a cover without a video", () => {
     const { container, video } = mountWith({ withVideo: false });
     video.fail();

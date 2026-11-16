@@ -208,6 +208,7 @@ export function renderCard(
         withVideo,
         autoplay: options.autoplay,
         labels: options.labels,
+        announce: false,
       })}
       <button
         type="button"

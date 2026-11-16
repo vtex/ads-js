@@ -500,7 +500,7 @@ describe("PlayerController", () => {
       video?.dispatchEvent(new Event("error"));
 
       const status = player.querySelector(".media-status");
-      expect(status?.getAttribute("role")).toBe("status");
+      expect(status?.parentElement?.getAttribute("role")).toBe("status");
       expect(status?.textContent).toContain(
         "Não foi possível carregar o vídeo",
       );

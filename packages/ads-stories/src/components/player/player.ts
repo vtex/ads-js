@@ -924,14 +924,14 @@ export class PlayerController implements ReactiveController {
    * on (muted if the browser blocks it). Not if the player closed or stepped
    * meanwhile, even back to the same Story.
    */
-  private readonly retryVideo = async (event?: Event) => {
-    event?.stopPropagation();
+  private readonly retryVideo = () => {
     this.dialog.value?.focus();
     const generation = this.retryGeneration;
-    const loaded = await this.video.retry();
-    if (loaded && generation === this.retryGeneration) {
-      this.video.playWithSound();
-    }
+    void this.video.retry().then((loaded) => {
+      if (loaded && generation === this.retryGeneration) {
+        this.video.playWithSound();
+      }
+    });
   };
 
   /**
