@@ -5,7 +5,8 @@ including VTEX IO, FastStore and non-VTEX storefronts.
 
 > Work in progress. Currently requests the placement's Stories from the ad
 > API, shows them in a carousel, whose cards open in a player at the bottom
-> right, and sends their impression, view and click events.
+> right, sends their impression, view and click events, and tells the store
+> when a product is added to or removed from the cart.
 
 ## npm
 
@@ -79,10 +80,12 @@ The same build is available as a standalone script from
 [unpkg](https://unpkg.com) and [jsDelivr](https://www.jsdelivr.com). It
 registers `<vtex-ads-story-carousel>` when it loads, so no JavaScript is
 needed in the page. Always pin an exact version: a pinned URL never changes.
+Replace `<version>` below with a version published on
+[npm](https://www.npmjs.com/package/@vtex/ads-stories?activeTab=versions).
 
 ```html
 <script
-  src="https://unpkg.com/@vtex/ads-stories@0.2.0"
+  src="https://unpkg.com/@vtex/ads-stories@<version>"
   integrity="sha384-<hash>"
   crossorigin="anonymous"
 ></script>
@@ -111,8 +114,11 @@ needed in the page. Always pin an exact version: a pinned URL never changes.
 
 - Stores with a Content-Security-Policy must allow the CDN host in
   `script-src` (`https://unpkg.com` or `https://cdn.jsdelivr.net`).
-- The script also exposes `window.VtexAdsStories` with the same API as the npm
-  package.
+- The script also exposes `window.VtexAdsStories`, with
+  `VtexAdsStoryCarouselElement`, `defineVtexAdsStoryCarousel` and `TAG_NAME`.
+  The commerce event names aren't in it: use the strings
+  `"vtex-ads-story:add-to-cart"` and `"vtex-ads-story:remove-from-cart"` (see
+  [Commerce events](#commerce-events)).
 
 ## Attributes
 
@@ -195,15 +201,15 @@ vtex-ads-story-carousel {
 }
 ```
 
-| Variable                                 | Default                            | Used for                                                                                                                                        |
-| ---------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--vtex-ads-story-font-family`           | inherited                          | All text                                                                                                                                        |
-| `--vtex-ads-story-color-text`            | inherited (`#242424` in the panel) | All text off the video, such as the open product panel's                                                                                        |
-| `--vtex-ads-story-color-muted`           | `#6b6b6b`                          | The panel's "from" price and its disabled add to cart                                                                                           |
-| `--vtex-ads-story-color-surface`         | `#fff` (`#fafafa` behind the card) | The open product panel, the view product button, and the background behind a single Story                                                       |
-| `--vtex-ads-story-color-accent`          | `#1b75a8`                          | The product panel's buttons                                                                                                                     |
-| `--vtex-ads-story-color-accent-contrast` | `#fff`                             | Text on the add to cart button                                                                                                                  |
-| `--vtex-ads-story-radius`                | Each element's own                 | The cards, the product and call to action pills, and the panel's buttons; `0` makes them square. The round icon buttons on the video stay round |
+| Variable                                 | Default                            | Used for                                                                                                                                                                                                       |
+| ---------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--vtex-ads-story-font-family`           | inherited                          | All text                                                                                                                                                                                                       |
+| `--vtex-ads-story-color-text`            | inherited (`#242424` in the panel) | All text off the video, such as the open product panel's                                                                                                                                                       |
+| `--vtex-ads-story-color-muted`           | `#6b6b6b`                          | The panel's "from" price and its disabled add to cart                                                                                                                                                          |
+| `--vtex-ads-story-color-surface`         | `#fff` (`#fafafa` behind the card) | The open product panel, the view product button, and the background behind a single Story                                                                                                                      |
+| `--vtex-ads-story-color-accent`          | `#1b75a8`                          | The product panel's buttons                                                                                                                                                                                    |
+| `--vtex-ads-story-color-accent-contrast` | `#fff`                             | Text on the add to cart button                                                                                                                                                                                 |
+| `--vtex-ads-story-radius`                | Each element's own                 | The cards, the covers beside the expanded video, the product and call to action pills, the panel's buttons and the video's retry button; `0` makes them square. The round icon buttons on the video stay round |
 
 Text over the video stays white: it sits on the video, not on a store color.
 
@@ -222,9 +228,10 @@ band as wide as its parent:
   Two Stories also show this way on screens 576px wide or less, with the other
   one on both sides.
 
-With more than one Story, the highlight moves to the next card every 5 seconds,
-except while the pointer is over the carousel, the keyboard focus is in it, or
-the player is open. It also moves with the arrows, a swipe, or a click on a
+With more than one Story, the highlight moves to the next card every
+`slide-duration` (5 seconds by default), except while the pointer is over the
+carousel, the keyboard focus is in it, or the player is open, and never for
+shoppers who prefer reduced motion. It also moves with the arrows, a swipe, or a click on a
 dimmed card. If the highlighted card's sound is on, the next highlighted card
 plays with sound too, or muted if the browser blocks it.
 
@@ -258,7 +265,8 @@ and in `currency`.
 The ad API sends only part of a product's details: no price yet. Once the
 carousel shows, the element fetches its products in one request, with a
 hydration strategy from [`@vtex/ads-core`](../core), and shows the details it
-reads from them over the ad API's. For now, the price is the only one.
+reads from them over the ad API's: for now, the price and whether the product
+can be bought.
 
 - **`hydration` property**: a strategy `{ fetcher, matcher, price, available? }`, as an
   object. `fetcher` and `matcher` are a `ProductFetcher` and a
@@ -291,9 +299,10 @@ one.
 A strategy can also say whether the product can be bought, with an optional
 `available(product, offer)` (a `ProductAvailabilityReader`; Intelligent
 Search's reads `AvailableQuantity`). When it says no, the card and the player
-show **Esgotado** in place of the price, add to cart becomes a disabled
-**Produto indisponível**, and **Ver produto** still opens the product page.
-The Story keeps playing. Without `available`, or when it doesn't say, the
+keep showing the price (or **Esgotado** in its place when there is none), add
+to cart becomes a disabled **Produto indisponível**, and **Ver produto** still
+opens the product page. The Story keeps playing. These texts follow the
+element's language (see [Language](#language)). Without `available`, or when it doesn't say, the
 product shows as before.
 
 Intelligent Search's check follows the stock it reports: a SKU with an
@@ -308,6 +317,14 @@ show a call to action at the bottom instead: a button with the text set in the
 campaign (the ad's `call_to_action`, such as "Saiba mais") and a caret, which
 opens the link in a new tab. On a card without the highlight, it moves the
 highlight, as the card does. Without a text, there is no button.
+
+### Destination
+
+The Story's `destination_url`, the product page or the call to action's link,
+can be an absolute http(s) URL or a path on the store (`/product/p`), which
+opens on the store the element runs in. A path that would lead to another host
+(`//host`, `/\host`) is ignored: the Story then shows no view product link, or
+no call to action.
 
 ### Player
 
@@ -327,6 +344,16 @@ muted if the browser blocks it. With more than one Story:
 - **Keyboard**: with the focus in the player, the left and right arrow keys step
   too (not with a modifier key held). Elsewhere on the page they keep working as
   usual.
+
+### Video errors
+
+A video that can't load leaves its cover with a notice over it. On the card,
+it says the video is unavailable (**Vídeo indisponível**). In the player, it
+says the video couldn't load (**Não foi possível carregar o vídeo**), with a
+**Tentar de novo** button: a spinner (**Carregando vídeo**) shows until the
+video loads and plays with the sound on (muted if the browser blocks it), or
+the notice comes back if it fails again. These texts follow the element's
+language (see [Language](#language)).
 
 ## Commerce events
 
@@ -414,18 +441,7 @@ the page. A failed `fetch` is logged to the console and not sent again. The ad
 API also deduplicates the events by session. A store that changes the element
 takes over keeping these rules.
 
-## Development
+## Contributing
 
-Run from the repository root:
-
-```bash
-pnpm stories:dev
-```
-
-This starts Storybook on port 6006, with a story for each scenario (one or
-more Stories, theming, slow or empty ad server, product hydration), reloading
-on save. The ad server and Intelligent Search are mocked with MSW, in
-`stories/handlers.ts`.
-
-To run the same stories against the built standalone script, the file the CDN
-serves, run `pnpm preview:cdn` in this package.
+To run the element locally or contribute a change, see
+[CONTRIBUTING.md](https://github.com/vtex/ads-js/blob/main/CONTRIBUTING.md).
