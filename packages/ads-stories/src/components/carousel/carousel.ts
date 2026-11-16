@@ -9,7 +9,6 @@ import type { StoryLabels } from "../../locales";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { icon } from "../icons";
-import { prefersReducedMotion } from "../media";
 
 export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
@@ -249,6 +248,11 @@ export interface CarouselOptions {
    * milliseconds (see toSlideDuration). Read whenever the host updates.
    */
   slideDuration?: () => number | undefined;
+  /**
+   * Whether the person prefers reduced motion: no automatic advance then.
+   * Read once each time the host connects.
+   */
+  reducedMotion?: () => boolean;
 }
 
 /** One rendered card. */
@@ -381,7 +385,7 @@ export class CarouselController implements ReactiveController {
     this.media = globalThis.matchMedia?.(NARROW_SCREEN.toString());
     this.media?.addEventListener("change", this.onMediaChange);
     this.narrow = this.media?.matches ?? false;
-    this.reducedMotion = prefersReducedMotion();
+    this.reducedMotion = this.options.reducedMotion?.() ?? false;
     this.syncTimer();
   }
 

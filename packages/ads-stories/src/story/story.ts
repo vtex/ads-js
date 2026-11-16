@@ -10,7 +10,7 @@ import {
   type Slide,
 } from "../components/carousel";
 import { StoryEventsController, type ViewTarget } from "../components/events";
-import { VideoController } from "../components/media";
+import { prefersReducedMotion, VideoController } from "../components/media";
 import {
   DEFAULT_LOCALE,
   priceFormatter,
@@ -251,6 +251,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     // The player shows the highlighted Story: the highlight stays on it.
     locked: () => this.player.isOpen || this.mediaLoading,
     slideDuration: () => this.slideDuration,
+    reducedMotion: prefersReducedMotion,
   });
 
   private readonly player = new PlayerController(this, {
