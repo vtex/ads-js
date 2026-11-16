@@ -363,20 +363,26 @@ document.addEventListener("vtex-ads-story:remove-from-cart", (event) => {
 In TypeScript, the listeners' events are typed as `StoryAddToCartEvent` and
 `StoryRemoveFromCartEvent` once the package is imported, on any element,
 `document` and `window`. `ADD_TO_CART_EVENT` and `REMOVE_FROM_CART_EVENT` hold
-the events' names, and `StoryAddToCartDetail` types their `detail`:
+the events' names, and `StoryAddToCartDetail` and `StoryRemoveFromCartDetail`
+type their `detail`:
 
 ```ts
 import {
   ADD_TO_CART_EVENT,
   REMOVE_FROM_CART_EVENT,
   type StoryAddToCartDetail,
+  type StoryRemoveFromCartDetail,
 } from "@vtex/ads-stories";
 
 function addToMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
   // ...
 }
 
-function removeFromMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
+function removeFromMyCart({
+  sku,
+  seller,
+  quantity,
+}: StoryRemoveFromCartDetail) {
   // ...
 }
 

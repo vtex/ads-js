@@ -89,6 +89,13 @@ function listenCart(target: EventTarget) {
   return events;
 }
 
+/** The click URLs beaconed so far, in order. */
+const clicksBeaconed = () =>
+  vi
+    .mocked(navigator.sendBeacon)
+    .mock.calls.map(([url]) => String(url))
+    .filter((url) => url.includes("/click/"));
+
 const quantityShown = (el: VtexAdsStoryCarouselElement) =>
   query(el, ".player .product-quantity")?.textContent?.trim();
 
@@ -266,6 +273,32 @@ describe(`${TAG_NAME} add to cart`, () => {
       expect(el.shadowRoot?.activeElement).toBe(
         query(el, ".player .product-add-to-cart"),
       );
+    });
+
+    it("keeps the focus on the minus when the quantity goes from 2 to 1", async () => {
+      const el = await mount([story1]);
+      await openPanel(el);
+      await click(el, ".player .product-add-to-cart");
+      await click(el, ".player .product-stepper-add");
+
+      const remove = query(el, ".player .product-stepper-remove");
+      remove?.focus();
+      await click(el, ".player .product-stepper-remove");
+
+      expect(quantityShown(el)).toBe("1");
+      expect(el.shadowRoot?.activeElement).toBe(remove);
+    });
+
+    it("counts add to cart, plus and minus as one click on the ad per session", async () => {
+      const el = await mount([story1]);
+      await openPanel(el);
+      expect(clicksBeaconed()).toEqual([story1.click_url]);
+
+      await click(el, ".player .product-add-to-cart");
+      await click(el, ".player .product-stepper-add");
+      await click(el, ".player .product-stepper-remove");
+
+      expect(clicksBeaconed()).toEqual([story1.click_url]);
     });
 
     it("bubbles and is composed, as add to cart", async () => {

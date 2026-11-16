@@ -16,7 +16,7 @@ export const ADD_TO_CART_EVENT = "vtex-ads-story:add-to-cart";
  */
 export const REMOVE_FROM_CART_EVENT = "vtex-ads-story:remove-from-cart";
 
-export interface StoryAddToCartDetail {
+interface StoryCartEventDetail {
   /** The Story product's SKU, from the ad API (`product.product_sku`). */
   sku: string;
   /**
@@ -28,21 +28,24 @@ export interface StoryAddToCartDetail {
   quantity: number;
 }
 
-/** The same as add to cart's: `quantity` is how many to remove. */
-export type StoryRemoveFromCartDetail = StoryAddToCartDetail;
+/** The detail of the add to cart event: `quantity` is how many to add. */
+export type StoryAddToCartDetail = StoryCartEventDetail;
+
+/** The detail of remove from cart: `quantity` is how many to remove. */
+export type StoryRemoveFromCartDetail = StoryCartEventDetail;
 
 /** The product an event is about: its SKU and, when known, its seller. */
-export type StoryCartItem = Pick<StoryAddToCartDetail, "sku" | "seller">;
+export type StoryCartItem = Pick<StoryCartEventDetail, "sku" | "seller">;
 
 export type StoryAddToCartEvent = CustomEvent<StoryAddToCartDetail>;
 export type StoryRemoveFromCartEvent = CustomEvent<StoryRemoveFromCartDetail>;
 
 function cartEvent(
-  type: string,
+  type: typeof ADD_TO_CART_EVENT | typeof REMOVE_FROM_CART_EVENT,
   { sku, seller }: StoryCartItem,
   quantity: number,
-): CustomEvent<StoryAddToCartDetail> {
-  return new CustomEvent<StoryAddToCartDetail>(type, {
+): CustomEvent<StoryCartEventDetail> {
+  return new CustomEvent<StoryCartEventDetail>(type, {
     detail: { sku, ...(seller && { seller }), quantity },
     bubbles: true,
     composed: true,

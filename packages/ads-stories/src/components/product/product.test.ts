@@ -473,6 +473,21 @@ describe("renderExpandableProduct", () => {
     expect(onToggle).not.toHaveBeenCalled();
   });
 
+  it("has no add to cart without onAddToCart", () => {
+    const container = document.createElement("div");
+    render(
+      renderExpandableProduct(product, {
+        ...options,
+        open: true,
+        onToggle: vi.fn(),
+      }),
+      container,
+    );
+
+    expect(container.querySelector(".product-add-to-cart")).toBeNull();
+    expect(container.querySelector(".product-stepper")).toBeNull();
+  });
+
   it("has no add to cart without a SKU", () => {
     const { container } = mount({ ...product, sku: undefined }, true);
 

@@ -12,7 +12,6 @@ export {
   REMOVE_FROM_CART_EVENT,
   type StoryAddToCartDetail,
   type StoryAddToCartEvent,
-  type StoryCartItem,
   type StoryRemoveFromCartDetail,
   type StoryRemoveFromCartEvent,
 } from "./commerce-events";

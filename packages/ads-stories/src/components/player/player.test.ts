@@ -256,7 +256,7 @@ describe("PlayerController", () => {
       const onAddToCart = vi.fn();
       const result = await setup(
         storyToPlay,
-        { product, onAddToCart },
+        { product, productActions: { onAddToCart } },
         openOptions,
       );
       const { player } = result;
@@ -332,7 +332,14 @@ describe("PlayerController", () => {
       const onRemoveFromCart = vi.fn();
       const { player, onClose } = await setup(
         withVideo,
-        { product, cartQuantity: 1, onRemoveFromCart },
+        {
+          product,
+          productActions: {
+            cartQuantity: 1,
+            onAddToCart: vi.fn(),
+            onRemoveFromCart,
+          },
+        },
         { productOpen: true },
       );
 
