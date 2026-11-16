@@ -256,7 +256,7 @@ describe("PlayerController", () => {
       const onAddToCart = vi.fn();
       const result = await setup(
         storyToPlay,
-        { product, onAddToCart },
+        { product, productActions: { onAddToCart } },
         openOptions,
       );
       const { player } = result;
@@ -332,7 +332,14 @@ describe("PlayerController", () => {
       const onRemoveFromCart = vi.fn();
       const { player, onClose } = await setup(
         withVideo,
-        { product, cartQuantity: 1, onRemoveFromCart },
+        {
+          product,
+          productActions: {
+            cartQuantity: 1,
+            onAddToCart: vi.fn(),
+            onRemoveFromCart,
+          },
+        },
         { productOpen: true },
       );
 
@@ -542,7 +549,7 @@ describe("PlayerController", () => {
       video?.dispatchEvent(new Event("error"));
 
       const status = player.querySelector(".media-status");
-      expect(status?.getAttribute("role")).toBe("status");
+      expect(status?.parentElement?.getAttribute("role")).toBe("status");
       expect(status?.textContent).toContain(
         "Não foi possível carregar o vídeo",
       );
@@ -1199,6 +1206,34 @@ describe("PlayerController", () => {
       expect(next).not.toBe(first);
       expect(next?.muted).toBe(false);
       expect(next?.paused).toBe(false);
+    });
+
+    it("doesn't turn the sound on for a retry left by stepping away and back", async () => {
+      const first = { ...videoStory, media_url: "https://example.com/a.mp4" };
+      const second = { ...videoStory, media_url: "https://example.com/b.mp4" };
+      let current = first;
+      const { container, controller } = mountHost(
+        (host) => new PlayerController(host, { onClose: vi.fn() }),
+        (player) => player.render(current, { navigation: true, labels }),
+      );
+      opened.push(controller);
+      await controller.open();
+      const player = container.querySelector("dialog");
+      player?.querySelector("video")?.dispatchEvent(new Event("error"));
+      await vi.waitFor(() =>
+        expect(player?.querySelector(".media-retry")).not.toBeNull(),
+      );
+      player?.querySelector<HTMLButtonElement>(".media-retry")?.click();
+
+      current = second;
+      await controller.showNext(1);
+      current = first;
+      await controller.showNext(-1);
+      const video = player?.querySelector("video");
+      video?.dispatchEvent(new Event("loadeddata"));
+      await Promise.resolve();
+
+      expect(video?.muted).toBe(true);
     });
 
     it("plays the next video, even after the previous one failed", async () => {

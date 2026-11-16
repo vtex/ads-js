@@ -1,4 +1,5 @@
 export {
+  focusCartAction,
   renderExpandableProduct,
   renderProduct,
   toCardProduct,
@@ -10,6 +11,7 @@ export type {
   CardProduct,
   ExpandableProductOptions,
   FetchedProduct,
+  ProductCartActions,
 } from "./product";
 export {
   DEFAULT_CURRENCY,

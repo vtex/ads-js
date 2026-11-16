@@ -92,7 +92,10 @@ export async function hydrateStoryProducts(
           ...(available !== undefined && { available }),
         });
       } catch (error) {
-        console.error(`[${TAG_NAME}] Product details failed`, error);
+        console.error(
+          `[${TAG_NAME}] Product details failed for ad ${story.ad_id}`,
+          error,
+        );
       }
     }
   } catch (error) {

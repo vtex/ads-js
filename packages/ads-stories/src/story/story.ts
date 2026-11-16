@@ -10,14 +10,21 @@ import {
   type Slide,
 } from "../components/carousel";
 import { StoryEventsController, type ViewTarget } from "../components/events";
-import { mediaStyles, VideoController } from "../components/media";
+import {
+  mediaStyles,
+  prefersReducedMotion,
+  VideoController,
+} from "../components/media";
 import {
   DEFAULT_LOCALE,
+  focusCartAction,
   priceFormatter,
   productStyles,
   toCardCta,
   toCardProduct,
+  type CardProduct,
   type FetchedProduct,
+  type ProductCartActions,
 } from "../components/product";
 import {
   neighborOffsets,
@@ -85,6 +92,10 @@ const hydrationConverter = {
   fromAttribute: (value: string | null) =>
     value === "none" ? ("none" as const) : undefined,
 };
+
+// A cart line is a SKU from a seller: the stepper counts each pair apart.
+const cartKey = ({ sku, seller }: StoryCartItem) =>
+  JSON.stringify([sku, seller ?? ""]);
 
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
@@ -229,10 +240,10 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   ];
 
   /**
-   * How many of each SKU were added since the player opened, for its
-   * stepper. It doesn't read the store's cart: it counts the add and remove
-   * events sent, and starts over each time the player opens, as the cart may
-   * have changed meanwhile.
+   * How many of each SKU, from each seller (see cartKey), were added since
+   * the player opened, for its stepper. It doesn't read the store's cart: it
+   * counts the add and remove events sent, and starts over each time the
+   * player opens, as the cart may have changed meanwhile.
    */
   private readonly cartQuantities = new Map<string, number>();
 
@@ -265,6 +276,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     // The player shows the highlighted Story: the highlight stays on it.
     locked: () => this.player.isOpen || this.mediaLoading,
     slideDuration: () => this.slideDuration,
+    reducedMotion: prefersReducedMotion,
   });
 
   private readonly player = new PlayerController(this, {
@@ -656,8 +668,6 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     });
 
     const product = this.productOf(active);
-    const sku = product?.sku;
-    const item = sku ? { sku, seller: product.seller } : undefined;
 
     return this.player.render(active, {
       labels: this.labels,
@@ -665,11 +675,23 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       neighbors,
       product,
       cta: toCardCta(active),
-      cartQuantity: sku ? this.cartQuantities.get(sku) : undefined,
-      onAddToCart: item ? () => this.changeCart(item, 1) : undefined,
-      onRemoveFromCart: item ? () => this.changeCart(item, -1) : undefined,
+      productActions: this.cartActionsFor(product),
       onPress: () => this.events.click(active),
     });
+  }
+
+  private cartActionsFor(
+    product?: CardProduct,
+  ): ProductCartActions | undefined {
+    const sku = product?.sku;
+    if (!sku) return undefined;
+
+    const item = { sku, seller: product.seller };
+    return {
+      cartQuantity: this.cartQuantities.get(cartKey(item)),
+      onAddToCart: () => this.changeCart(item, 1),
+      onRemoveFromCart: () => this.changeCart(item, -1),
+    };
   }
 
   /**
@@ -678,27 +700,28 @@ export class VtexAdsStoryCarouselElement extends LitElement {
    * and the stepper swap places, the focus moves to the one now shown.
    */
   private changeCart(item: StoryCartItem, delta: 1 | -1) {
-    const before = this.cartQuantities.get(item.sku) ?? 0;
+    const key = cartKey(item);
+    const before = this.cartQuantities.get(key) ?? 0;
     const after = Math.max(0, before + delta);
     if (after === before) return;
 
-    if (after > 0) this.cartQuantities.set(item.sku, after);
-    else this.cartQuantities.delete(item.sku);
+    if (after > 0) this.cartQuantities.set(key, after);
+    else this.cartQuantities.delete(key);
     this.requestUpdate();
 
     this.dispatchEvent(
       delta > 0 ? addToCartEvent(item) : removeFromCartEvent(item),
     );
 
-    const swapped =
-      before === 0
-        ? ".player .product-stepper-add"
-        : after === 0 && ".player .product-add-to-cart";
-    if (swapped) {
-      this.updateComplete.then(() =>
-        this.shadowRoot?.querySelector<HTMLElement>(swapped)?.focus(),
-      );
-    }
+    let swapped: "stepper" | "add" | undefined;
+    if (before === 0) swapped = "stepper";
+    else if (after === 0) swapped = "add";
+    if (!swapped) return;
+
+    const action = swapped;
+    this.updateComplete
+      .then(() => this.shadowRoot && focusCartAction(this.shadowRoot, action))
+      .catch(() => undefined);
   }
 }
 

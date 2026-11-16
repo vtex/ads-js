@@ -245,10 +245,11 @@ product without a SKU has no add to cart.
 
 Once added, a stepper takes add to cart's place: minus, the quantity and plus.
 With one left, minus is a trash that removes it, and add to cart comes back.
-The quantity counts what was added and removed, for each SKU, since the player
-opened: the element doesn't read the store's cart, so an item added or removed
-elsewhere, or a failed add, doesn't change it. Opening the player again starts
-the count over, with add to cart; the store's cart keeps what was added.
+The quantity counts what was added and removed, for each SKU and seller, since
+the player opened: the element doesn't read the store's cart, so an item added
+or removed elsewhere, or a failed add, doesn't change it. Opening the player
+again starts the count over, with add to cart; the store's cart keeps what was
+added.
 
 Prices are formatted in the element's language (see [Language](#language))
 and in `currency`.
@@ -362,20 +363,26 @@ document.addEventListener("vtex-ads-story:remove-from-cart", (event) => {
 In TypeScript, the listeners' events are typed as `StoryAddToCartEvent` and
 `StoryRemoveFromCartEvent` once the package is imported, on any element,
 `document` and `window`. `ADD_TO_CART_EVENT` and `REMOVE_FROM_CART_EVENT` hold
-the events' names, and `StoryAddToCartDetail` types their `detail`:
+the events' names, and `StoryAddToCartDetail` and `StoryRemoveFromCartDetail`
+type their `detail`:
 
 ```ts
 import {
   ADD_TO_CART_EVENT,
   REMOVE_FROM_CART_EVENT,
   type StoryAddToCartDetail,
+  type StoryRemoveFromCartDetail,
 } from "@vtex/ads-stories";
 
 function addToMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
   // ...
 }
 
-function removeFromMyCart({ sku, seller, quantity }: StoryAddToCartDetail) {
+function removeFromMyCart({
+  sku,
+  seller,
+  quantity,
+}: StoryRemoveFromCartDetail) {
   // ...
 }
 

@@ -156,5 +156,8 @@ describe("renderCard failed video", () => {
     expect(card?.querySelector(".media-retry")).toBeNull();
     expect(card?.querySelector(".play")).toBeNull();
     expect(card?.querySelector(".poster")).not.toBeNull();
+    const notice = card?.querySelector(".media-notice");
+    expect(notice?.getAttribute("role")).toBeNull();
+    expect(notice?.getAttribute("aria-hidden")).toBe("true");
   });
 });
