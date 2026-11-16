@@ -425,6 +425,30 @@ describe("renderExpandableProduct", () => {
       ).toBe("Increase quantity");
     });
 
+    it("announces the quantity from a status that outlives the stepper", () => {
+      const { container } = mount(product, true);
+      const status = query(container, ".product-cart-status");
+      expect(status?.getAttribute("role")).toBe("status");
+      expect(status?.textContent?.trim()).toBe("");
+
+      render(
+        renderExpandableProduct(product, {
+          ...options,
+          open: true,
+          onToggle: vi.fn(),
+          onAddToCart: vi.fn(),
+          cartQuantity: 1,
+        }),
+        container,
+      );
+
+      expect(query(container, ".product-cart-status")).toBe(status);
+      expect(status?.textContent?.trim()).toBe("Quantity in cart: 1");
+      expect(query(container, ".product-quantity")?.hasAttribute("role")).toBe(
+        false,
+      );
+    });
+
     it("calls onAddToCart from plus and onRemoveFromCart from minus", () => {
       const { container, onAddToCart, onRemoveFromCart, onToggle } = mount(
         product,

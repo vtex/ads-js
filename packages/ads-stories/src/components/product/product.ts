@@ -226,7 +226,7 @@ function renderStepper(
       >
         ${icon(last ? "trash" : "minus")}
       </button>
-      <span class="product-quantity" role="status">${quantity}</span>
+      <span class="product-quantity">${quantity}</span>
       <button
         type="button"
         class="product-stepper-button ${STEPPER_ADD_CLASS}"
@@ -268,6 +268,21 @@ function renderAddToCart(
   `;
 }
 
+// Announces the quantity in the cart. It stays in the panel while the stepper
+// comes and goes, so the first value is announced too.
+function renderCartStatus(
+  { sku }: CardProduct,
+  { labels, cartQuantity = 0, onAddToCart }: ExpandableProductOptions,
+) {
+  if (!sku || !onAddToCart) return nothing;
+
+  return html`
+    <span class="product-cart-status" role="status">
+      ${cartQuantity > 0 ? `${labels.cartQuantity}: ${cartQuantity}` : ""}
+    </span>
+  `;
+}
+
 /**
  * The product pill in the player. The pill is a button that opens a panel
  * below it, as in the prototype, with "Adicionar ao carrinho" (a placeholder
@@ -300,6 +315,7 @@ export function renderExpandableProduct(
       </button>
       <div id=${options.panelId} class="product-panel" ?inert=${!open}>
         <div class="product-actions">
+          ${renderCartStatus(product, options)}
           ${renderAddToCart(product, options)}
           ${product.url
             ? html`
