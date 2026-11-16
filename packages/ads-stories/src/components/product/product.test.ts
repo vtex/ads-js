@@ -123,6 +123,48 @@ describe("toCardProduct", () => {
     });
   });
 
+  it("takes a price of 0 of a product that can't be bought as no price", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      price: "$20.00",
+      soldOut: "Sold out",
+      label: "Shoe | $20.00 | Sold out",
+    });
+  });
+
+  it("shows only the sold out text when every price of it is 0", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 0 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      soldOut: "Sold out",
+      label: "Shoe | Sold out",
+    });
+    expect(product?.price).toBeUndefined();
+  });
+
+  it("keeps a price of 0 of a product that can be bought", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: true },
+    );
+
+    expect(product?.price).toBe("$0.00");
+    expect(product?.soldOut).toBeUndefined();
+  });
+
   it("keeps the ad server's price when the product can't be bought", () => {
     const product = toCardProduct(
       storyWith({ product_metadata: { price: 20 } }),

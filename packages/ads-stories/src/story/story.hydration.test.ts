@@ -292,6 +292,35 @@ describe(`${TAG_NAME} product hydration`, () => {
     expect(panel?.querySelector(".product-view")).not.toBeNull();
   });
 
+  it("shows the ad server's price for a sold out product priced 0", async () => {
+    intelligentSearchPriceMock.mockReturnValue({ price: 0 });
+    intelligentSearchAvailabilityMock.mockReturnValue(false);
+
+    const el = await mount(WITH_ACCOUNT);
+
+    expect(priceOf(el)).toBe("R$ 129,90");
+    expect(pill(el)?.getAttribute("aria-label")?.replace(/\s/g, " ")).toBe(
+      `${mockStory.product?.product_name}, de R$ 159,90 por R$ 129,90, Esgotado`,
+    );
+  });
+
+  it("shows only sold out for a product priced 0 with no ad server price", async () => {
+    const story = mockStories.find(
+      (item) =>
+        item.product && Object.keys(item.product.product_metadata).length === 0,
+    )!;
+    getRawAdsMock.mockResolvedValue(rawAdsWith([story]));
+    intelligentSearchPriceMock.mockReturnValue({ price: 0 });
+    intelligentSearchAvailabilityMock.mockReturnValue(false);
+
+    const el = await mount(WITH_ACCOUNT);
+
+    expect(priceOf(el)).toBeUndefined();
+    expect(pill(el)?.getAttribute("aria-label")).toBe(
+      `${story.product?.product_name}, Esgotado`,
+    );
+  });
+
   it("doesn't check availability with a strategy that can't tell", async () => {
     const strategy: StoryHydration = {
       fetcher: vi.fn(),
@@ -377,7 +406,7 @@ describe(`${TAG_NAME} product hydration`, () => {
       available: true,
     });
     expect(consoleError).toHaveBeenCalledWith(
-      `[${TAG_NAME}] Product details failed`,
+      `[${TAG_NAME}] Product details failed for ad ${mockStories[0].ad_id}`,
       error,
     );
   });
