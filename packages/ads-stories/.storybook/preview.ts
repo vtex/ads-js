@@ -2,7 +2,7 @@ import type { Preview } from "@storybook/web-components-vite";
 import { html } from "lit";
 import "./preview.css";
 import { mswLoader } from "msw-storybook-addon/csf3";
-import { handlers } from "../stories/handlers";
+import { handlers, liveHandlers } from "../stories/handlers";
 // The source or the CDN build, as set in main.ts.
 import "vtex-ads-stories-element";
 
@@ -10,10 +10,10 @@ const msw = mswLoader();
 
 const preview: Preview = {
   // The toolbar's Ad API: "mock" answers with the handlers, "live" sends
-  // the requests to the production ad API (set the publisher-id and
-  // placement controls to the ones to try). Live is end to end: the
-  // impressions, views and clicks go to the real event URLs the ads carry,
-  // and count.
+  // the ad request to the production ad API (set the publisher-id and
+  // placement controls to the ones to try). The impressions, views and
+  // clicks of the real Stories stay caught by MSW (see liveHandlers), so
+  // they don't count for the advertiser.
   globalTypes: {
     adApi: {
       description: "Ad API",
@@ -21,21 +21,21 @@ const preview: Preview = {
         icon: "globe",
         items: [
           { value: "mock", title: "Mocked ad API" },
-          { value: "live", title: "Production ad API (sends events)" },
+          { value: "live", title: "Production ad API" },
         ],
         dynamicTitle: true,
       },
     },
   },
-  // Over every story in live mode, so the real events aren't a surprise.
+  // Over every story in live mode, so the real Stories aren't a surprise.
   decorators: [
     (story, { globals }) =>
       globals.adApi === "live"
         ? html`
             <div class="live-alert" role="alert">
-              <strong>Production ad API.</strong> This story sends real
-              impressions, views and clicks, and they count. Switch the
-              toolbar's Ad API back to mocked to test without them.
+              <strong>Production ad API.</strong> These are real Stories. Their
+              impressions, views and clicks are logged to the console, not sent.
+              Switch the toolbar's Ad API back to mocked for the test Stories.
             </div>
             ${story()}
           `
@@ -45,7 +45,10 @@ const preview: Preview = {
   loaders: [
     async (context) => {
       await msw(context);
-      if (context.globals.adApi === "live") context.msw.resetHandlers();
+      if (context.globals.adApi === "live") {
+        context.msw.resetHandlers();
+        context.msw.use(...liveHandlers);
+      }
       return {};
     },
   ],

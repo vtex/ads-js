@@ -9,6 +9,10 @@
  *
  * The test Stories' impression, view and click beacons are accepted (202)
  * and logged to the console, so each event shows when it fires.
+ *
+ * liveHandlers, for the toolbar's Production ad API, let the ad request and
+ * every GET (products, covers, videos) through, and catch the other POSTs
+ * the same way: the real Stories' events are logged, never sent.
  */
 import { delay, http, HttpResponse, passthrough } from "msw";
 import type { StoryAdDetail } from "@vtex/ads-core";
@@ -212,5 +216,14 @@ export const handlers = [
       .map(([skuId, product]) => searchProduct(skuId, product));
 
     return HttpResponse.json({ products });
+  }),
+];
+
+export const liveHandlers = [
+  http.post(AD_SERVER, () => passthrough()),
+  http.post("*", async ({ request }) => {
+    const body: unknown = await request.text().catch(() => null);
+    console.info(`[events mock] ${request.url}`, body);
+    return new HttpResponse(null, { status: 202 });
   }),
 ];
