@@ -1,5 +1,26 @@
 # @vtex/ads-stories
 
+## 0.7.0
+
+### Minor Changes
+
+- a0cf1b9: Add to cart in the player dispatches `vtex-ads-story:add-to-cart` from the element, with `{ sku, seller, quantity }` (the product's `product_sku`, its `seller_id` when the ad API sends one, and `1`). The event bubbles and is composed, has no default action, and leaves the player open. A product without a SKU has no add to cart. `ADD_TO_CART_EVENT`, `StoryAddToCartDetail` and `StoryAddToCartEvent` are exported.
+- a0cf1b9: Once a product is added from the player, a stepper takes add to cart's place: minus (a trash with one left), the quantity and plus. Plus dispatches `vtex-ads-story:add-to-cart`, and minus the new `vtex-ads-story:remove-from-cart`, with the same `{ sku, seller, quantity }` detail (`quantity` is how many to remove, always 1). The quantity counts what was added and removed, for each SKU and seller, since the player opened; it doesn't read the store's cart, and opening the player again starts it over. `REMOVE_FROM_CART_EVENT`, `StoryRemoveFromCartDetail` and `StoryRemoveFromCartEvent` are exported.
+- 8b3f105: `--vtex-ads-story-radius` now also shapes the product and call to action pills, the covers beside the expanded video, the product panel's buttons (add to cart, its stepper, view product) and the video's **Tentar de novo**, not only the cards. The product image follows it 8px in, so its corners stay parallel to the pill's. Unset, each keeps its current corners. The round icon buttons on the video stay round.
+
+  From about `38px` up, the 60px product image becomes a circle. Use `0px`, not `0`, for square corners.
+
+- cb5a966: A Story's `destination_url` can be a path on the store (`/product/p`) as well as an absolute http(s) URL, for both the product card and the call to action. Paths that would lead to another host (`//host`, `/\host`) are ignored.
+- 80d967a: New `slide-duration` attribute, also in the React JSX types: with more than one Story, how long each one stays highlighted before the carousel moves to the next, in milliseconds (default `5000`). `0` turns the automatic advance off, so the highlight moves only with the arrows, swipes and clicks. Other values are limited to between `2000` and `120000`. A negative value or one that isn't a number uses the default. Changing it doesn't request the Stories again: the highlighted Story's time starts over with the new duration.
+- cb5a966: A product that can't be bought keeps showing its price (fetched, or the ad server's from `product_metadata`) on the card and in the player; **Esgotado** only shows in its place when there is no price. Add to cart is still the disabled **Produto indisponível**. Screen readers hear that it's sold out either way: the product button's label ends with **Esgotado**, after the price when there is one.
+- cb5a966: A video that can't load no longer leaves only its cover: the card shows a **Video unavailable** notice over it, and the player shows **Couldn't load the video** with a **Try again** button. Retrying shows a spinner with **Loading video** until the video loads, then plays it with the sound on, or shows the notice again if it fails. `StoryLabels` gets `videoUnavailable`, `videoFailed`, `videoLoading` and `retry`, in Portuguese, Spanish and English.
+
+### Patch Changes
+
+- cb5a966: A hydration strategy whose `price()` returns no amount, `NaN`, a string or a negative amount no longer shows "R$ NaN": the ad server's price shows instead. A `listPrice` that isn't an amount above the price is dropped.
+- 80d967a: Opening a Story in the player now plays its video with the sound on, since the shopper chose to watch it. If the browser blocks playing with sound, the video plays muted and the sound button offers to turn it on.
+- 80d967a: With `prefers-reduced-motion: reduce`, the carousel no longer moves the highlight on its own: it stays on the cards' covers and moves only with the arrows, swipes and clicks, whatever `slide-duration` says. The player still plays the video once the shopper opens it.
+
 ## 0.6.0
 
 ### Minor Changes
