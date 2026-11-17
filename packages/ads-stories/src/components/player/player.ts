@@ -628,7 +628,7 @@ function supportsPopover(dialog: HTMLDialogElement) {
 /**
  * The Story player, rendered by its host with render(). open() shows it as
  * the mini player; expand switches to the expanded view, a modal dialog, and
- * back. The video starts muted and plays when the player opens. It closes on
+ * back. The video plays with the sound on when the player opens. It closes on
  * its own when the host leaves the page.
  */
 export class PlayerController implements ReactiveController {
@@ -692,7 +692,8 @@ export class PlayerController implements ReactiveController {
   }
 
   /**
-   * Opens the mini player, plays the video and focuses the close button.
+   * Opens the mini player, plays the video with the sound on (muted if the
+   * browser blocks it) and focuses the close button.
    * With `productOpen`, the product panel shows open (the shopper chose the
    * product).
    */
@@ -715,7 +716,7 @@ export class PlayerController implements ReactiveController {
     if (!this.isOpen || !dialog) return;
 
     this.show(dialog);
-    this.video.play();
+    this.video.playWithSound();
     this.closeButton.value?.focus();
   }
 

@@ -49,6 +49,12 @@ export interface VtexAdsStoryCarouselAttributes {
    * their video, muted. Off by default.
    */
   "inactive-autoplay"?: boolean;
+  /**
+   * With more than one Story, how long each one stays highlighted, in
+   * milliseconds (default 5000). 0: no automatic advance. Never advances on
+   * its own for people who prefer reduced motion.
+   */
+  "slide-duration"?: number;
 }
 
 export type VtexAdsStoryCarouselProps = DetailedHTMLProps<

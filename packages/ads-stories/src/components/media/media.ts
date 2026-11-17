@@ -4,10 +4,11 @@ import type { StoryMedia } from "../../types";
 import { httpUrl } from "../../utils/http-url";
 import type { VideoController } from "./video-controller";
 
+/** Media query for people who asked the system for less motion. */
+export const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
 export function prefersReducedMotion() {
-  return (
-    globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
-  );
+  return globalThis.matchMedia?.(REDUCED_MOTION).matches ?? false;
 }
 
 /** Whether renderMedia shows a video for this Story right now. */

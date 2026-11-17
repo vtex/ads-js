@@ -629,7 +629,7 @@ describe(TAG_NAME, () => {
       const { card, player } = getVideos(el);
       expect(card?.paused).toBe(true);
       expect(player?.paused).toBe(false);
-      expect(player?.muted).toBe(true);
+      expect(player?.muted).toBe(false);
     });
 
     it("plays the card video again when the player closes", async () => {
@@ -663,6 +663,31 @@ describe(TAG_NAME, () => {
 
       expect(getPlayers(el)).toHaveLength(0);
       expect(getVideos(el).card?.paused).toBe(false);
+    });
+
+    // The card waits on its cover; opening the player is the shopper's
+    // choice to watch.
+    it("plays only in the player with reduced motion", async () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: query === "(prefers-reduced-motion: reduce)",
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }));
+      try {
+        const el = await mount();
+        expect(getVideos(el).card?.autoplay).toBe(false);
+        expect(getVideos(el).card?.paused).toBe(true);
+
+        getCard(el)?.click();
+        await flushRender(el);
+        expect(getVideos(el).player?.paused).toBe(false);
+
+        el.shadowRoot?.querySelector<HTMLElement>(".player-close")?.click();
+        await flushRender(el);
+        expect(getVideos(el).card?.paused).toBe(true);
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
     it("closes from the close button and focuses the card again", async () => {

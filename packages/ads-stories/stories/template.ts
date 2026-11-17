@@ -31,6 +31,7 @@ export type ElementArgs = {
   labelAddToCart?: string;
   labelViewProduct?: string;
   inactiveAutoplay: boolean;
+  slideDuration?: number;
   hydration?: StoryHydration;
   theme?: Record<string, string>;
 };
@@ -51,6 +52,7 @@ export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
   labelAddToCart: { name: "label-add-to-cart", control: "text" },
   labelViewProduct: { name: "label-view-product", control: "text" },
   inactiveAutoplay: { name: "inactive-autoplay", control: "boolean" },
+  slideDuration: { name: "slide-duration", control: "number" },
   hydration: { control: false },
 };
 
@@ -80,6 +82,7 @@ export const renderElement = (
           label-add-to-cart=${ifDefined(args.labelAddToCart)}
           label-view-product=${ifDefined(args.labelViewProduct)}
           ?inactive-autoplay=${args.inactiveAutoplay}
+          slide-duration=${ifDefined(args.slideDuration)}
           .hydration=${args.hydration}
         ></vtex-ads-story-carousel>`,
       )}
