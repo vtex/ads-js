@@ -17,11 +17,14 @@ import {
 } from "../components/media";
 import {
   DEFAULT_LOCALE,
+  focusCartAction,
   priceFormatter,
   productStyles,
   toCardCta,
   toCardProduct,
+  type CardProduct,
   type FetchedProduct,
+  type ProductCartActions,
 } from "../components/product";
 import {
   neighborOffsets,
@@ -39,6 +42,11 @@ import { fetchStories } from "../utils/fetch-story";
 import { httpUrl } from "../utils/safe-url";
 import { decodeImage, firstReady } from "../utils/media-ready";
 import { labelsFor, type StoryLabels } from "../locales";
+import {
+  addToCartEvent,
+  removeFromCartEvent,
+  type StoryCartItem,
+} from "../commerce-events";
 import { TAG_NAME } from "../tag-name";
 
 export { TAG_NAME } from "../tag-name";
@@ -84,6 +92,10 @@ const hydrationConverter = {
   fromAttribute: (value: string | null) =>
     value === "none" ? ("none" as const) : undefined,
 };
+
+// A cart line is a SKU from a seller: the stepper counts each pair apart.
+const cartKey = ({ sku, seller }: StoryCartItem) =>
+  JSON.stringify([sku, seller ?? ""]);
 
 // LitElement is importable where HTMLElement doesn't exist (SSR, Node): Lit
 // falls back to a minimal shim there.
@@ -226,6 +238,14 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     carouselSkeletonStyles,
     playerStyles,
   ];
+
+  /**
+   * How many of each SKU, from each seller (see cartKey), were added since
+   * the player opened, for its stepper. It doesn't read the store's cart: it
+   * counts the add and remove events sent, and starts over each time the
+   * player opens, as the cart may have changed meanwhile.
+   */
+  private readonly cartQuantities = new Map<string, number>();
 
   /**
    * One per rendered card, by its key (see Slide): a Story can show in more
@@ -510,6 +530,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   private openPlayer({ productOpen = false } = {}) {
     if (this.player.isOpen) return;
 
+    this.cartQuantities.clear();
     // While the player is open, the card behind it stops on its cover.
     this.activeVideo?.pause();
     void this.player.open({ productOpen });
@@ -646,14 +667,61 @@ export class VtexAdsStoryCarouselElement extends LitElement {
       };
     });
 
+    const product = this.productOf(active);
+
     return this.player.render(active, {
       labels: this.labels,
       navigation: stories.length > 1,
       neighbors,
-      product: this.productOf(active),
+      product,
       cta: toCardCta(active),
+      productActions: this.cartActionsFor(product),
       onPress: () => this.events.click(active),
     });
+  }
+
+  private cartActionsFor(
+    product?: CardProduct,
+  ): ProductCartActions | undefined {
+    const sku = product?.sku;
+    if (!sku) return undefined;
+
+    const item = { sku, seller: product.seller };
+    return {
+      cartQuantity: this.cartQuantities.get(cartKey(item)),
+      onAddToCart: () => this.changeCart(item, 1),
+      onRemoveFromCart: () => this.changeCart(item, -1),
+    };
+  }
+
+  /**
+   * Adds one of `item` to the stepper's count, or removes one, and tells the
+   * store, which changes its cart: the element has none. When add to cart
+   * and the stepper swap places, the focus moves to the one now shown.
+   */
+  private changeCart(item: StoryCartItem, delta: 1 | -1) {
+    const key = cartKey(item);
+    const before = this.cartQuantities.get(key) ?? 0;
+    const after = Math.max(0, before + delta);
+    if (after === before) return;
+
+    if (after > 0) this.cartQuantities.set(key, after);
+    else this.cartQuantities.delete(key);
+    this.requestUpdate();
+
+    this.dispatchEvent(
+      delta > 0 ? addToCartEvent(item) : removeFromCartEvent(item),
+    );
+
+    let swapped: "stepper" | "add" | undefined;
+    if (before === 0) swapped = "stepper";
+    else if (after === 0) swapped = "add";
+    if (!swapped) return;
+
+    const action = swapped;
+    this.updateComplete.then(
+      () => this.shadowRoot && focusCartAction(this.shadowRoot, action),
+    );
   }
 }
 

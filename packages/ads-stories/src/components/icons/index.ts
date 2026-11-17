@@ -15,10 +15,13 @@ import close from "./assets/close.svg?raw";
 import caretUp from "./assets/caret-up-bold.svg?raw";
 import collapse from "./assets/collapse.svg?raw";
 import expand from "./assets/expand.svg?raw";
+import minus from "./assets/minus.svg?raw";
 import pause from "./assets/pause-fill.svg?raw";
 import play from "./assets/play-fill.svg?raw";
+import plus from "./assets/plus.svg?raw";
 import soundOff from "./assets/speaker-x-fill.svg?raw";
 import soundOn from "./assets/speaker-high-fill.svg?raw";
+import trash from "./assets/trash.svg?raw";
 import warning from "./assets/warning-circle-fill.svg?raw";
 
 export const icons = {
@@ -26,12 +29,15 @@ export const icons = {
   close,
   collapse,
   expand,
+  minus,
   next,
   pause,
   play,
+  plus,
   previous,
   soundOff,
   soundOn,
+  trash,
   warning,
 };
 
