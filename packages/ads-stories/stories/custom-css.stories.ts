@@ -71,11 +71,11 @@ export const Brand: Story = {
 };
 
 export const Square: Story = {
-  args: { "--vtex-ads-story-radius": "0" },
+  args: { "--vtex-ads-story-radius": "0px" },
   parameters: {
-    note: html`<code>--vtex-ads-story-radius: 0</code>: the cards, the pills and
-      the panel's buttons are square; the round icon buttons on the video stay
-      round. ${OPEN_THE_PANEL}`,
+    note: html`<code>--vtex-ads-story-radius: 0px</code>: the cards, the pills
+      and the panel's buttons are square; the round icon buttons on the video
+      stay round. ${OPEN_THE_PANEL}`,
   },
 };
 

@@ -229,6 +229,9 @@ export class VtexAdsStoryCarouselElement extends LitElement {
         display: block;
         font-family: var(--vtex-ads-story-font-family, inherit);
         color: var(--vtex-ads-story-color-text, inherit);
+        --_pill-radius: var(--vtex-ads-story-radius, 16px);
+        --_pill-inset: 8px;
+        --_button-radius: var(--vtex-ads-story-radius, 999px);
       }
     `,
     cardStyles,
