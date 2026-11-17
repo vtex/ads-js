@@ -42,6 +42,12 @@ describe("labelsFor", () => {
     expect(labelsFor("en").product("Shoe", "$1", "$2")).toBe(
       "Shoe, was $2, now $1",
     );
+    expect(
+      labelsFor("pt-BR").product("Tênis", "R$ 1", undefined, "Esgotado"),
+    ).toBe("Tênis, R$ 1, Esgotado");
+    expect(
+      labelsFor("en").product("Shoe", undefined, undefined, "Sold out"),
+    ).toBe("Shoe, Sold out");
     expect(labelsFor("en").position("Show video", 1, 4)).toBe(
       "Show video 2 of 4",
     );

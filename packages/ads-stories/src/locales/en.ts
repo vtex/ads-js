@@ -20,9 +20,15 @@ export const en: StoryLabels = {
   unavailable: "Product unavailable",
   soldOut: "Sold out",
   viewProduct: "View product",
-  product: (name, price, listPrice) => {
-    if (price && listPrice) return `${name}, was ${listPrice}, now ${price}`;
-    return price ? `${name}, ${price}` : name;
+  videoUnavailable: "Video unavailable",
+  videoFailed: "Couldn't load the video",
+  retry: "Try again",
+  videoLoading: "Loading video",
+  product: (name, price, listPrice, soldOut) => {
+    let text = name;
+    if (price && listPrice) text = `${name}, was ${listPrice}, now ${price}`;
+    else if (price) text = `${name}, ${price}`;
+    return soldOut ? `${text}, ${soldOut}` : text;
   },
   position: (label, index, count) =>
     count > 1 ? `${label} ${index + 1} of ${count}` : label,

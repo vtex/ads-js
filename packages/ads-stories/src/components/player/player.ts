@@ -11,7 +11,7 @@ import {
   renderMedia,
   VideoController,
 } from "../media";
-import { httpUrl } from "../../utils/http-url";
+import { httpUrl } from "../../utils/safe-url";
 import {
   renderCta,
   renderExpandableProduct,
@@ -744,7 +744,7 @@ export class PlayerController implements ReactiveController {
     // Read before the render: a Story without a video, or a video that
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
-    this.video.failed = false;
+    this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
     this.host.requestUpdate();
@@ -910,6 +910,18 @@ export class PlayerController implements ReactiveController {
   private readonly toggleProduct = () => {
     this.productOpen = !this.productOpen;
     this.host.requestUpdate();
+  };
+
+  /**
+   * Loads the failed video again and, once it loads, plays it with the sound
+   * on (muted if the browser blocks it). Not if the player closed or stepped
+   * meanwhile, even back to the same Story: the retry then resolves false.
+   */
+  private readonly retryVideo = () => {
+    this.dialog.value?.focus();
+    void this.video.retry().then((loaded) => {
+      if (loaded) this.video.playWithSound();
+    });
   };
 
   /**
@@ -1093,6 +1105,8 @@ export class PlayerController implements ReactiveController {
         ${renderMedia(story, video, {
           loop: !advances,
           onEnded: advances ? () => options.onStep?.(1) : undefined,
+          labels: destination.labels,
+          onRetry: this.retryVideo,
         })}
         ${hasVideo(story, video)
           ? this.renderVideoControls(destination.labels)
