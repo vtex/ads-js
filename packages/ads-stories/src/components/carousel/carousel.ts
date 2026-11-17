@@ -13,24 +13,25 @@ import { icon } from "../icons";
 export const STAGE_HEIGHT = css`500px`;
 const SOLO_PADDING = css`24px`;
 
-/**
- * Default time each Story stays highlighted before the next one, in
- * milliseconds.
- */
 export const AUTO_ADVANCE_MS = 5000;
-
-/** Longest time a Story can stay highlighted, in milliseconds. */
+export const MIN_SLIDE_DURATION_MS = 2000;
 export const MAX_SLIDE_DURATION_MS = 120_000;
 
 /**
  * The time each Story stays highlighted: `ms` when it is a number from zero
- * up (zero: no automatic advance), capped at MAX_SLIDE_DURATION_MS,
- * AUTO_ADVANCE_MS when it is missing, negative or not a number.
+ * up (zero: no automatic advance), raised to MIN_SLIDE_DURATION_MS when
+ * smaller and capped at MAX_SLIDE_DURATION_MS, AUTO_ADVANCE_MS when it is
+ * missing, negative or not a number.
  */
-export const toSlideDuration = (ms?: number) =>
-  ms !== undefined && Number.isFinite(ms) && ms >= 0
-    ? Math.min(ms, MAX_SLIDE_DURATION_MS)
-    : AUTO_ADVANCE_MS;
+export const toSlideDuration = (ms?: number) => {
+  if (ms === undefined || !Number.isFinite(ms) || ms < 0) {
+    return AUTO_ADVANCE_MS;
+  }
+  if (ms === 0) {
+    return 0;
+  }
+  return Math.min(Math.max(ms, MIN_SLIDE_DURATION_MS), MAX_SLIDE_DURATION_MS);
+};
 
 /** How far a pointer must move, in pixels, to count as a swipe. */
 export const SWIPE_DISTANCE = 40;
