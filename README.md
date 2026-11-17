@@ -16,12 +16,13 @@
 
 ## Packages
 
-This repository is a **monorepo** powered by [pnpm](https://pnpm.io/) and contains two public npm packages:
+This repository is a **monorepo** powered by [pnpm](https://pnpm.io/) and contains three public npm packages:
 
-| Package           | Description                                                                    |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `@vtex/ads-core`  | Framework-agnostic SDK to fetch sponsored products from the VTEX Ad Network.   |
-| `@vtex/ads-react` | Thin React layer (Provider + hook) on top of **ads-core** for an ergonomic DX. |
+| Package             | Description                                                                    |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `@vtex/ads-core`    | Framework-agnostic SDK to fetch sponsored products from the VTEX Ad Network.   |
+| `@vtex/ads-react`   | Thin React layer (Provider + hook) on top of **ads-core** for an ergonomic DX. |
+| `@vtex/ads-stories` | VTEX Ads Stories web component.                                                |
 
 ## Installation
 

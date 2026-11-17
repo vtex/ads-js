@@ -42,6 +42,18 @@ The playground is served at <http://localhost:5173/ads-js/playground/>. It calls
 
 After changing `packages/core` or `packages/react`, run `pnpm build` so the playground picks up the changes. `pnpm dev` does not do this: it runs `tsc --watch`, which does not update the `dist/esm` and `dist/cjs` bundles (built by `tsup`) that the playground consumes.
 
+### `ads-stories` (Storybook)
+
+Run from the repository root:
+
+```bash
+pnpm stories:dev
+```
+
+This builds `@vtex/ads-core` and starts Storybook at <http://localhost:6006>, with a story for each scenario (one or more Stories, theming, slow or empty ad server, product hydration), reloading on save. The ad server and Intelligent Search are mocked with [MSW](https://mswjs.io), in `packages/ads-stories/stories/handlers.ts`.
+
+To run the same stories against the built standalone script, the file the CDN serves, run `pnpm preview:cdn` in `packages/ads-stories`.
+
 ## Quality checks
 
 Run these before opening a PR. CI runs the same checks.
