@@ -719,9 +719,9 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     if (!swapped) return;
 
     const action = swapped;
-    this.updateComplete
-      .then(() => this.shadowRoot && focusCartAction(this.shadowRoot, action))
-      .catch(() => undefined);
+    this.updateComplete.then(
+      () => this.shadowRoot && focusCartAction(this.shadowRoot, action),
+    );
   }
 }
 
