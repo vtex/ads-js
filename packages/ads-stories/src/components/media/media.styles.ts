@@ -1,8 +1,15 @@
 import { css } from "lit";
 
 export const mediaStyles = css`
-  /* Over the cover when the video can't load or is loading again: a dimmed
-     layer with the notice in the middle. Clicks go through to the card. */
+  /* The live region the notice shows in, over the cover. Empty until the
+     video can't load or is loading again. Clicks go through to the card. */
+  .media-notice {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* The notice: a dimmed layer with the text in the middle. */
   .media-status {
     position: absolute;
     inset: 0;
@@ -49,7 +56,7 @@ export const mediaStyles = css`
     min-height: 36px;
     padding: 0 16px;
     border: 0;
-    border-radius: var(--vtex-ads-story-radius, 999px);
+    border-radius: var(--_button-radius);
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(4px);
     box-shadow: inset 0 0 3px rgba(255, 255, 255, 0.42);

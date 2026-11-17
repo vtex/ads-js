@@ -17,6 +17,7 @@ import {
   renderExpandableProduct,
   type CardCta,
   type CardProduct,
+  type ProductCartActions,
 } from "../product";
 import type { StoryMedia } from "../../types";
 
@@ -456,14 +457,10 @@ export interface PlayerRenderOptions {
   /** The Story's call to action, for a link destination (no product). */
   cta?: CardCta;
   /**
-   * How many of the product were added from the element: above 0, its
-   * stepper shows in place of add to cart.
+   * What the product's panel does with the cart: add to cart and plus keep
+   * the player open; minus is a trash with one left.
    */
-  cartQuantity?: number;
-  /** Called by the product's add to cart and plus. The player stays open. */
-  onAddToCart?: () => void;
-  /** Called by the product's minus (a trash with one left). */
-  onRemoveFromCart?: () => void;
+  productActions?: ProductCartActions;
   /**
    * Called by any click on the video's card (the video, its play and sound
    * buttons, the product and the call to action), before what that click
@@ -476,12 +473,7 @@ export interface PlayerRenderOptions {
 // What shows at the bottom of the video: one or the other.
 type StoryDestination = Pick<
   PlayerRenderOptions,
-  | "product"
-  | "cta"
-  | "labels"
-  | "cartQuantity"
-  | "onAddToCart"
-  | "onRemoveFromCart"
+  "product" | "cta" | "labels" | "productActions"
 >;
 
 /**
@@ -761,8 +753,7 @@ export class PlayerController implements ReactiveController {
     // Read before the render: a Story without a video, or a video that
     // failed, replaces the <video> with a new one, muted.
     const withSound = !this.video.muted;
-    this.video.failed = false;
-    this.video.retrying = false;
+    this.video.clearFailure();
     // Another Story, another product: its panel starts closed.
     this.productOpen = false;
     this.host.requestUpdate();
@@ -932,17 +923,14 @@ export class PlayerController implements ReactiveController {
 
   /**
    * Loads the failed video again and, once it loads, plays it with the sound
-   * on (muted if the browser blocks it). Not if the player closed or moved to
-   * another Story meanwhile.
+   * on (muted if the browser blocks it). Not if the player closed or stepped
+   * meanwhile, even back to the same Story: the retry then resolves false.
    */
-  private readonly retryVideo = async (event?: Event) => {
-    event?.stopPropagation();
+  private readonly retryVideo = () => {
     this.dialog.value?.focus();
-    const story = this.rendered?.story;
-    const loaded = await this.video.retry();
-    if (loaded && this.isOpen && this.rendered?.story === story) {
-      this.video.playWithSound();
-    }
+    void this.video.retry().then((loaded) => {
+      if (loaded) this.video.playWithSound();
+    });
   };
 
   /**
@@ -959,11 +947,17 @@ export class PlayerController implements ReactiveController {
    * its actions, or the call to action of a link destination. Clicks on them
    * don't reach the video.
    */
-  private renderDestination({ product, cta, ...cart }: StoryDestination) {
+  private renderDestination({
+    product,
+    cta,
+    labels,
+    productActions,
+  }: StoryDestination) {
     let content;
     if (product) {
       content = renderExpandableProduct(product, {
-        ...cart,
+        ...productActions,
+        labels,
         open: this.productOpen,
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",

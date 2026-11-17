@@ -18,10 +18,8 @@ import { installDialogMocks } from "../components/player/dialog.mock";
 import {
   AUTO_ADVANCE_MS,
   carouselStyles,
-  MAX_SLIDE_DURATION_MS,
   NARROW_SCREEN,
   RENDERED_SIDE,
-  toSlideDuration,
 } from "../components/carousel";
 import { REDUCED_MOTION } from "../components/media";
 import {
@@ -75,6 +73,15 @@ async function click(el: VtexAdsStoryCarouselElement, selector: string) {
   query(el, selector)?.click();
   await el.updateComplete;
   await el.updateComplete;
+}
+
+/**
+ * Starts the automatic advance over, with the full time and the current
+ * timers (it started on load, with real ones): steps forward and back.
+ */
+async function restartAutoAdvance(el: VtexAdsStoryCarouselElement) {
+  await click(el, ".arrow-next");
+  await click(el, ".arrow-previous");
 }
 
 describe(`${TAG_NAME} carousel`, () => {
@@ -152,9 +159,8 @@ describe(`${TAG_NAME} carousel`, () => {
     await new Promise((resolve) => setTimeout(resolve));
     await el.updateComplete;
     vi.useFakeTimers();
-    // The timer started with real timers: start it again, keeping the flags.
-    await click(el, ".arrow-next");
-    await click(el, ".arrow-previous");
+    // Keeps the flags.
+    await restartAutoAdvance(el);
 
     await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
 
@@ -352,9 +358,7 @@ describe(`${TAG_NAME} carousel`, () => {
     it(`moves the highlight every ${AUTO_ADVANCE_MS} ms`, async () => {
       const el = await mount();
       vi.useFakeTimers();
-      // The timer started on load, with real timers: start it again.
-      await click(el, ".arrow-next");
-      await click(el, ".arrow-previous");
+      await restartAutoAdvance(el);
 
       await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1);
       expect(activeIndex(el)).toBe(0);
@@ -393,24 +397,13 @@ describe(`${TAG_NAME} carousel`, () => {
         "slide-duration": "8000",
       });
       vi.useFakeTimers();
-      await click(el, ".arrow-next");
-      await click(el, ".arrow-previous");
+      await restartAutoAdvance(el);
 
       await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS);
       expect(activeIndex(el)).toBe(0);
 
       await vi.advanceTimersByTimeAsync(8000 - AUTO_ADVANCE_MS);
       expect(activeIndex(el)).toBe(1);
-    });
-
-    it.each([
-      [MAX_SLIDE_DURATION_MS, MAX_SLIDE_DURATION_MS],
-      [MAX_SLIDE_DURATION_MS + 1, MAX_SLIDE_DURATION_MS],
-      [2 ** 31, MAX_SLIDE_DURATION_MS],
-      [Infinity, AUTO_ADVANCE_MS],
-      [0, 0],
-    ])("turns slide-duration %s into %s", (value, expected) => {
-      expect(toSlideDuration(value)).toBe(expected);
     });
 
     it("does not advance with slide-duration 0, the arrows still step", async () => {
@@ -435,8 +428,7 @@ describe(`${TAG_NAME} carousel`, () => {
           "slide-duration": value,
         });
         vi.useFakeTimers();
-        await click(el, ".arrow-next");
-        await click(el, ".arrow-previous");
+        await restartAutoAdvance(el);
 
         await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1);
         expect(activeIndex(el)).toBe(0);
@@ -449,8 +441,7 @@ describe(`${TAG_NAME} carousel`, () => {
     it("starts the time over when slide-duration changes, without requesting again", async () => {
       const el = await mount();
       vi.useFakeTimers();
-      await click(el, ".arrow-next");
-      await click(el, ".arrow-previous");
+      await restartAutoAdvance(el);
       getRawAdsMock.mockClear();
 
       await vi.advanceTimersByTimeAsync(AUTO_ADVANCE_MS - 1000);

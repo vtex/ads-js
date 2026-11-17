@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
-import type { StoryLabels } from "../../locales";
+import { pt, type StoryLabels } from "../../locales";
 import { icon } from "../icons";
 import type { StoryMedia } from "../../types";
 import { httpUrl } from "../../utils/safe-url";
@@ -34,10 +34,15 @@ export interface MediaOptions {
    */
   autoplay?: boolean;
   /**
-   * The texts of the notice over the cover when the video can't load.
-   * Without them, only the cover shows.
+   * The texts of the notice over the cover when the video can't load
+   * (default Portuguese, as the element's).
    */
   labels?: StoryLabels;
+  /**
+   * Whether screen readers announce the notice (default true). Off where
+   * several can show at once, as on the cards.
+   */
+  announce?: boolean;
   /**
    * Offers to load a failed video again (see VideoController.retry), with a
    * button in the notice. Without it, the notice only says the video is
@@ -46,17 +51,23 @@ export interface MediaOptions {
   onRetry?: () => void;
 }
 
-// What the notice says, and the retry button when there is one.
+// What the notice says, and the retry button when there is one. The button
+// is inside the card, which plays or pauses on a click: the click stops here.
 function renderFailed(labels: StoryLabels, onRetry?: () => void) {
+  const retry = (event: Event) => {
+    event.stopPropagation();
+    onRetry?.();
+  };
+
   return html`
-    <div class="media-status" role="status" ?data-retry=${!!onRetry}>
+    <div class="media-status" ?data-retry=${!!onRetry}>
       <span class="media-status-text">
         ${icon("warning")}
         ${onRetry ? labels.videoFailed : labels.videoUnavailable}
       </span>
       ${onRetry
         ? html`
-            <button type="button" class="media-retry" @click=${onRetry}>
+            <button type="button" class="media-retry" @click=${retry}>
               ${labels.retry}
             </button>
           `
@@ -67,7 +78,7 @@ function renderFailed(labels: StoryLabels, onRetry?: () => void) {
 
 function renderVideoLoading(labels: StoryLabels) {
   return html`
-    <div class="media-status" role="status">
+    <div class="media-status">
       <span class="media-status-text">
         <span class="media-spinner" aria-hidden="true"></span>
         ${labels.videoLoading}
@@ -79,19 +90,37 @@ function renderVideoLoading(labels: StoryLabels) {
 // The notice over the cover, if the video failed or is loading again.
 function renderStatus(
   video: VideoController,
-  { labels, onRetry }: MediaOptions,
+  labels: StoryLabels,
+  onRetry?: () => void,
 ) {
-  if (!labels) return nothing;
   if (video.failed) return renderFailed(labels, onRetry);
   if (video.retrying) return renderVideoLoading(labels);
   return nothing;
 }
 
+// A live region is announced when its content changes, not when it is
+// added with it: it stays for as long as there is a video, empty until a
+// notice shows.
+function renderNotice(
+  video: VideoController,
+  { labels = pt, onRetry, announce = true }: MediaOptions,
+) {
+  return html`
+    <div
+      class="media-notice"
+      role=${announce ? "status" : nothing}
+      aria-hidden=${announce ? nothing : "true"}
+    >
+      ${renderStatus(video, labels, onRetry)}
+    </div>
+  `;
+}
+
 /**
  * The Story cover and, with a media_url, the video looping muted over it. If
  * the video can't load, it is removed and the cover underneath stays, with a
- * notice over it when there are `labels` (and a retry button with
- * `onRetry`). With withVideo false, only the cover.
+ * notice over it (and a retry button with `onRetry`). With withVideo false,
+ * only the cover.
  */
 export function renderMedia(
   story: StoryMedia,
@@ -133,6 +162,6 @@ export function renderMedia(
           ></video>
         `
       : nothing}
-    ${mediaUrl ? renderStatus(video, options) : nothing}
+    ${mediaUrl ? renderNotice(video, options) : nothing}
   `;
 }

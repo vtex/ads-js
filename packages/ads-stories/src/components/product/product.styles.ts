@@ -14,9 +14,9 @@ export const productStyles = css`
     gap: 8px;
     align-items: center;
     box-sizing: border-box;
-    padding: 8px;
+    padding: var(--_pill-inset);
     border: 0;
-    border-radius: var(--vtex-ads-story-radius, 16px);
+    border-radius: var(--_pill-radius);
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(5px);
     color: #fff;
@@ -111,7 +111,7 @@ export const productStyles = css`
     align-items: center;
     box-sizing: border-box;
     width: 100%;
-    padding: 8px;
+    padding: var(--_pill-inset);
     border: 0;
     border-radius: inherit;
     background: transparent;
@@ -174,7 +174,7 @@ export const productStyles = css`
     height: 48px;
     padding: 0 16px;
     border: 1px solid var(--vtex-ads-story-color-accent, #1b75a8);
-    border-radius: var(--vtex-ads-story-radius, 50px);
+    border-radius: var(--_button-radius);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
@@ -219,7 +219,7 @@ export const productStyles = css`
     height: 46px;
     padding: 0;
     border: 0;
-    border-radius: var(--vtex-ads-story-radius, 50%);
+    border-radius: var(--_button-radius);
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -245,6 +245,16 @@ export const productStyles = css`
     min-width: 0;
     font-size: 16px;
     text-align: center;
+  }
+
+  .product-cart-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* Sold out: add to cart, disabled and grayed. */
@@ -336,12 +346,12 @@ export const productStyles = css`
     }
   }
 
-  /* Its corners follow the pill's, 8px in from them: 8px by default. */
+  /* Its corners follow the pill's, one inset in from them: 8px by default. */
   .product-image {
     flex: none;
     width: 60px;
     height: 60px;
-    border-radius: max(0px, calc(var(--vtex-ads-story-radius, 16px) - 8px));
+    border-radius: max(0px, var(--_pill-radius) - var(--_pill-inset));
     background: #fff;
     object-fit: contain;
   }
@@ -405,7 +415,7 @@ export const productStyles = css`
   .product-add-to-cart-loading {
     display: block;
     height: 48px;
-    border-radius: var(--vtex-ads-story-radius, 50px);
+    border-radius: var(--_button-radius);
   }
 
   @media (prefers-reduced-motion: reduce) {

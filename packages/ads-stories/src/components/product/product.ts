@@ -4,7 +4,7 @@ import { icon } from "../icons";
 import { destinationUrl, httpUrl } from "../../utils/safe-url";
 import type { StoryAd } from "../../types";
 import type { StoryProductDetails } from "../../utils/hydrate-products";
-import { readProductPrice } from "./price";
+import { readProductPrice, type ProductPrice } from "./price";
 
 /** What the card shows of the Story's product, with the prices formatted. */
 export interface CardProduct {
@@ -48,7 +48,8 @@ export type FetchedProduct = StoryProductDetails | "loading" | undefined;
  * The price is the fetched one when there is one; while the product loads,
  * none; and otherwise the ad server's, from `product_metadata`. A fetched
  * product that can't be bought still shows its price, or `labels.soldOut`
- * when it has none.
+ * when it has none. Its price of 0 is no price: Intelligent Search gives one
+ * to a SKU out of stock.
  */
 export function toCardProduct(
   story: Pick<StoryAd, "product" | "destination_url">,
@@ -71,21 +72,21 @@ export function toCardProduct(
   if (fetched === "loading") {
     return { ...base, label: labels.product(name), isLoading: true };
   }
-  const amounts = fetched?.price ?? readProductPrice(product.product_metadata);
+  const soldOut = fetched?.available === false ? labels.soldOut : undefined;
+  const shown = (amounts: ProductPrice | undefined) =>
+    soldOut && amounts?.price === 0 ? undefined : amounts;
+  const amounts =
+    shown(fetched?.price) ?? shown(readProductPrice(product.product_metadata));
   const price = amounts && format(amounts.price);
   const listPrice =
     amounts?.listPrice === undefined ? undefined : format(amounts.listPrice);
-  const soldOut = fetched?.available === false ? labels.soldOut : undefined;
 
   return {
     ...base,
     price,
     listPrice,
     soldOut,
-    label:
-      soldOut && !price
-        ? labels.product(name, soldOut)
-        : labels.product(name, price, listPrice),
+    label: labels.product(name, price, listPrice, soldOut),
   };
 }
 
@@ -158,15 +159,8 @@ export function renderProduct(product: CardProduct, onSelect: () => void) {
   `;
 }
 
-export interface ExpandableProductOptions {
-  /** Whether the panel with the actions shows. */
-  open: boolean;
-  /** Called by the pill's button, to open or close the panel. */
-  onToggle: () => void;
-  /** Id of the panel, for the button's aria-controls. */
-  panelId: string;
-  /** The texts: add to cart, its disabled "unavailable" and view product. */
-  labels: StoryLabels;
+/** What the panel does with the cart. Without `onAddToCart`, no add to cart. */
+export interface ProductCartActions {
   /**
    * How many of the product were added from the element. Above 0, a stepper
    * shows in place of add to cart.
@@ -178,11 +172,43 @@ export interface ExpandableProductOptions {
   onRemoveFromCart?: () => void;
 }
 
+export interface ExpandableProductOptions extends ProductCartActions {
+  /** Whether the panel with the actions shows. */
+  open: boolean;
+  /** Called by the pill's button, to open or close the panel. */
+  onToggle: () => void;
+  /** Id of the panel, for the button's aria-controls. */
+  panelId: string;
+  /** The texts: add to cart, its disabled "unavailable" and view product. */
+  labels: StoryLabels;
+}
+
+const STEPPER_ADD_CLASS = "product-stepper-add";
+const ADD_TO_CART_CLASS = "product-add-to-cart";
+
+/**
+ * Moves the focus to the control that takes the place of the one clicked
+ * when add to cart and the stepper swap: the stepper's plus (`"stepper"`) or
+ * add to cart (`"add"`). Does nothing if the panel isn't in `root`.
+ */
+export function focusCartAction(root: ParentNode, action: "add" | "stepper") {
+  const className =
+    action === "stepper" ? STEPPER_ADD_CLASS : ADD_TO_CART_CLASS;
+  root.querySelector<HTMLElement>(`.${className}`)?.focus();
+}
+
 // In the cart: minus (a trash with one left), the quantity and plus, in the
 // add to cart button's place.
 function renderStepper(
   quantity: number,
-  { labels, onAddToCart, onRemoveFromCart }: ExpandableProductOptions,
+  {
+    labels,
+    onAddToCart,
+    onRemoveFromCart,
+  }: Pick<
+    ExpandableProductOptions,
+    "labels" | "onAddToCart" | "onRemoveFromCart"
+  >,
 ) {
   const last = quantity === 1;
 
@@ -200,10 +226,10 @@ function renderStepper(
       >
         ${icon(last ? "trash" : "minus")}
       </button>
-      <span class="product-quantity" role="status">${quantity}</span>
+      <span class="product-quantity">${quantity}</span>
       <button
         type="button"
-        class="product-stepper-button product-stepper-add"
+        class="product-stepper-button ${STEPPER_ADD_CLASS}"
         aria-label=${labels.increaseQuantity}
         @click=${onAddToCart}
       >
@@ -214,13 +240,14 @@ function renderStepper(
 }
 
 // Add to cart: its placeholder while the product loads, a disabled button
-// when sold out, and the stepper once in the cart. Nothing without a SKU.
+// when sold out, and the stepper once in the cart. Nothing without a SKU or
+// an `onAddToCart` to call.
 function renderAddToCart(
   { isLoading, soldOut, sku }: CardProduct,
   options: ExpandableProductOptions,
 ) {
   const { labels, onAddToCart, cartQuantity = 0 } = options;
-  if (!sku) return nothing;
+  if (!sku || !onAddToCart) return nothing;
   if (isLoading) return addToCartSkeleton;
   if (soldOut) {
     return html`
@@ -233,11 +260,26 @@ function renderAddToCart(
   return html`
     <button
       type="button"
-      class="product-action product-add-to-cart"
+      class="product-action ${ADD_TO_CART_CLASS}"
       @click=${onAddToCart}
     >
       ${labels.addToCart}
     </button>
+  `;
+}
+
+// Announces the quantity in the cart. It stays in the panel while the stepper
+// comes and goes, so the first value is announced too.
+function renderCartStatus(
+  { sku }: CardProduct,
+  { labels, cartQuantity = 0, onAddToCart }: ExpandableProductOptions,
+) {
+  if (!sku || !onAddToCart) return nothing;
+
+  return html`
+    <span class="product-cart-status" role="status">
+      ${cartQuantity > 0 ? `${labels.cartQuantity}: ${cartQuantity}` : ""}
+    </span>
   `;
 }
 
@@ -273,6 +315,7 @@ export function renderExpandableProduct(
       </button>
       <div id=${options.panelId} class="product-panel" ?inert=${!open}>
         <div class="product-actions">
+          ${renderCartStatus(product, options)}
           ${renderAddToCart(product, options)}
           ${product.url
             ? html`

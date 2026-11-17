@@ -9,8 +9,12 @@ import {
 import { en } from "../../locales";
 
 const format = (amount: number) => `$${amount.toFixed(2)}`;
-const label = (name: string, price?: string, listPrice?: string) =>
-  [name, listPrice, price].filter(Boolean).join(" | ");
+const label = (
+  name: string,
+  price?: string,
+  listPrice?: string,
+  soldOut?: string,
+) => [name, listPrice, price, soldOut].filter(Boolean).join(" | ");
 const labels = { ...en, product: label };
 
 const storyWith = (product: Record<string, unknown> | null) =>
@@ -156,8 +160,50 @@ describe("toCardProduct", () => {
       price: "$12.00",
       listPrice: "$15.00",
       soldOut: "Sold out",
-      label: "Shoe | $15.00 | $12.00",
+      label: "Shoe | $15.00 | $12.00 | Sold out",
     });
+  });
+
+  it("takes a price of 0 of a product that can't be bought as no price", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      price: "$20.00",
+      soldOut: "Sold out",
+      label: "Shoe | $20.00 | Sold out",
+    });
+  });
+
+  it("shows only the sold out text when every price of it is 0", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 0 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: false },
+    );
+
+    expect(product).toMatchObject({
+      soldOut: "Sold out",
+      label: "Shoe | Sold out",
+    });
+    expect(product?.price).toBeUndefined();
+  });
+
+  it("keeps a price of 0 of a product that can be bought", () => {
+    const product = toCardProduct(
+      storyWith({ product_metadata: { price: 20 } }),
+      format,
+      labels,
+      { price: { price: 0 }, available: true },
+    );
+
+    expect(product?.price).toBe("$0.00");
+    expect(product?.soldOut).toBeUndefined();
   });
 
   it("keeps the ad server's price when the product can't be bought", () => {
@@ -168,7 +214,11 @@ describe("toCardProduct", () => {
       { available: false },
     );
 
-    expect(product).toMatchObject({ price: "$20.00", soldOut: "Sold out" });
+    expect(product).toMatchObject({
+      price: "$20.00",
+      soldOut: "Sold out",
+      label: "Shoe | $20.00 | Sold out",
+    });
   });
 
   it("shows the price when the product can be bought", () => {
@@ -375,6 +425,30 @@ describe("renderExpandableProduct", () => {
       ).toBe("Increase quantity");
     });
 
+    it("announces the quantity from a status that outlives the stepper", () => {
+      const { container } = mount(product, true);
+      const status = query(container, ".product-cart-status");
+      expect(status?.getAttribute("role")).toBe("status");
+      expect(status?.textContent?.trim()).toBe("");
+
+      render(
+        renderExpandableProduct(product, {
+          ...options,
+          open: true,
+          onToggle: vi.fn(),
+          onAddToCart: vi.fn(),
+          cartQuantity: 1,
+        }),
+        container,
+      );
+
+      expect(query(container, ".product-cart-status")).toBe(status);
+      expect(status?.textContent?.trim()).toBe("Quantity in cart: 1");
+      expect(query(container, ".product-quantity")?.hasAttribute("role")).toBe(
+        false,
+      );
+    });
+
     it("calls onAddToCart from plus and onRemoveFromCart from minus", () => {
       const { container, onAddToCart, onRemoveFromCart, onToggle } = mount(
         product,
@@ -421,6 +495,21 @@ describe("renderExpandableProduct", () => {
 
     expect(onAddToCart).toHaveBeenCalledTimes(1);
     expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("has no add to cart without onAddToCart", () => {
+    const container = document.createElement("div");
+    render(
+      renderExpandableProduct(product, {
+        ...options,
+        open: true,
+        onToggle: vi.fn(),
+      }),
+      container,
+    );
+
+    expect(container.querySelector(".product-add-to-cart")).toBeNull();
+    expect(container.querySelector(".product-stepper")).toBeNull();
   });
 
   it("has no add to cart without a SKU", () => {
