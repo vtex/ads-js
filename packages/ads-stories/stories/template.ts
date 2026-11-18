@@ -35,6 +35,8 @@ export type ElementArgs = {
   currency?: string;
   labelAddToCart?: string;
   labelViewProduct?: string;
+  labelUnavailable?: string;
+  labelSoldOut?: string;
   inactiveAutoplay: boolean;
   slideDuration?: number;
   hydration?: StoryHydration;
@@ -64,6 +66,8 @@ export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
   currency: { control: "text" },
   labelAddToCart: { name: "label-add-to-cart", control: "text" },
   labelViewProduct: { name: "label-view-product", control: "text" },
+  labelUnavailable: { name: "label-unavailable", control: "text" },
+  labelSoldOut: { name: "label-sold-out", control: "text" },
   inactiveAutoplay: { name: "inactive-autoplay", control: "boolean" },
   slideDuration: { name: "slide-duration", control: "number" },
   hydration: { control: false },
@@ -94,6 +98,8 @@ export const renderElement = (
           currency=${ifDefined(args.currency)}
           label-add-to-cart=${ifDefined(args.labelAddToCart)}
           label-view-product=${ifDefined(args.labelViewProduct)}
+          label-unavailable=${ifDefined(args.labelUnavailable)}
+          label-sold-out=${ifDefined(args.labelSoldOut)}
           ?inactive-autoplay=${args.inactiveAutoplay}
           slide-duration=${ifDefined(args.slideDuration)}
           .hydration=${args.hydration}

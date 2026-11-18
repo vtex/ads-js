@@ -15,6 +15,8 @@ const meta: Meta<ElementArgs> = {
     lang: { ...elementArgTypes.lang, ...TEXTS },
     labelAddToCart: { ...elementArgTypes.labelAddToCart, ...TEXTS },
     labelViewProduct: { ...elementArgTypes.labelViewProduct, ...TEXTS },
+    labelUnavailable: { ...elementArgTypes.labelUnavailable, ...TEXTS },
+    labelSoldOut: { ...elementArgTypes.labelSoldOut, ...TEXTS },
     theme: { control: false },
   },
   render: renderElement,
@@ -57,10 +59,13 @@ export const StoreLabels: Story = {
     currency: "ARS",
     labelAddToCart: "Comprar",
     labelViewProduct: "Ver detalles",
+    labelUnavailable: "No disponible",
+    labelSoldOut: "Agotado",
   },
   parameters: {
-    note: html`<code>label-add-to-cart</code> and
-      <code>label-view-product</code> replace the panel's buttons; the other
-      texts stay in the element's language. ${OPEN_THE_PANEL}`,
+    note: html`<code>label-add-to-cart</code>, <code>label-view-product</code>,
+      <code>label-unavailable</code> and <code>label-sold-out</code> replace the
+      panel's texts; the other texts stay in the element's language.
+      ${OPEN_THE_PANEL}`,
   },
 };

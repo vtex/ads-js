@@ -26,6 +26,17 @@ describe("labelsFor", () => {
     expect(labels.close).toBe("Cerrar video");
   });
 
+  it("lets the store replace the unavailable and sold out texts", () => {
+    const labels = labelsFor("en", {
+      unavailable: " No disponible ",
+      soldOut: "Agotado",
+    });
+
+    expect(labels.unavailable).toBe("No disponible");
+    expect(labels.soldOut).toBe("Agotado");
+    expect(labelsFor("en", { soldOut: " " }).soldOut).toBe("Sold out");
+  });
+
   it("keeps the default for a blank text", () => {
     expect(labelsFor("pt-BR", { addToCart: "  " }).addToCart).toBe(
       "Adicionar ao carrinho",
