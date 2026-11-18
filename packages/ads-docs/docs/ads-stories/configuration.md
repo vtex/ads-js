@@ -23,6 +23,8 @@ The element requests the placement's Stories from the VTEX Ads ad API with
 | `currency`           | No       | Currency of the product prices, as an ISO 4217 code (`BRL`, `ARS`). Default `BRL`. An invalid code uses the default                                                                                                        |
 | `label-add-to-cart`  | No       | The add to cart button's text. Missing or blank: the default in the element's language (see [Language](#language))                                                                                                         |
 | `label-view-product` | No       | The view product button's text. Missing or blank: the default in the element's language                                                                                                                                    |
+| `label-unavailable`  | No       | The disabled button's text for a product that can't be bought. Missing or blank: the default in the element's language                                                                                                     |
+| `label-sold-out`     | No       | The sold out text, shown with the price and read by screen readers. Missing or blank: the default in the element's language                                                                                                |
 | `inactive-autoplay`  | No       | With more than one Story, the visible cards without the highlight also play their video, muted. On when present without a value or `"true"`; off by default, they show only their cover                                    |
 | `slide-duration`     | No       | With more than one Story, how long each one stays highlighted before the next, in milliseconds. Default `5000`. `0`: no automatic advance. Minimum `2000` and maximum `120000`: other values are raised or capped to them. |
 | `hydration`          | No       | `none`: no product request. Any other value is ignored. To set a strategy, use the `hydration` property (see [Product hydration](./product-hydration.md))                                                                  |
@@ -61,14 +63,16 @@ with another language, they are in Portuguese and prices use `pt-BR`.
 These docs quote the English texts (**Add to cart**, **Sold out**); a page
 without a `lang` shows them in Portuguese.
 
-`label-add-to-cart` and `label-view-product` replace those two buttons' texts
-in any language:
+`label-add-to-cart`, `label-view-product`, `label-unavailable` and
+`label-sold-out` replace those texts in any language:
 
 ```html
 <vtex-ads-story-carousel
   lang="es-AR"
   label-add-to-cart="Comprar"
   label-view-product="Ver detalles"
+  label-unavailable="No disponible"
+  label-sold-out="Agotado"
   ...
 ></vtex-ads-story-carousel>
 ```

@@ -11,6 +11,8 @@ export { pt } from "./pt";
 export interface StoryLabelOverrides {
   addToCart?: string;
   viewProduct?: string;
+  unavailable?: string;
+  soldOut?: string;
 }
 
 const BY_LANGUAGE = new Map<string, StoryLabels>([
@@ -27,10 +29,14 @@ export function labelsFor(
   const labels = BY_LANGUAGE.get(language) ?? pt;
   const addToCart = overrides.addToCart?.trim();
   const viewProduct = overrides.viewProduct?.trim();
+  const unavailable = overrides.unavailable?.trim();
+  const soldOut = overrides.soldOut?.trim();
 
   return {
     ...labels,
     ...(addToCart && { addToCart }),
     ...(viewProduct && { viewProduct }),
+    ...(unavailable && { unavailable }),
+    ...(soldOut && { soldOut }),
   };
 }

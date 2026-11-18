@@ -112,6 +112,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
     currency: {},
     labelAddToCart: { attribute: "label-add-to-cart" },
     labelViewProduct: { attribute: "label-view-product" },
+    labelUnavailable: { attribute: "label-unavailable" },
+    labelSoldOut: { attribute: "label-sold-out" },
     hydration: { converter: hydrationConverter },
     hydrationTimeout: { type: Number, attribute: "hydration-timeout" },
     slideDuration: { type: Number, attribute: "slide-duration" },
@@ -154,14 +156,24 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   declare currency?: string;
   /**
    * The add to cart button's text. Missing or blank: the default in the
-   * element's language ("Adicionar ao carrinho").
+   * element's language.
    */
   declare labelAddToCart?: string;
   /**
    * The view product button's text. Missing or blank: the default in the
-   * element's language ("Ver produto").
+   * element's language.
    */
   declare labelViewProduct?: string;
+  /**
+   * The text of the disabled button for a product that can't be bought.
+   * Missing or blank: the default in the element's language.
+   */
+  declare labelUnavailable?: string;
+  /**
+   * The sold out text, shown with the price and read by screen readers.
+   * Missing or blank: the default in the element's language.
+   */
+  declare labelSoldOut?: string;
   /**
    * Where the products' details (for now, their prices) come from. A
    * strategy (fetcher, matcher and price reader) is set as a property; the
@@ -574,14 +586,28 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   private labelSet?: { key: string; labels: StoryLabels };
 
   private get labels() {
-    const { locale, labelAddToCart = "", labelViewProduct = "" } = this;
-    const key = JSON.stringify([locale, labelAddToCart, labelViewProduct]);
+    const {
+      locale,
+      labelAddToCart = "",
+      labelViewProduct = "",
+      labelUnavailable = "",
+      labelSoldOut = "",
+    } = this;
+    const key = JSON.stringify([
+      locale,
+      labelAddToCart,
+      labelViewProduct,
+      labelUnavailable,
+      labelSoldOut,
+    ]);
     if (this.labelSet?.key !== key) {
       this.labelSet = {
         key,
         labels: labelsFor(locale, {
           addToCart: labelAddToCart,
           viewProduct: labelViewProduct,
+          unavailable: labelUnavailable,
+          soldOut: labelSoldOut,
         }),
       };
     }
