@@ -698,6 +698,39 @@ describe("PlayerController", () => {
       expect(player.hasAttribute("data-pair")).toBe(false);
     });
 
+    // With three or four Stories a Story shows on both sides: only the cover
+    // on the right is announced and reached with Tab; both take clicks.
+    it("hides the left cover of a repeated Story from assistive tech", async () => {
+      const shared = { poster_url: "https://example.com/shared.jpg" };
+      const { player, onStep } = await setupWithNavigation(true, {
+        neighbors: [
+          { offset: -1, story: neighbor(-1).story },
+          { offset: 1, story: neighbor(1).story },
+          { offset: -2, story: shared },
+          { offset: 2, story: shared },
+        ],
+      });
+      await expand(player);
+
+      const covers = [
+        ...player.querySelectorAll<HTMLElement>(".player-neighbor"),
+      ];
+      expect(
+        covers.map((cover) => [
+          cover.getAttribute("aria-hidden"),
+          cover.getAttribute("tabindex"),
+        ]),
+      ).toEqual([
+        [null, null],
+        [null, null],
+        ["true", "-1"],
+        [null, null],
+      ]);
+
+      covers[2].click();
+      expect(onStep).toHaveBeenCalledWith(-2);
+    });
+
     it("steps to another Story when its cover is clicked", async () => {
       const { player, onStep } = await setupWithNavigation(true, {
         neighbors: [neighbor(-1), neighbor(2)],

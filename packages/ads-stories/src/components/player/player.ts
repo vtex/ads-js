@@ -1017,11 +1017,18 @@ export class PlayerController implements ReactiveController {
       ({ offset, story, label }) => {
         const poster = httpUrl(story.poster_url);
         const side = Math.sign(offset);
+        // A Story shown twice is announced once, by the cover on the right,
+        // the one reached last in reading order. Both still take clicks.
+        const repeated = neighbors.some(
+          (other) => other.story === story && other.offset > offset,
+        );
         return html`
           <button
             type="button"
             class="player-neighbor"
             aria-label=${label ?? labels.show}
+            aria-hidden=${repeated ? "true" : nothing}
+            tabindex=${repeated ? "-1" : nothing}
             style=${styleMap({
               "--side": String(side),
               "--beyond": String(offset - side),
