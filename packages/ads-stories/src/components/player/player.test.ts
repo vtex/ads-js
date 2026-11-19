@@ -961,76 +961,54 @@ describe("PlayerController", () => {
         ]);
       });
 
-      // Four Stories A B C D, A in the player: D, B and C beside it. Clicking
-      // C (two before) leaves B, D and A beside it: each comes from where it
-      // was, not from its offset plus the step.
-      it("starts each cover where its Story was, across the wraparound", async () => {
-        const [a, b, c, d] = ["a", "b", "c", "d"].map((name) => ({
-          poster_url: `https://example.com/${name}.jpg`,
-          media_url: `https://example.com/${name}.mp4`,
-        }));
-        let shown = {
-          story: a,
-          neighbors: [
-            { offset: -1, story: d },
-            { offset: 1, story: b },
-            { offset: -2, story: c },
-          ],
-        };
-        const { container, controller } = mountHost(
-          (host) => new PlayerController(host, { onClose: vi.fn() }),
-          (player) =>
-            player.render(shown.story, {
-              labels,
-              navigation: true,
-              neighbors: shown.neighbors,
-            }),
-        );
-        opened.push(controller);
-        await controller.open();
-        const player = container.querySelector("dialog");
-        if (!player) throw new Error("The player did not render");
+      // Three or more Stories fill every place, repeating some, so each
+      // moves by the step: clicking the cover two before brings the ones
+      // before it in from off screen, and the video shrinks two places after.
+      it("moves every place by the step, from off screen when it wasn't shown", async () => {
+        const { controller, player } = await setupWithNavigation(true, {
+          neighbors: [neighbor(-1), neighbor(1), neighbor(-2), neighbor(2)],
+        });
         await expand(player);
 
-        shown = {
-          story: c,
-          neighbors: [
-            { offset: -1, story: b },
-            { offset: 1, story: d },
-            { offset: -2, story: a },
-          ],
-        };
         await controller.showNext(-2);
 
         const far = near + SIDE + FAR_GAP;
+        const pitch = SIDE + FAR_GAP;
         expect(animations()).toEqual([
           ["player-dim", { opacity: 1 }, { opacity: 0 }, undefined],
-          // C was the cover two before.
+          // The video comes from the cover two before.
           [
             "player-stage",
             { transform: `translateX(${-far}px) scale(${ratio})` },
             { transform: "none" },
             undefined,
           ],
-          // B was after A.
+          // Before: from three places before, off screen.
           [
             "player-neighbor",
-            { transform: cover(near) },
+            { transform: cover(-far - pitch) },
             { transform: cover(-near) },
             undefined,
           ],
-          // D was before A.
+          // After: was the cover before.
           [
             "player-neighbor",
             { transform: cover(-near) },
             { transform: cover(near) },
             undefined,
           ],
-          // A was the video.
+          // Two before: from four places before, off screen.
+          [
+            "player-neighbor",
+            { transform: cover(-far - 2 * pitch) },
+            { transform: cover(-far) },
+            undefined,
+          ],
+          // Two after: was the video.
           [
             "player-neighbor",
             { transform: cover(0, 1 / ratio) },
-            { transform: cover(-far) },
+            { transform: cover(far) },
             undefined,
           ],
           ["player-neighbor", { opacity: 0 }, { opacity: 1 }, "::after"],
@@ -1255,8 +1233,8 @@ describe("neighborOffsets", () => {
     [1, 0, []],
     [2, 0, [1]],
     [2, 1, [-1]],
-    [3, 0, [-1, 1]],
-    [4, 2, [-1, 1, -2]],
+    [3, 0, [-1, 1, -2, 2]],
+    [4, 2, [-1, 1, -2, 2]],
     [5, 0, [-1, 1, -2, 2]],
     [8, 3, [-1, 1, -2, 2]],
   ])("with %i Stories, the highlighted at %i: %j", (count, active, offsets) => {

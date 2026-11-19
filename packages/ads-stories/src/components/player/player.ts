@@ -479,23 +479,13 @@ type StoryDestination = Pick<
 /**
  * Offsets of the Stories shown beside the expanded video, as in the
  * prototype: one with two Stories, on the side away from the edge the
- * highlighted one is on; otherwise the nearest ones, up to two per side, each
- * Story once.
+ * highlighted one is on; otherwise two per side, wrapping around like the
+ * carousel, so with three or four Stories some show twice.
  */
 export function neighborOffsets(count: number, active: number): number[] {
   if (count < 2) return [];
   if (count === 2) return [active === 0 ? 1 : -1];
-
-  const offsets: number[] = [];
-  const shown = new Set([0]);
-  for (const offset of [-1, 1, -2, 2]) {
-    const index = ((offset % count) + count) % count;
-    if (!shown.has(index)) {
-      shown.add(index);
-      offsets.push(offset);
-    }
-  }
-  return offsets;
+  return [-1, 1, -2, 2];
 }
 
 /** The prototype's expanded step: slow at the end, without bounce. */
@@ -508,12 +498,6 @@ export const STEP_ANIMATION: KeyframeAnimationOptions = {
 interface StepSizes {
   frameWidth: number;
   sideWidth: number;
-}
-
-/** The Story in the player and the covers beside it, as rendered. */
-interface ShownStories {
-  story: StoryMedia;
-  neighbors: readonly PlayerNeighbor[];
 }
 
 /** A cover beside the expanded video and its place (see PlayerNeighbor). */
@@ -533,16 +517,17 @@ const fadeIn = (element: HTMLElement) =>
   });
 
 /**
- * Three or more Stories: the video comes from `frameFrom`, the place of the
- * cover of the Story it now shows. Each cover comes from `from`, its Story's
- * place before the step; the one that was the video, from the middle, at the
- * video's size, its dimming fading in. The places match the CSS
- * (--near, --pitch).
+ * Three or more Stories: every place is filled, so the step moves each one
+ * `delta` places, as in the carousel. The video comes from the cover at
+ * `delta`; each cover from its offset plus `delta`, the one that was the
+ * video from the middle, at the video's size, its dimming fading in, and the
+ * others from off screen when that place wasn't shown. The places match the
+ * CSS (--near, --pitch).
  */
 function animateRailStep(
   frame: HTMLElement,
-  frameFrom: number,
-  neighbors: readonly (RenderedNeighbor & { from: number })[],
+  delta: number,
+  neighbors: readonly RenderedNeighbor[],
   { frameWidth, sideWidth }: StepSizes,
 ): Animation[] {
   const placeX = (place: number) => {
@@ -556,14 +541,15 @@ function animateRailStep(
   const animations = [
     frame.animate(
       [
-        { transform: `translateX(${placeX(frameFrom)}px) scale(${ratio})` },
+        { transform: `translateX(${placeX(delta)}px) scale(${ratio})` },
         { transform: "none" },
       ],
       STEP_ANIMATION,
     ),
   ];
 
-  for (const { element, offset, from } of neighbors) {
+  for (const { element, offset } of neighbors) {
+    const from = offset + delta;
     const wasVideo = from === 0;
 
     animations.push(
@@ -682,9 +668,6 @@ export class PlayerController implements ReactiveController {
   private navigation = false;
   /** Side the expanded video moved to with two Stories; 0 otherwise. */
   private pairDirection = 0;
-  /** The Story and covers rendered, and those before the last step. */
-  private rendered?: ShownStories;
-  private beforeStep?: ShownStories;
   /** The step animation running, cancelled by the next step. */
   private animations: Animation[] = [];
 
@@ -714,8 +697,6 @@ export class PlayerController implements ReactiveController {
     this.expanded = false;
     this.productOpen = productOpen;
     this.switched = false;
-    this.rendered = undefined;
-    this.beforeStep = undefined;
     this.video.reset();
     this.host.requestUpdate();
     await this.host.updateComplete;
@@ -784,24 +765,9 @@ export class PlayerController implements ReactiveController {
     const dim = this.dim.value;
     if (!frame || !dim || typeof frame.animate !== "function") return;
 
-    // Where each Story was before the step: the video (0), its cover's
-    // offset, or, if it wasn't shown, `fallback`. Read from the Stories, not
-    // from offset + delta: with wraparound (four Stories), a Story's offset
-    // can change by more or less than the step.
-    const { rendered, beforeStep } = this;
-    const placeBefore = (story: StoryMedia | undefined, fallback: number) => {
-      if (!story || !beforeStep) return fallback;
-      if (story === beforeStep.story) return 0;
-      const cover = beforeStep.neighbors.find((n) => n.story === story);
-      return cover?.offset ?? fallback;
-    };
     const neighbors = [...this.neighborElements].map(([offset, element]) => ({
       offset,
       element,
-      from: placeBefore(
-        rendered?.neighbors.find((n) => n.offset === offset)?.story,
-        offset + delta,
-      ),
     }));
 
     const sizes = {
@@ -820,12 +786,7 @@ export class PlayerController implements ReactiveController {
             this.pairDirection,
             sizes,
           )
-        : animateRailStep(
-            frame,
-            placeBefore(rendered?.story, delta),
-            neighbors,
-            sizes,
-          )),
+        : animateRailStep(frame, delta, neighbors, sizes)),
     ];
   }
 
@@ -1132,19 +1093,13 @@ export class PlayerController implements ReactiveController {
   }
 
   /**
-   * Keeps what this render shows, for the step animation: the covers beside
-   * the video (only in the expanded view) and the side the video moves to
-   * with two Stories. A new Story makes what was shown the animation's
-   * start.
+   * The covers beside the video this render shows (only in the expanded
+   * view), keeping the side the video moves to with two Stories for the
+   * step animation.
    */
-  private track(story: StoryMedia, neighbors: readonly PlayerNeighbor[]) {
+  private track(neighbors: readonly PlayerNeighbor[]) {
     const shown = this.expanded ? neighbors : [];
     this.pairDirection = shown.length === 1 ? -Math.sign(shown[0].offset) : 0;
-
-    if (this.rendered && story !== this.rendered.story) {
-      this.beforeStep = this.rendered;
-    }
-    this.rendered = { story, neighbors: shown };
     return shown;
   }
 
@@ -1169,7 +1124,7 @@ export class PlayerController implements ReactiveController {
     if (!this.isOpen) return nothing;
 
     const { video, expanded } = this;
-    const shownNeighbors = this.track(story, neighbors);
+    const shownNeighbors = this.track(neighbors);
     const pair = this.pairDirection !== 0;
     this.navigation = navigation;
 
