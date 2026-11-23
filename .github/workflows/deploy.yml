@@ -32,6 +32,7 @@ jobs:
         run: |
           pnpm build --filter ads-playground
           pnpm build --filter ads-docs
+          pnpm --filter @vtex/ads-stories build-storybook
 
       - name: Combine docs and playground builds
         run: |
@@ -39,6 +40,8 @@ jobs:
           cp -r packages/ads-docs/build/* combined/
           mkdir -p combined/playground
           cp -r packages/playground/dist/* combined/playground/
+          mkdir -p combined/storybook
+          cp -r packages/ads-stories/storybook-static/* combined/storybook/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
