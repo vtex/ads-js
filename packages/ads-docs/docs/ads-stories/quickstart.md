@@ -14,6 +14,11 @@ It is framework-agnostic: it works on any HTML5 page, including VTEX IO,
 FastStore and non-VTEX storefronts. Load it from npm or, with no build step,
 from a CDN.
 
+:::tip Try it
+Explore the element's variants, attributes and CSS variables live in the
+[Stories Storybook](pathname:///ads-js/storybook/).
+:::
+
 ## Installation
 
 ### npm

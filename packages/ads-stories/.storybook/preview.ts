@@ -6,7 +6,28 @@ import { handlers, liveHandlers } from "../stories/handlers";
 // The source or the CDN build, as set in main.ts.
 import "vtex-ads-stories-element";
 
-const msw = mswLoader();
+// The worker is requested next to iframe.html, so Storybook also works when
+// served under a sub path (GitHub Pages), not only at the root.
+const setupWorker = async () => {
+  const { setupWorker } = await import("msw/browser");
+  const { isCommonAssetRequest } = await import("msw");
+  const worker = setupWorker();
+  await worker.start({
+    quiet: true,
+    serviceWorker: { url: "./mockServiceWorker.js" },
+    onUnhandledRequest(request, print) {
+      if (
+        isCommonAssetRequest(request) ||
+        /iframe\.html|sb-|@vite|\/virtual:|\.stories\./.test(request.url)
+      )
+        return;
+      print.warning();
+    },
+  });
+  return worker;
+};
+
+const msw = mswLoader(setupWorker);
 
 const preview: Preview = {
   // The toolbar's Ad API: "mock" answers with the handlers, "live" sends
@@ -29,8 +50,8 @@ const preview: Preview = {
   },
   // Over every story in live mode, so the real Stories aren't a surprise.
   decorators: [
-    (story, { globals }) =>
-      globals.adApi === "live"
+    (story, { globals, title }) =>
+      globals.adApi === "live" && title !== "Introduction"
         ? html`
             <div class="live-alert" role="alert">
               <strong>Production ad API.</strong> These are real Stories. Their
@@ -54,6 +75,17 @@ const preview: Preview = {
   ],
   parameters: {
     layout: "padded",
+    options: {
+      storySort: {
+        order: [
+          "Introduction",
+          "Story",
+          "Custom CSS",
+          "Custom labels",
+          "Commerce events",
+        ],
+      },
+    },
     controls: { expanded: true },
     msw: handlers,
   },
