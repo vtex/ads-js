@@ -98,9 +98,19 @@ const config: Config = {
           label: "React API",
         },
         {
-          href: "https://vtex.github.io/ads-js/playground",
-          label: "Playground",
+          type: "dropdown",
+          label: "Try it",
           position: "right",
+          items: [
+            {
+              label: "React SDK playground",
+              href: "https://vtex.github.io/ads-js/playground",
+            },
+            {
+              label: "Stories Storybook",
+              href: "pathname:///ads-js/storybook/",
+            },
+          ],
         },
         {
           href: "https://github.com/vtex/ads-js",
@@ -137,6 +147,14 @@ const config: Config = {
         {
           title: "More",
           items: [
+            {
+              label: "React SDK playground",
+              href: "https://vtex.github.io/ads-js/playground",
+            },
+            {
+              label: "Stories Storybook",
+              href: "pathname:///ads-js/storybook/",
+            },
             {
               label: "GitHub",
               href: "https://github.com/vtex/ads-js",
