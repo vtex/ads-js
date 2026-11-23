@@ -16,7 +16,7 @@ export default meta;
 
 type Story = StoryObj<ElementArgs>;
 
-export const Default: Story = {};
+export const OneStory: Story = {};
 
 export const TwoStories: Story = {
   args: { placement: "two_stories" },
