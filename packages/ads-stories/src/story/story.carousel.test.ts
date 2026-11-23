@@ -676,6 +676,7 @@ describe(`${TAG_NAME} carousel`, () => {
         (img) => img.getAttribute("src"),
       );
 
+    // Two on each side, as in the carousel: with three, each shows twice.
     it("shows the other Stories beside the expanded video", async () => {
       getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 3)));
       const el = await mount();
@@ -686,12 +687,19 @@ describe(`${TAG_NAME} carousel`, () => {
       expect(neighborCovers(el)).toEqual([
         mockStories[2].poster_url,
         mockStories[1].poster_url,
+        mockStories[1].poster_url,
+        mockStories[2].poster_url,
       ]);
       expect(
         [...(el.shadowRoot?.querySelectorAll(".player-neighbor") ?? [])].map(
           (cover) => cover.getAttribute("aria-label"),
         ),
-      ).toEqual(["Mostrar vídeo 3 de 3", "Mostrar vídeo 2 de 3"]);
+      ).toEqual([
+        "Mostrar vídeo 3 de 3",
+        "Mostrar vídeo 2 de 3",
+        "Mostrar vídeo 2 de 3",
+        "Mostrar vídeo 3 de 3",
+      ]);
     });
 
     it("steps to the Story whose cover is clicked in the expanded view", async () => {
