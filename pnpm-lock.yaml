@@ -2784,10 +2784,6 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@trysound/sax@0.2.0':
-    resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
-    engines: {node: '>=10.13.0'}
-
   '@tybys/wasm-util@0.10.4':
     resolution: {integrity: sha512-W3c4gRigFS0T/Ma4qIYF3GDAc5AQdHb1yL5znJT1Zv1YaD9Kitx656wBjvr19qbiosmZT8lWDM5BEMynUqX65A==}
 
@@ -6645,6 +6641,10 @@ packages:
   sax@1.4.1:
     resolution: {integrity: sha512-+aWOz7yVScEGoKNd4PA10LZ8sk0A/z5+nXQG5giUO5rprX9jgYsTdov9qCchZiPIZezbZH+jRut8nPodFAX4Jg==}
 
+  sax@1.6.1:
+    resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
+    engines: {node: '>=11.0.0'}
+
   saxes@6.0.0:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
@@ -6983,8 +6983,8 @@ packages:
   svg-parser@2.0.4:
     resolution: {integrity: sha512-e4hG1hRwoOdRb37cIMSgzNsxyzKfayW6VOflrwvR+/bzrkyxY/31WkbgnQpgtrNp1SdpJvpUAGTa/ZoiPNDuRQ==}
 
-  svgo@3.3.2:
-    resolution: {integrity: sha512-OoohrmuUlBs8B8o6MB2Aevn+pRIH9zDALSR+6hhqVfa6fRwG/Qw9VUMSMW9VNg2CFc/MTIfabtdOVl9ODIJjpw==}
+  svgo@3.3.5:
+    resolution: {integrity: sha512-8SQMzdrvWaD8deUmrnYB+ASyxBVgWUOilg+A75nE/76WdLpj6LopCwiAVvkzkcqy/9b7t2Mg7faFLjg0ZRcZ3w==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -10888,7 +10888,7 @@ snapshots:
       '@svgr/core': 8.1.0(typescript@5.6.3)
       cosmiconfig: 8.3.6(typescript@5.6.3)
       deepmerge: 4.3.1
-      svgo: 3.3.2
+      svgo: 3.3.5
     transitivePeerDependencies:
       - typescript
 
@@ -10985,8 +10985,6 @@ snapshots:
   '@testing-library/user-event@14.6.9(@testing-library/dom@10.4.2)':
     dependencies:
       '@testing-library/dom': 10.4.2
-
-  '@trysound/sax@0.2.0': {}
 
   '@tybys/wasm-util@0.10.4':
     dependencies:
@@ -15095,7 +15093,7 @@ snapshots:
     dependencies:
       postcss: 8.5.32
       postcss-value-parser: 4.2.0
-      svgo: 3.3.2
+      svgo: 3.3.5
 
   postcss-unique-selectors@6.0.4(postcss@8.5.32):
     dependencies:
@@ -15587,6 +15585,8 @@ snapshots:
 
   sax@1.4.1: {}
 
+  sax@1.6.1: {}
+
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
@@ -15976,15 +15976,15 @@ snapshots:
 
   svg-parser@2.0.4: {}
 
-  svgo@3.3.2:
+  svgo@3.3.5:
     dependencies:
-      '@trysound/sax': 0.2.0
       commander: 7.2.0
       css-select: 5.2.2
       css-tree: 2.3.1
       css-what: 6.2.2
       csso: 5.0.5
       picocolors: 1.1.1
+      sax: 1.6.1
 
   symbol-tree@3.2.4: {}
 
