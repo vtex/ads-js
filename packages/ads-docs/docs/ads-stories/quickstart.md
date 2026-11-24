@@ -17,9 +17,11 @@ from a CDN.
 Building your own carousel, or a native app? Call the ad API directly: see
 [Ad API](./ad-api.md) for the request, the response and the events to send.
 
-:::tip Try it
+:::tip[Try it]
+
 Explore the element's variants, attributes and CSS variables live in the
 [Stories Storybook](pathname:///ads-js/storybook/).
+
 :::
 
 ## Enable Story ads
