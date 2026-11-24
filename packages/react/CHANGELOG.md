@@ -1,5 +1,13 @@
 # @vtex/ads-react
 
+## 0.6.1
+
+### Patch Changes
+
+- f8f6baa: Update the build and development dependencies flagged by `pnpm audit`, including vite 7 and newer rollup and esbuild releases. The published JavaScript is unchanged; the bundled type declarations are reorganized into differently named files with the same exported types.
+- Updated dependencies [f8f6baa]
+  - @vtex/ads-core@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
