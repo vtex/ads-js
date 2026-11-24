@@ -18,6 +18,8 @@ To fetch ads, you first need to construct a request that identifies the user and
 
 The identity tells the ad server who the user is and what session they're in. It also optionally includes the channel (like `'web'` or `'mobile'`), which helps with targeting and analytics.
 
+`userId` and `sessionId` must be opaque ids, never personal data such as an email or a document number (see [Personal data](../guides/personal-data.md)).
+
 ```ts
 const identity = {
   accountName: "your-account-name",

@@ -44,6 +44,11 @@ const sidebars: SidebarsConfig = {
         "ads-stories/events",
       ],
     },
+    {
+      type: "category",
+      label: "Guides",
+      items: ["guides/content-security-policy", "guides/personal-data"],
+    },
   ],
   adsCore: [
     {
