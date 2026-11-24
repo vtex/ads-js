@@ -146,7 +146,8 @@ export interface CardOptions {
   cta?: CardCta;
   /**
    * Called by a click on the call to action instead of following the link
-   * (a card without the highlight). Without it, the link opens.
+   * (a card without the highlight). Without it, the link opens in a new tab
+   * and the video goes muted, as the card starts.
    */
   onCtaSelect?: () => void;
   /**
@@ -230,7 +231,12 @@ export function renderCard(
             options.onProductSelect ?? options.onSelect,
           )
         : nothing}
-      ${options.cta ? renderCta(options.cta, options.onCtaSelect) : nothing}
+      ${options.cta
+        ? renderCta(options.cta, {
+            onSelect: options.onCtaSelect,
+            onOpen: () => video.mute(),
+          })
+        : nothing}
     </div>
   `;
 }

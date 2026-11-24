@@ -903,10 +903,13 @@ export class PlayerController implements ReactiveController {
     else this.video.togglePlayback();
   };
 
+  // View product and the call to action open a new tab: the video pauses.
+  private readonly pauseVideo = () => this.video.pause();
+
   /**
    * At the bottom of the video, the product pill, which opens the panel with
    * its actions, or the call to action of a link destination. Clicks on them
-   * don't reach the video.
+   * don't reach the video. View product and the call to action pause it.
    */
   private renderDestination({
     product,
@@ -922,9 +925,10 @@ export class PlayerController implements ReactiveController {
         open: this.productOpen,
         onToggle: this.toggleProduct,
         panelId: "player-product-panel",
+        onViewProduct: this.pauseVideo,
       });
     } else if (cta) {
-      content = renderCta(cta);
+      content = renderCta(cta, { onOpen: this.pauseVideo });
     } else {
       return nothing;
     }

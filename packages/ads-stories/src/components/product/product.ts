@@ -181,6 +181,8 @@ export interface ExpandableProductOptions extends ProductCartActions {
   panelId: string;
   /** The texts: add to cart, its disabled "unavailable" and view product. */
   labels: StoryLabels;
+  /** Called by view product, as it opens the product page in a new tab. */
+  onViewProduct?: () => void;
 }
 
 const STEPPER_ADD_CLASS = "product-stepper-add";
@@ -324,6 +326,7 @@ export function renderExpandableProduct(
                   href=${product.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  @click=${options.onViewProduct}
                 >
                   ${options.labels.viewProduct}
                 </a>

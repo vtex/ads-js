@@ -27,19 +27,27 @@ export function toCardCta(
   return label && url ? { label, url } : undefined;
 }
 
+export interface CtaOptions {
+  /**
+   * Called by a click instead of following the link (a card without the
+   * highlight takes it first).
+   */
+  onSelect?: () => void;
+  /** Called by a click that follows the link, as it opens the new tab. */
+  onOpen?: () => void;
+}
+
 /**
  * The call to action at the bottom of the card or the video: a glass pill
- * with the text and a caret, a link to the destination in a new tab. With
- * `onSelect`, a click calls it instead of following the link (a card
- * without the highlight takes it first).
+ * with the text and a caret, a link to the destination in a new tab.
  */
-export function renderCta(cta: CardCta, onSelect?: () => void) {
+export function renderCta(cta: CardCta, { onSelect, onOpen }: CtaOptions = {}) {
   const onClick = onSelect
     ? (event: Event) => {
         event.preventDefault();
         onSelect();
       }
-    : undefined;
+    : onOpen;
 
   return html`
     <a

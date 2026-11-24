@@ -315,6 +315,23 @@ describe("PlayerController", () => {
       expect(view?.rel).toBe("noopener noreferrer");
     });
 
+    it("pauses the video when view product opens the page", async () => {
+      const { player, panel, onClose, video } = await setupWithProduct({
+        productOpen: true,
+      });
+      const view = panel()?.querySelector<HTMLAnchorElement>(".product-view");
+      if (!video || !view) throw new Error("The video or the link is missing");
+      // The test doesn't navigate.
+      view.addEventListener("click", (event) => event.preventDefault());
+      expect(video.paused).toBe(false);
+
+      view.click();
+
+      expect(video.paused).toBe(true);
+      expect(onClose).not.toHaveBeenCalled();
+      expect(player.isConnected).toBe(true);
+    });
+
     it("calls onAddToCart and stays open, the panel too", async () => {
       const { player, pill, onAddToCart, onClose, video } =
         await setupWithProduct({ productOpen: true });
@@ -430,20 +447,19 @@ describe("PlayerController", () => {
       expect(player.querySelector(".card-cta")).toBeNull();
     });
 
-    it("doesn't pause the video when clicked", async () => {
-      const { player } = await setup(withVideo, { cta });
+    it("pauses the video when clicked, as the link opens a new tab", async () => {
+      const { player, onClose } = await setup(withVideo, { cta });
       const video = player.querySelector("video");
       const link = player.querySelector<HTMLAnchorElement>(".card-cta");
       if (!video || !link) throw new Error("The video or the link is missing");
       // The test doesn't navigate.
       link.addEventListener("click", (event) => event.preventDefault());
       expect(video.paused).toBe(false);
-      const pause = vi.spyOn(video, "pause");
 
       link.click();
 
-      expect(pause).not.toHaveBeenCalled();
-      expect(video.paused).toBe(false);
+      expect(video.paused).toBe(true);
+      expect(onClose).not.toHaveBeenCalled();
     });
   });
 
