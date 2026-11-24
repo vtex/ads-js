@@ -80,7 +80,9 @@ document.addEventListener(REMOVE_FROM_CART_EVENT, (event) => {
 
 The element sends each Story's impression, view and click to the URLs the ad
 API returned for it (`impression_url`, `view_url`, `click_url`), each at most
-once per Story and `session-id`. The store doesn't need to send them:
+once per Story and `session-id`. The store doesn't need to send them (a store
+that calls the ad API without the element sends them itself: see
+[Ad API](./ad-api.md#events)):
 
 - **Impression**: when the carousel shows the Stories, once the skeleton
   leaves. Nothing is sent while it is up.

@@ -14,10 +14,27 @@ It is framework-agnostic: it works on any HTML5 page, including VTEX IO,
 FastStore and non-VTEX storefronts. Load it from npm or, with no build step,
 from a CDN.
 
+Building your own carousel, or a native app? Call the ad API directly: see
+[Ad API](./ad-api.md) for the request, the response and the events to send.
+
 :::tip Try it
 Explore the element's variants, attributes and CSS variables live in the
 [Stories Storybook](pathname:///ads-js/storybook/).
 :::
+
+## Enable Story ads
+
+Story ads are off by default. Before the store can show them:
+
+1. **Ask the VTEX Ads team to turn Story on.** It is a store configuration
+   only they can change (for a network, once for the whole network).
+2. **Turn on the ad type**: in **Settings > Ad types** on the
+   [VTEX Ads platform](https://app.ads.vtex.com/), check **Story** and save.
+3. **Give it to the advertisers**: in **Settings > Advertisers**, add
+   **Story** to the ad types of each advertiser that may run Story campaigns.
+
+Advertisers can then create Story campaigns, which run once the store approves
+them.
 
 ## Installation
 
@@ -147,3 +164,5 @@ The types are opt-in so projects without React don't need `@types/react`.
   availability come from.
 - [Events](./events.md): the cart events for the store, and the ad events the
   element sends.
+- [Ad API](./ad-api.md): the Story request and response, for stores and apps
+  that don't use the element.
