@@ -35,7 +35,8 @@ export interface CtaOptions {
   onSelect?: () => void;
   /**
    * Called by a click that follows the link, as it opens the new tab. Not
-   * called when the tab opens in the background (see opensInBackground).
+   * called when the tab opens in the background (see opensInBackground), nor
+   * with onSelect, which takes the click instead.
    */
   onOpen?: () => void;
 }

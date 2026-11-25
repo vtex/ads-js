@@ -142,12 +142,14 @@ export interface CardOptions {
   product?: CardProduct;
   /** Called by a click on the product (default onSelect). */
   onProductSelect?: () => void;
-  /** The Story's call to action, for a link destination (no product). */
+  /**
+   * The Story's call to action, for a link destination (no product). Its link
+   * opens in a new tab, and the video goes muted, as the card starts.
+   */
   cta?: CardCta;
   /**
    * Called by a click on the call to action instead of following the link
-   * (a card without the highlight). Without it, the link opens in a new tab
-   * and the video goes muted, as the card starts.
+   * (a card without the highlight).
    */
   onCtaSelect?: () => void;
   /**

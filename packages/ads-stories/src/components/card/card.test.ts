@@ -208,6 +208,36 @@ describe("renderCard call to action", () => {
     expect(video.muted).toBe(false);
   });
 
+  it("keeps a muted video muted and playing when the link opens", () => {
+    const { card, video: controller } = mount(story, { cta });
+    controller.play();
+    const video = card?.querySelector("video");
+    const link = card?.querySelector<HTMLAnchorElement>(".card-cta");
+    if (!video || !link) throw new Error("The video or the link is missing");
+    // The test doesn't navigate.
+    link.addEventListener("click", (event) => event.preventDefault());
+    expect(video.muted).toBe(true);
+
+    link.click();
+
+    expect(video.muted).toBe(true);
+    expect(video.paused).toBe(false);
+  });
+
+  it("leaves a paused video paused when the link opens", () => {
+    const { card } = mount(story, { cta });
+    const video = card?.querySelector("video");
+    const link = card?.querySelector<HTMLAnchorElement>(".card-cta");
+    if (!video || !link) throw new Error("The video or the link is missing");
+    // The test doesn't navigate.
+    link.addEventListener("click", (event) => event.preventDefault());
+    expect(video.paused).toBe(true);
+
+    link.click();
+
+    expect(video.paused).toBe(true);
+  });
+
   it("leaves the sound on when onCtaSelect takes the click", () => {
     const onCtaSelect = vi.fn();
     const { video, link } = mountWithSound({ onCtaSelect });
