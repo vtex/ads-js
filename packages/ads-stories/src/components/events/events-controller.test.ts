@@ -20,7 +20,8 @@ function setup(identity: Partial<EventIdentity>) {
   const host: ReactiveControllerHost = {
     addController: (c) => (controller = c),
     removeController: () => undefined,
-    requestUpdate: () => undefined,
+    // Renders at once, where lit renders a microtask later.
+    requestUpdate: () => controller?.hostUpdated?.(),
     updateComplete: Promise.resolve(true),
   };
   new StoryEventsController(host, {
@@ -75,7 +76,7 @@ describe("StoryEventsController", () => {
     expect(beaconed()).toEqual([stories[2].impression_url]);
   });
 
-  it("watches nothing off the page, and the elements shown once it is back", async () => {
+  it("watches nothing off the page, and the elements shown once it is back", () => {
     const { render, disconnect, connect } = setup({ sessionId: "s-1" });
 
     disconnect();
@@ -83,7 +84,7 @@ describe("StoryEventsController", () => {
     expect(observed()).toEqual([]);
 
     connect();
-    await vi.waitFor(() => expect(observed()).toEqual([cards[0][0]]));
+    expect(observed()).toEqual([cards[0][0]]);
     intersect(cards[0][0], 1);
     expect(beaconed()).toEqual([stories[0].impression_url]);
   });

@@ -5,7 +5,7 @@ import { vi } from "vitest";
  * element is on screen with intersect(). jsdom doesn't implement it.
  */
 class FakeIntersectionObserver {
-  static instances: FakeIntersectionObserver[] = [];
+  static readonly instances = new Set<FakeIntersectionObserver>();
   readonly observed = new Set<Element>();
 
   readonly threshold: number | number[] | undefined;
@@ -15,7 +15,7 @@ class FakeIntersectionObserver {
     options?: IntersectionObserverInit,
   ) {
     this.threshold = options?.threshold;
-    FakeIntersectionObserver.instances.push(this);
+    FakeIntersectionObserver.instances.add(this);
   }
 
   observe(element: Element) {
@@ -47,7 +47,7 @@ class FakeIntersectionObserver {
 
 /** Stubs the global with a fresh fake; vi.unstubAllGlobals() removes it. */
 export function installIntersectionObserverMock() {
-  FakeIntersectionObserver.instances = [];
+  FakeIntersectionObserver.instances.clear();
   vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
 }
 
@@ -57,7 +57,7 @@ export function installIntersectionObserverMock() {
  */
 export const observed = (threshold?: number) => [
   ...new Set(
-    FakeIntersectionObserver.instances
+    [...FakeIntersectionObserver.instances]
       .filter((o) => threshold === undefined || o.threshold === threshold)
       .flatMap((o) => [...o.observed]),
   ),
