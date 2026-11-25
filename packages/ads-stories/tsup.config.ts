@@ -20,8 +20,10 @@ const raw: EsbuildPlugin = {
   },
 };
 
-// Lit ships only ES modules, so it is bundled wherever the output can't import
-// it: the CJS build (require()) and the standalone CDN script.
+// Lit is bundled into every build. It ships only ES modules (no require()),
+// and its ES2021 syntax doesn't parse in bundlers that read `module` instead
+// of `exports`, such as webpack 4 (VTEX IO). Bundled, it is lowered with the
+// rest of the code.
 const bundleLit = [/^lit(\/|$)/, /^@lit\//];
 
 // The CDN script also bundles @vtex/ads-core.
@@ -49,8 +51,7 @@ const nativeFetch: EsbuildPlugin = {
 // Custom elements must stay native ES classes (`class extends HTMLElement`),
 // so no build goes below ES2018.
 export default defineConfig([
-  // npm: ESM (modern bundlers). Lit stays an import, shared with any other
-  // Lit components on the page.
+  // npm: ESM (bundlers)
   {
     entry: ["src/index.ts", "src/react.ts"],
     format: ["esm"],
@@ -60,10 +61,11 @@ export default defineConfig([
     outDir: "dist/esm",
     clean: false,
     bundle: true,
+    noExternal: bundleLit,
     splitting: false,
     esbuildPlugins: [raw],
   },
-  // npm: CJS (require(), Jest, VTEX IO)
+  // npm: CJS (require(), Jest)
   {
     entry: ["src/index.ts", "src/react.ts"],
     format: ["cjs"],
