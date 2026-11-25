@@ -1,5 +1,11 @@
 # @vtex/ads-stories
 
+## 0.10.0
+
+### Minor Changes
+
+- 1e189e0: A Story's impression is sent only once at least 30% of its card is on screen, instead of for every Story as soon as the carousel renders. Cards off screen, in the carousel or below the fold, send theirs when they come into view. Browsers without `IntersectionObserver` send no impression, as they already sent no view.
+
 ## 0.9.0
 
 ### Minor Changes
