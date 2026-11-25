@@ -43,7 +43,11 @@ export type ElementArgs = {
   theme?: Record<string, string>;
 };
 
-export type Parameters = { note?: TemplateResult };
+export type Parameters = {
+  note?: TemplateResult;
+  /** Pushes the element below the fold, to scroll down to it. */
+  spacer?: boolean;
+};
 
 export const elementArgTypes: Partial<ArgTypes<ElementArgs>> = {
   publisherId: {
@@ -83,6 +87,9 @@ export const renderElement = (
   <div class="story-container">
     ${(parameters as Parameters).note
       ? html`<p class="note">${(parameters as Parameters).note}</p>`
+      : nothing}
+    ${(parameters as Parameters).spacer
+      ? html`<div class="spacer">Scroll down to the carousel ⬇️</div>`
       : nothing}
     <div style=${styleMap(theme ?? {})}>
       ${keyed(

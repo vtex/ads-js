@@ -52,6 +52,18 @@ export const FourStories: Story = {
   },
 };
 
+export const BelowTheFold: Story = {
+  name: "Below the fold",
+  args: { placement: "four_stories" },
+  parameters: {
+    spacer: true,
+    note: html`Scroll down to the carousel: each Story's impression goes out
+      once 30% of its card is on screen, not when the carousel renders. Filter
+      the Network tab by <code>impression</code> to see them. Cards hidden at
+      the ends send theirs when they slide in.`,
+  },
+};
+
 export const CustomSlideDuration: Story = {
   name: "Custom slide duration",
   args: { placement: "three_stories", slideDuration: 2000 },
