@@ -1,5 +1,11 @@
 # @vtex/ads-stories
 
+## 0.8.3
+
+### Patch Changes
+
+- 3afe7e9: Pause the Story video when see product or the call to action in the open player opens the destination in a new tab. The player stays open, so the shopper can play the video again when they come back. In the carousel, the highlighted card's call to action mutes the video instead of pausing it: the card keeps playing without sound, as it starts. A Cmd or Ctrl click, which opens the destination in a background tab, leaves the video playing with its sound.
+
 ## 0.8.2
 
 ### Patch Changes

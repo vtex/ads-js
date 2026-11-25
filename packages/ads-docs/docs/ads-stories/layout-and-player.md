@@ -47,7 +47,8 @@ shows struck through beside it. Prices are formatted in the element's language
 
 In the player, the same product sits at the bottom of the video. Clicking it
 opens a panel with an add to cart button and a view product link (the product
-page, in a new tab). Clicking the product on the highlighted card opens the
+page, in a new tab). Clicking view product also pauses the video; the player
+stays open. Clicking the product on the highlighted card opens the
 player with the panel already open; on another card, it moves the highlight, as
 the card does. Clicking the video or moving to another Story closes the panel.
 
@@ -81,6 +82,11 @@ show a call to action at the bottom instead: a button with the text set in the
 campaign (the ad's `call_to_action`, such as "Learn more") and a caret, which
 opens the link in a new tab. On a card without the highlight, it moves the
 highlight, as the card does. Without a text, there is no button.
+
+Opening the link leaves the video quiet behind the new tab. In the player, the
+video pauses and the player stays open. On the highlighted card, the video is
+muted and keeps playing, as the card starts: a paused card would show its play
+button, which opens the player instead of resuming the video.
 
 ## Destination
 

@@ -527,6 +527,48 @@ describe("renderExpandableProduct", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
+  function mountWithView() {
+    const onViewProduct = vi.fn();
+    const container = document.createElement("div");
+    document.body.append(container);
+    render(
+      renderExpandableProduct(product, {
+        ...options,
+        open: true,
+        onToggle: vi.fn(),
+        onViewProduct,
+      }),
+      container,
+    );
+    const view = container.querySelector<HTMLAnchorElement>(".product-view");
+    if (!view) throw new Error("The link is missing");
+    // The test doesn't navigate.
+    view.addEventListener("click", (event) => event.preventDefault());
+    return { view, onViewProduct };
+  }
+
+  it("calls onViewProduct, with no arguments, when view product opens the page", () => {
+    const { view, onViewProduct } = mountWithView();
+
+    view.click();
+
+    expect(onViewProduct).toHaveBeenCalledOnce();
+    expect(onViewProduct).toHaveBeenCalledWith();
+  });
+
+  it.each([{ metaKey: true }, { ctrlKey: true }])(
+    "doesn't call onViewProduct when the page opens in the background (%o)",
+    (keys) => {
+      const { view, onViewProduct } = mountWithView();
+
+      view.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, ...keys }),
+      );
+
+      expect(onViewProduct).not.toHaveBeenCalled();
+    },
+  );
+
   it("has no product page link without a URL", () => {
     const { container } = mount({ ...product, url: undefined }, true);
 

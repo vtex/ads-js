@@ -88,7 +88,8 @@ Replace `<version>` below with a version published on
   shows an error instead of a hash of an error page.
 
 - Stores with a Content-Security-Policy must allow the CDN host in
-  `script-src` (`https://unpkg.com` or `https://cdn.jsdelivr.net`).
+  `script-src` (`https://unpkg.com` or `https://cdn.jsdelivr.net`), besides
+  the hosts in [Content Security Policy](../guides/content-security-policy.md).
 - The script also exposes `window.VtexAdsStories`, with
   `VtexAdsStoryCarouselElement`, `defineVtexAdsStoryCarousel` and `TAG_NAME`.
   The commerce event names aren't in it: use the strings

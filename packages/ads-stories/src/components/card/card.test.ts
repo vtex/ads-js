@@ -2,17 +2,17 @@ import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
 import { mountHost } from "../host.mock";
 import { installMediaMocks } from "../media/media.mock";
 import { VideoController } from "../media";
-import { renderCard } from "./card";
+import { renderCard, type CardOptions } from "./card";
 import type { StoryMedia } from "../../types";
 import { pt } from "../../locales";
 
 const options = { label: "Assistir vídeo", labels: pt };
 
-function mount(story: StoryMedia) {
+function mount(story: StoryMedia, extra?: Partial<CardOptions>) {
   const onSelect = vi.fn();
   const { container, controller: video } = mountHost(
     (host) => new VideoController(host),
-    (video) => renderCard(story, video, { ...options, onSelect }),
+    (video) => renderCard(story, video, { ...options, onSelect, ...extra }),
   );
 
   const card = container.querySelector<HTMLElement>(".card");
@@ -159,5 +159,92 @@ describe("renderCard failed video", () => {
     const notice = card?.querySelector(".media-notice");
     expect(notice?.getAttribute("role")).toBeNull();
     expect(notice?.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+describe("renderCard call to action", () => {
+  const story = { media_url: "https://example.com/story.mp4" };
+  const cta = { label: "Saiba mais", url: "https://www.example.com/campaign" };
+
+  beforeAll(() => {
+    installMediaMocks();
+  });
+
+  // The card's video playing with the sound on.
+  function mountWithSound(extra?: Partial<CardOptions>) {
+    const result = mount(story, { cta, ...extra });
+    result.video.play();
+    result.sound()?.click();
+    const video = result.card?.querySelector("video");
+    const link = result.card?.querySelector<HTMLAnchorElement>(".card-cta");
+    if (!video || !link) throw new Error("The video or the link is missing");
+    // The test doesn't navigate.
+    link.addEventListener("click", (event) => event.preventDefault());
+    expect(video.muted).toBe(false);
+    return { ...result, video, link };
+  }
+
+  it("mutes the video and keeps it playing when the link opens", () => {
+    const { video, link, sound } = mountWithSound();
+
+    link.click();
+
+    expect(video.muted).toBe(true);
+    expect(video.paused).toBe(false);
+    expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
+  });
+
+  it("leaves the sound on when the link opens in the background", () => {
+    const { video, link } = mountWithSound();
+
+    link.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        metaKey: true,
+      }),
+    );
+
+    expect(video.muted).toBe(false);
+  });
+
+  it("keeps a muted video muted and playing when the link opens", () => {
+    const { card, video: controller } = mount(story, { cta });
+    controller.play();
+    const video = card?.querySelector("video");
+    const link = card?.querySelector<HTMLAnchorElement>(".card-cta");
+    if (!video || !link) throw new Error("The video or the link is missing");
+    // The test doesn't navigate.
+    link.addEventListener("click", (event) => event.preventDefault());
+    expect(video.muted).toBe(true);
+
+    link.click();
+
+    expect(video.muted).toBe(true);
+    expect(video.paused).toBe(false);
+  });
+
+  it("leaves a paused video paused when the link opens", () => {
+    const { card } = mount(story, { cta });
+    const video = card?.querySelector("video");
+    const link = card?.querySelector<HTMLAnchorElement>(".card-cta");
+    if (!video || !link) throw new Error("The video or the link is missing");
+    // The test doesn't navigate.
+    link.addEventListener("click", (event) => event.preventDefault());
+    expect(video.paused).toBe(true);
+
+    link.click();
+
+    expect(video.paused).toBe(true);
+  });
+
+  it("leaves the sound on when onCtaSelect takes the click", () => {
+    const onCtaSelect = vi.fn();
+    const { video, link } = mountWithSound({ onCtaSelect });
+
+    link.click();
+
+    expect(onCtaSelect).toHaveBeenCalledOnce();
+    expect(video.muted).toBe(false);
   });
 });

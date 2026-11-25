@@ -60,10 +60,10 @@ describe("toCardCta", () => {
 describe("renderCta", () => {
   const cta = { label: "Saiba mais", url: "https://example.com/campaign" };
 
-  function mount(onSelect?: () => void) {
+  function mount(onSelect?: () => void, onOpen?: () => void) {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    render(renderCta(cta, onSelect), container);
+    render(renderCta(cta, { onSelect, onOpen }), container);
     const link = container.querySelector<HTMLAnchorElement>(".card-cta");
     if (!link) throw new Error("The call to action did not render");
     return link;
@@ -106,5 +106,75 @@ describe("renderCta", () => {
 
     expect(onSelect).toHaveBeenCalledOnce();
     expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("calls onOpen and follows the link", () => {
+    const onOpen = vi.fn();
+    const link = mount(undefined, onOpen);
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    // After the link's own listener; cancels it so the test doesn't navigate.
+    let prevented: boolean | undefined;
+    document.body.addEventListener(
+      "click",
+      (clicked) => {
+        prevented = clicked.defaultPrevented;
+        clicked.preventDefault();
+      },
+      { once: true },
+    );
+
+    link.dispatchEvent(event);
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(prevented).toBe(false);
+  });
+
+  it.each([{ metaKey: true }, { ctrlKey: true }])(
+    "doesn't call onOpen when the tab opens in the background (%o)",
+    (keys) => {
+      const onOpen = vi.fn();
+      const link = mount(undefined, onOpen);
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        ...keys,
+      });
+      // The test doesn't navigate.
+      link.addEventListener("click", (clicked) => clicked.preventDefault());
+
+      link.dispatchEvent(event);
+
+      expect(onOpen).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([{ shiftKey: true }, { metaKey: true, shiftKey: true }])(
+    "calls onOpen when the tab comes to the front (%o)",
+    (keys) => {
+      const onOpen = vi.fn();
+      const link = mount(undefined, onOpen);
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        ...keys,
+      });
+      // The test doesn't navigate.
+      link.addEventListener("click", (clicked) => clicked.preventDefault());
+
+      link.dispatchEvent(event);
+
+      expect(onOpen).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("calls onSelect, not onOpen, with both", () => {
+    const onSelect = vi.fn();
+    const onOpen = vi.fn();
+    const link = mount(onSelect, onOpen);
+
+    link.click();
+
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });
