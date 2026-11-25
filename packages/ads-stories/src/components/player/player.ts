@@ -903,8 +903,6 @@ export class PlayerController implements ReactiveController {
     else this.video.togglePlayback();
   };
 
-  // View product and the call to action open a new tab: the video pauses,
-  // unless the tab opens in the background.
   private readonly pauseVideo = () => this.video.pause();
 
   /**
