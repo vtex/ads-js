@@ -1,11 +1,17 @@
 {
   "name": "@vtex/ads-stories",
   "type": "module",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "description": "VTEX Ads Stories web component",
   "main": "dist/cjs/index.cjs",
-  "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "react": [
+        "dist/esm/react.d.ts"
+      ]
+    }
+  },
   "unpkg": "dist/cdn/vtex-ads-stories.js",
   "jsdelivr": "dist/cdn/vtex-ads-stories.js",
   "exports": {

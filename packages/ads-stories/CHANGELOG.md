@@ -1,5 +1,13 @@
 # @vtex/ads-stories
 
+## 0.9.0
+
+### Minor Changes
+
+- 290c00f: Bundlers that don't read `exports`, such as webpack 4 on VTEX IO, can import `@vtex/ads-stories` directly. The package no longer has a `module` field, so they read `main`: the CJS build, with Lit bundled and lowered to ES2018 like the rest of the package. Before, they read `module`, an ESM build that imports Lit, whose ES2021 syntax webpack 4 can't parse. Bundlers that read `exports` keep the ESM build, with Lit as a shared import.
+
+  `@vtex/ads-stories/react` also resolves in TypeScript projects that don't read `exports` (`moduleResolution: "node"`), such as VTEX IO apps, so `import type {} from "@vtex/ads-stories/react"` types `<vtex-ads-story-carousel>` in JSX there too.
+
 ## 0.8.3
 
 ### Patch Changes

@@ -86,10 +86,10 @@ Open a single PR with everything: code changes, updated `package.json`, updated 
 
 Packages are released in two independent groups, each with its own tag format:
 
-| Packages                               | Version                          | Tag                       |
-| -------------------------------------- | -------------------------------- | ------------------------- |
-| `@vtex/ads-core` and `@vtex/ads-react` | Always the same for both         | `v1.2.3`, `v1.2.3-beta.0` |
-| `@vtex/ads-stories`                    | Its own, from its `package.json` | `v0.1.0-ads-stories`      |
+| Packages                               | Version                          | Tag                                               |
+| -------------------------------------- | -------------------------------- | ------------------------------------------------- |
+| `@vtex/ads-core` and `@vtex/ads-react` | Always the same for both         | `v1.2.3`, `v1.2.3-beta.0`                         |
+| `@vtex/ads-stories`                    | Its own, from its `package.json` | `v0.1.0-ads-stories`, `v0.1.0-beta.0-ads-stories` |
 
 The tag version must match the `version` in the released package's `package.json` on the tagged commit.
 
@@ -118,11 +118,18 @@ After the PR is merged, pull `main` and push a tag with the `-ads-stories` suffi
 ```bash
 git checkout main && git pull
 
+# Production release
 git tag v0.1.0-ads-stories
 git push origin v0.1.0-ads-stories
+
+# Beta release
+git tag v0.1.0-beta.0-ads-stories
+git push origin v0.1.0-beta.0-ads-stories
 ```
 
-Pushing the tag triggers only the `ads-stories` `npm-publish-v1` pipeline. There is no beta channel for `ads-stories` yet.
+Pushing the tag triggers only the `ads-stories` `npm-publish-v1` pipeline. A beta tag publishes under npm's `beta` dist-tag, so `latest` and the CDN links don't change.
+
+A beta can also be tagged on a branch, to test a change before its PR is merged. Set `version` in `packages/ads-stories/package.json` to the beta version by hand (for example `0.9.0-beta.0`), commit it, and tag that commit. Drop that commit before merging: the release version comes from `pnpm version-packages`.
 
 > The package name goes after the version (`v0.1.0-ads-stories`), not before it: the DK webhook rejects tags that don't start with a semver version, such as `ads-stories-v0.1.0`.
 
