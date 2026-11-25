@@ -33,8 +33,28 @@ export interface CtaOptions {
    * highlight takes it first).
    */
   onSelect?: () => void;
-  /** Called by a click that follows the link, as it opens the new tab. */
+  /**
+   * Called by a click that follows the link, as it opens the new tab. Not
+   * called when the tab opens in the background (see opensInBackground).
+   */
   onOpen?: () => void;
+}
+
+/**
+ * Whether a click on a link opens its tab in the background, the page staying
+ * in front: Cmd (macOS) or Ctrl with the click. With Shift too, the new tab
+ * comes to the front.
+ */
+const opensInBackground = (event: MouseEvent) =>
+  (event.metaKey || event.ctrlKey) && !event.shiftKey;
+
+/** Runs onOpen for a click that brings the new tab to the front. */
+export function onForegroundOpen(onOpen?: () => void) {
+  return onOpen
+    ? (event: MouseEvent) => {
+        if (!opensInBackground(event)) onOpen();
+      }
+    : undefined;
 }
 
 /**
@@ -47,7 +67,7 @@ export function renderCta(cta: CardCta, { onSelect, onOpen }: CtaOptions = {}) {
         event.preventDefault();
         onSelect();
       }
-    : onOpen;
+    : onForegroundOpen(onOpen);
 
   return html`
     <a

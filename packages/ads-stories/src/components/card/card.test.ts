@@ -194,6 +194,20 @@ describe("renderCard call to action", () => {
     expect(sound()?.getAttribute("aria-label")).toBe("Ativar som");
   });
 
+  it("leaves the sound on when the link opens in the background", () => {
+    const { video, link } = mountWithSound();
+
+    link.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        metaKey: true,
+      }),
+    );
+
+    expect(video.muted).toBe(false);
+  });
+
   it("leaves the sound on when onCtaSelect takes the click", () => {
     const onCtaSelect = vi.fn();
     const { video, link } = mountWithSound({ onCtaSelect });

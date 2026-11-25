@@ -129,6 +129,44 @@ describe("renderCta", () => {
     expect(prevented).toBe(false);
   });
 
+  it.each([{ metaKey: true }, { ctrlKey: true }])(
+    "doesn't call onOpen when the tab opens in the background (%o)",
+    (keys) => {
+      const onOpen = vi.fn();
+      const link = mount(undefined, onOpen);
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        ...keys,
+      });
+      // The test doesn't navigate.
+      link.addEventListener("click", (clicked) => clicked.preventDefault());
+
+      link.dispatchEvent(event);
+
+      expect(onOpen).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([{ shiftKey: true }, { metaKey: true, shiftKey: true }])(
+    "calls onOpen when the tab comes to the front (%o)",
+    (keys) => {
+      const onOpen = vi.fn();
+      const link = mount(undefined, onOpen);
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        ...keys,
+      });
+      // The test doesn't navigate.
+      link.addEventListener("click", (clicked) => clicked.preventDefault());
+
+      link.dispatchEvent(event);
+
+      expect(onOpen).toHaveBeenCalledOnce();
+    },
+  );
+
   it("calls onSelect, not onOpen, with both", () => {
     const onSelect = vi.fn();
     const onOpen = vi.fn();

@@ -4,6 +4,7 @@ import { icon } from "../icons";
 import { destinationUrl, httpUrl } from "../../utils/safe-url";
 import type { StoryAd } from "../../types";
 import type { StoryProductDetails } from "../../utils/hydrate-products";
+import { onForegroundOpen } from "./cta";
 import { readProductPrice, type ProductPrice } from "./price";
 
 /** What the card shows of the Story's product, with the prices formatted. */
@@ -181,7 +182,10 @@ export interface ExpandableProductOptions extends ProductCartActions {
   panelId: string;
   /** The texts: add to cart, its disabled "unavailable" and view product. */
   labels: StoryLabels;
-  /** Called by view product, as it opens the product page in a new tab. */
+  /**
+   * Called by view product, as it opens the product page in a new tab. Not
+   * called when the tab opens in the background (see opensInBackground).
+   */
   onViewProduct?: () => void;
 }
 
@@ -326,7 +330,7 @@ export function renderExpandableProduct(
                   href=${product.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  @click=${options.onViewProduct}
+                  @click=${onForegroundOpen(options.onViewProduct)}
                 >
                   ${options.labels.viewProduct}
                 </a>

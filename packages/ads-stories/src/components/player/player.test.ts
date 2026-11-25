@@ -332,6 +332,24 @@ describe("PlayerController", () => {
       expect(player.isConnected).toBe(true);
     });
 
+    it("keeps playing when view product opens the page in the background", async () => {
+      const { panel, video } = await setupWithProduct({ productOpen: true });
+      const view = panel()?.querySelector<HTMLAnchorElement>(".product-view");
+      if (!video || !view) throw new Error("The video or the link is missing");
+      // The test doesn't navigate.
+      view.addEventListener("click", (event) => event.preventDefault());
+
+      view.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          metaKey: true,
+        }),
+      );
+
+      expect(video.paused).toBe(false);
+    });
+
     it("calls onAddToCart and stays open, the panel too", async () => {
       const { player, pill, onAddToCart, onClose, video } =
         await setupWithProduct({ productOpen: true });
@@ -460,6 +478,25 @@ describe("PlayerController", () => {
 
       expect(video.paused).toBe(true);
       expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("keeps playing when the link opens in the background", async () => {
+      const { player } = await setup(withVideo, { cta });
+      const video = player.querySelector("video");
+      const link = player.querySelector<HTMLAnchorElement>(".card-cta");
+      if (!video || !link) throw new Error("The video or the link is missing");
+      // The test doesn't navigate.
+      link.addEventListener("click", (event) => event.preventDefault());
+
+      link.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+        }),
+      );
+
+      expect(video.paused).toBe(false);
     });
   });
 
