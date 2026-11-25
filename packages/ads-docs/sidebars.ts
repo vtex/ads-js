@@ -42,6 +42,7 @@ const sidebars: SidebarsConfig = {
         "ads-stories/layout-and-player",
         "ads-stories/product-hydration",
         "ads-stories/events",
+        "ads-stories/ad-api",
       ],
     },
     {

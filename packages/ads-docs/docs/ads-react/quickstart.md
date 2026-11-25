@@ -6,9 +6,11 @@ sidebar_position: 1
 
 The `@vtex/ads-react` package provides React-specific components and hooks for integrating VTEX Ads into React applications. It offers a declarative API with built-in loading states, error handling, and request batching.
 
-:::tip Try it
+:::tip[Try it]
+
 Run the SDK against live ad requests in the
 [React SDK playground](pathname:///ads-js/playground/).
+
 :::
 
 ## Installation
