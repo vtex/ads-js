@@ -139,14 +139,9 @@ store with a Content-Security-Policy must allow them (see
 
 Send each Story's impression, view and click to its URLs from the response,
 exactly as they came: they carry the ad's data and a signature, so don't
-build or change them. Send each at most once per Story and session:
-
-- **Impression**: when the carousel shows the Stories, for every Story in the
-  response, on screen or not.
-- **View**: when the Story's video plays for 2 continuous seconds with at
-  least 50% of it on screen and the page visible.
-- **Click**: on the shopper's first touch on the Story: the card, its video,
-  product or call to action.
+build or change them. Send each at most once per Story and session, when the
+same rules the element follows are met: see
+[Events](./events.md#ad-events).
 
 Each event is a `POST` with the session, and the user when known, in a JSON
 body:

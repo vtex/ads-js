@@ -84,17 +84,21 @@ once per Story and `session-id`. The store doesn't need to send them (a store
 that calls the ad API without the element sends them itself: see
 [Ad API](./ad-api.md#events)):
 
-- **Impression**: when the carousel shows the Stories, once the skeleton
-  leaves. Nothing is sent while it is up.
+- **Impression**: when at least 30% of a Story's card is on screen, once the
+  skeleton leaves. Only the Stories the shopper can see send it: rendering the
+  carousel doesn't send one for every Story, and a card scrolled out of the
+  carousel, or below the fold, sends it only once it comes into view. Nothing
+  is sent while the skeleton is up.
 - **View**: when a card's video, or the open player's, plays for 2 continuous
   seconds while at least 50% of it is on screen, with the page visible. A card
   showing only its cover, or a paused video, doesn't count, and cards behind
-  the expanded player don't either. Browsers without `IntersectionObserver`
-  send no view.
+  the expanded player don't either.
 - **Click**: on the first touch on a card (its product, call to action and
   sound button included), or on the player's video (its play and sound
   buttons, product and call to action included). Previous, next and the
   player's window buttons don't count.
+
+Browsers without `IntersectionObserver` send no impression and no view.
 
 Each event is a `POST` with a JSON body holding `session_id` and, when set,
 `user_id`, sent with `navigator.sendBeacon` (a `fetch` with `keepalive` when
