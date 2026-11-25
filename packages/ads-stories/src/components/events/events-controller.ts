@@ -107,6 +107,7 @@ export class StoryEventsController implements ReactiveController {
       for (const watched of watcher?.watched.values() ?? []) {
         clearTimeout(watched.timer);
       }
+      watcher?.watched.clear();
     }
     this.impressions = undefined;
     this.views = undefined;

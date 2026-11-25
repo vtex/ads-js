@@ -31,7 +31,10 @@ class FakeIntersectionObserver {
   }
 
   report(target: Element, ratio: number) {
-    if (!this.observed.has(target)) return;
+    if (this.observed.has(target)) this.deliver(target, ratio);
+  }
+
+  deliver(target: Element, ratio: number) {
     this.callback(
       [
         {
@@ -68,6 +71,16 @@ export function intersect(element: Element | null | undefined, ratio: number) {
   if (!element) throw new Error("No element to intersect");
   for (const observer of FakeIntersectionObserver.instances) {
     observer.report(element, ratio);
+  }
+}
+
+/**
+ * Delivers an entry the browser queued before disconnect() or unobserve():
+ * to every observer, watching the element or not.
+ */
+export function deliverQueued(element: Element, ratio: number) {
+  for (const observer of FakeIntersectionObserver.instances) {
+    observer.deliver(element, ratio);
   }
 }
 

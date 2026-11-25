@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
-import { StoryEventsController, type StoryTarget } from "./events-controller";
 import {
+  StoryEventsController,
+  VIEW_DURATION_MS,
+  type StoryTarget,
+} from "./events-controller";
+import {
+  deliverQueued,
   installIntersectionObserverMock,
   intersect,
   observed,
@@ -14,7 +19,8 @@ const stories = mockStories;
 const beaconed = () =>
   vi.mocked(navigator.sendBeacon).mock.calls.map(([url]) => String(url));
 
-function setup(identity: Partial<EventIdentity>) {
+/** With `views`, the elements shown also count toward their views. */
+function setup(identity: Partial<EventIdentity>, { views = false } = {}) {
   let controller: ReactiveController | undefined;
   let targets: StoryTarget[] = [];
   const host: ReactiveControllerHost = {
@@ -27,7 +33,7 @@ function setup(identity: Partial<EventIdentity>) {
   new StoryEventsController(host, {
     identity: () => identity,
     impressionTargets: () => targets,
-    viewTargets: () => [],
+    viewTargets: () => (views ? targets : []),
   });
   controller?.hostConnected?.();
   return {
@@ -53,6 +59,7 @@ describe("StoryEventsController", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("sends nothing without a session", () => {
@@ -87,5 +94,31 @@ describe("StoryEventsController", () => {
     expect(observed()).toEqual([cards[0][0]]);
     intersect(cards[0][0], 1);
     expect(beaconed()).toEqual([stories[0].impression_url]);
+  });
+
+  it("ignores an impression entry queued before it left the page", () => {
+    const { render, disconnect } = setup({ sessionId: "s-1" });
+
+    render([cards[0]]);
+    disconnect();
+    deliverQueued(cards[0][0], 1);
+
+    expect(beaconed()).toEqual([]);
+  });
+
+  it("ignores a view entry queued before it left the page", () => {
+    vi.useFakeTimers();
+    const { render, disconnect, connect } = setup(
+      { sessionId: "s-1" },
+      { views: true },
+    );
+
+    render([cards[0]]);
+    disconnect();
+    deliverQueued(cards[0][0], 1);
+    connect();
+    vi.advanceTimersByTime(VIEW_DURATION_MS);
+
+    expect(beaconed()).not.toContain(stories[0].view_url);
   });
 });
