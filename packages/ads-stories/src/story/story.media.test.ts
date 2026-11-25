@@ -199,6 +199,17 @@ describe(`${TAG_NAME} media loading`, () => {
     expect(impressions()).toEqual([mockStories[0].impression_url]);
   });
 
+  it("waits for the skeleton to leave without IntersectionObserver too", async () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    const el = await mount();
+    expect(impressions()).toEqual([]);
+
+    decodeAll();
+    await settle(el);
+
+    expect(impressions()).toEqual([mockStories[0].impression_url]);
+  });
+
   it("waits only for the first Story's cover", async () => {
     getRawAdsMock.mockResolvedValue(rawAdsWith(mockStories.slice(0, 2)));
     await mount();

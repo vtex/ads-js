@@ -206,11 +206,14 @@ describe(`${TAG_NAME} events`, () => {
       expect(beaconedOf("impression")).toEqual([story2.impression_url]);
     });
 
-    it("sends no impression without IntersectionObserver", async () => {
+    it("sends the impression of every card shown without IntersectionObserver", async () => {
       vi.stubGlobal("IntersectionObserver", undefined);
       await mount([story1, story2]);
 
-      expect(beaconedOf("impression")).toEqual([]);
+      expect(beaconedOf("impression")).toEqual([
+        story1.impression_url,
+        story2.impression_url,
+      ]);
     });
   });
 

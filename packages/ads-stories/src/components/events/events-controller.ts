@@ -59,8 +59,10 @@ interface Watcher {
  *   50% on screen for 2 continuous seconds, with the page visible;
  * - click: on the first touch on the Story (click()).
  *
- * Without IntersectionObserver, no impression or view is sent. Leaving the
- * page stops the views counting; nothing sent is sent again on return.
+ * Without IntersectionObserver, nothing tells what is on screen: every
+ * element in `impressionTargets` sends its impression, and no view is sent.
+ * Leaving the page stops the views counting; nothing sent is sent again on
+ * return.
  */
 export class StoryEventsController implements ReactiveController {
   private readonly sent: Record<EventKind, Set<string>> = {
@@ -164,7 +166,12 @@ export class StoryEventsController implements ReactiveController {
   }
 
   private syncTargets() {
-    this.sync(this.impressions, this.options.impressionTargets());
+    const impressionTargets = this.options.impressionTargets();
+    if (this.impressions) {
+      this.sync(this.impressions, impressionTargets);
+    } else {
+      for (const [, story] of impressionTargets) this.send("impression", story);
+    }
     this.sync(this.views, this.options.viewTargets());
   }
 

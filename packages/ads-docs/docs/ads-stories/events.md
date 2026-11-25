@@ -98,7 +98,8 @@ that calls the ad API without the element sends them itself: see
   buttons, product and call to action included). Previous, next and the
   player's window buttons don't count.
 
-Browsers without `IntersectionObserver` send no impression and no view.
+Browsers without `IntersectionObserver` can't tell what is on screen: they
+send the impression of every card shown once the skeleton leaves, and no view.
 
 Each event is a `POST` with a JSON body holding `session_id` and, when set,
 `user_id`, sent with `navigator.sendBeacon` (a `fetch` with `keepalive` when
