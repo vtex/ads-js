@@ -2,6 +2,7 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 import type { StoryAd } from "../../types";
 import { sendEvent, type EventIdentity } from "../../utils/send-event";
 
+export const IMPRESSION_THRESHOLD = 0.3;
 export const VIEW_THRESHOLD = 0.5;
 export const VIEW_DURATION_MS = 2000;
 
@@ -13,8 +14,8 @@ const URL_FIELD = {
   click: "click_url",
 } as const satisfies Record<EventKind, keyof StoryAd>;
 
-/** An element that shows a Story, watched for the view. */
-export type ViewTarget = readonly [element: Element, story: StoryAd];
+/** An element that shows a Story, watched for its impression or view. */
+export type StoryTarget = readonly [element: Element, story: StoryAd];
 
 export interface StoryEventsOptions {
   /**
@@ -23,30 +24,45 @@ export interface StoryEventsOptions {
    */
   identity: () => Partial<EventIdentity>;
   /**
-   * The elements on which a Story can be seen right now, read after every
+   * The elements on which the shopper can see a Story right now, read after
+   * every render of the host.
+   */
+  impressionTargets: () => Iterable<StoryTarget>;
+  /**
+   * The elements on which a Story can be watched right now, read after every
    * render of the host. An element left out stops counting toward its view.
    */
-  viewTargets: () => Iterable<ViewTarget>;
+  viewTargets: () => Iterable<StoryTarget>;
 }
 
 interface Watched {
   story: StoryAd;
-  /** Last reported by the observer: at least VIEW_THRESHOLD on screen. */
+  /** Last reported by the observer: at least the threshold on screen. */
   visible: boolean;
   timer?: ReturnType<typeof setTimeout>;
+}
+
+/** The elements watched for one event, and the observer watching them. */
+interface Watcher {
+  kind: "impression" | "view";
+  observer: IntersectionObserver;
+  watched: Map<Element, Watched>;
 }
 
 /**
  * Sends a Story's impression, view and click URLs, each at most once per
  * Story and session (the ad API's `session_id`):
  *
- * - impression: when the Story is rendered in the carousel (impress());
+ * - impression: when one of its elements (see `impressionTargets`) has at
+ *   least 30% on screen;
  * - view: when one of its elements (see `viewTargets`) has stayed at least
  *   50% on screen for 2 continuous seconds, with the page visible;
  * - click: on the first touch on the Story (click()).
  *
- * Without IntersectionObserver, no view is sent. Leaving the page stops
- * the views counting; nothing sent is sent again on return.
+ * Without IntersectionObserver, nothing tells what is on screen: every
+ * element in `impressionTargets` sends its impression, and no view is sent.
+ * Leaving the page stops the views counting; nothing sent is sent again on
+ * return.
  */
 export class StoryEventsController implements ReactiveController {
   private readonly sent: Record<EventKind, Set<string>> = {
@@ -55,11 +71,9 @@ export class StoryEventsController implements ReactiveController {
     click: new Set(),
   };
 
-  private pendingImpressions: readonly StoryAd[] = [];
   private connected = false;
-
-  private observer?: IntersectionObserver;
-  private readonly watched = new Map<Element, Watched>();
+  private impressions?: Watcher;
+  private views?: Watcher;
 
   constructor(
     private readonly host: ReactiveControllerHost,
@@ -71,22 +85,17 @@ export class StoryEventsController implements ReactiveController {
   hostConnected() {
     this.connected = true;
     if (typeof IntersectionObserver === "function") {
-      this.observer = new IntersectionObserver(this.onIntersect, {
-        threshold: VIEW_THRESHOLD,
-      });
+      this.impressions = this.watcher("impression", IMPRESSION_THRESHOLD);
+      this.views = this.watcher("view", VIEW_THRESHOLD);
     }
     globalThis.document?.addEventListener(
       "visibilitychange",
       this.onVisibilityChange,
     );
     // Moved on the page: the cards rendered before are still there, but lit
-    // hands their refs back only after the controllers connect. Impressions
-    // that came while off the page go out now.
-    this.host.updateComplete.then(() => {
-      if (!this.connected) return;
-      this.sendImpressions();
-      this.syncViewTargets();
-    });
+    // hands their refs back only after the controllers connect. The render
+    // asked for here runs after that, and hostUpdated watches them.
+    this.host.requestUpdate();
   }
 
   hostDisconnected() {
@@ -95,33 +104,19 @@ export class StoryEventsController implements ReactiveController {
       "visibilitychange",
       this.onVisibilityChange,
     );
-    this.observer?.disconnect();
-    this.observer = undefined;
-    for (const watched of this.watched.values()) clearTimeout(watched.timer);
-    this.watched.clear();
+    for (const watcher of [this.impressions, this.views]) {
+      watcher?.observer.disconnect();
+      for (const watched of watcher?.watched.values() ?? []) {
+        clearTimeout(watched.timer);
+      }
+      watcher?.watched.clear();
+    }
+    this.impressions = undefined;
+    this.views = undefined;
   }
 
   hostUpdated() {
-    if (!this.connected) return;
-    this.sendImpressions();
-    this.syncViewTargets();
-  }
-
-  /**
-   * The Stories the host shows next: their impressions go out once that
-   * render is done, on the page, with a session (or after the first render
-   * that has both). Replaces Stories passed before and not sent yet.
-   */
-  impress(stories: readonly StoryAd[]) {
-    this.pendingImpressions = stories;
-  }
-
-  private sendImpressions() {
-    const stories = this.pendingImpressions;
-    if (!stories.length || !this.options.identity().sessionId) return;
-
-    this.pendingImpressions = [];
-    for (const story of stories) this.send("impression", story);
+    if (this.connected) this.syncTargets();
   }
 
   /** A touch on the Story: its click goes out, the first time only. */
@@ -148,46 +143,65 @@ export class StoryEventsController implements ReactiveController {
     }
   }
 
+  private watcher(kind: Watcher["kind"], threshold: number): Watcher {
+    const watched = new Map<Element, Watched>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const target = watched.get(entry.target);
+          if (!target) continue;
+
+          target.visible =
+            entry.isIntersecting && entry.intersectionRatio >= threshold;
+          if (kind === "impression") {
+            if (target.visible) this.sendWatched(watcher, target.story);
+          } else if (target.visible) this.startTimer(target);
+          else this.stopTimer(target);
+        }
+      },
+      { threshold },
+    );
+    const watcher: Watcher = { kind, observer, watched };
+    return watcher;
+  }
+
+  private syncTargets() {
+    const impressionTargets = this.options.impressionTargets();
+    if (this.impressions) {
+      this.sync(this.impressions, impressionTargets);
+    } else {
+      for (const [, story] of impressionTargets) this.send("impression", story);
+    }
+    this.sync(this.views, this.options.viewTargets());
+  }
+
   // Watches the elements the host shows now, and stops watching the others,
   // dropping the time they had on screen.
-  private syncViewTargets() {
-    const { observer } = this;
-    if (!observer) return;
+  private sync(watcher: Watcher | undefined, targets: Iterable<StoryTarget>) {
+    if (!watcher) return;
 
     const current = new Map<Element, StoryAd>();
-    for (const [element, story] of this.options.viewTargets()) {
-      if (!this.wasSent("view", story)) current.set(element, story);
+    for (const [element, story] of targets) {
+      if (!this.wasSent(watcher.kind, story)) current.set(element, story);
     }
 
-    for (const [element, watched] of this.watched) {
+    for (const [element, watched] of watcher.watched) {
       if (current.get(element) !== watched.story) {
-        this.unwatch(element, watched);
+        this.unwatch(watcher, element, watched);
       }
     }
 
     for (const [element, story] of current) {
-      if (this.watched.has(element)) continue;
-      this.watched.set(element, { story, visible: false });
-      observer.observe(element);
+      if (watcher.watched.has(element)) continue;
+      watcher.watched.set(element, { story, visible: false });
+      watcher.observer.observe(element);
     }
   }
-
-  private readonly onIntersect = (entries: IntersectionObserverEntry[]) => {
-    for (const entry of entries) {
-      const watched = this.watched.get(entry.target);
-      if (!watched) continue;
-
-      watched.visible =
-        entry.isIntersecting && entry.intersectionRatio >= VIEW_THRESHOLD;
-      if (watched.visible) this.startTimer(watched);
-      else this.stopTimer(watched);
-    }
-  };
 
   // A hidden page (another tab, minimized) breaks the 2 seconds: they start
   // over when it shows again.
   private readonly onVisibilityChange = () => {
-    for (const watched of this.watched.values()) {
+    for (const watched of this.views?.watched.values() ?? []) {
       if (document.hidden) this.stopTimer(watched);
       else if (watched.visible) this.startTimer(watched);
     }
@@ -197,9 +211,7 @@ export class StoryEventsController implements ReactiveController {
     if (watched.timer || globalThis.document?.hidden) return;
     watched.timer = setTimeout(() => {
       watched.timer = undefined;
-      this.send("view", watched.story);
-      // Its other elements no longer need watching.
-      if (this.wasSent("view", watched.story)) this.unwatchStory(watched.story);
+      if (this.views) this.sendWatched(this.views, watched.story);
     }, VIEW_DURATION_MS);
   }
 
@@ -208,15 +220,21 @@ export class StoryEventsController implements ReactiveController {
     watched.timer = undefined;
   }
 
-  private unwatch(element: Element, watched: Watched) {
-    this.stopTimer(watched);
-    this.observer?.unobserve(element);
-    this.watched.delete(element);
+  // Once sent, the Story's other elements no longer need watching.
+  private sendWatched(watcher: Watcher, story: StoryAd) {
+    this.send(watcher.kind, story);
+    if (!this.wasSent(watcher.kind, story)) return;
+
+    for (const [element, watched] of watcher.watched) {
+      if (watched.story.ad_id === story.ad_id) {
+        this.unwatch(watcher, element, watched);
+      }
+    }
   }
 
-  private unwatchStory(story: StoryAd) {
-    for (const [element, watched] of this.watched) {
-      if (watched.story.ad_id === story.ad_id) this.unwatch(element, watched);
-    }
+  private unwatch(watcher: Watcher, element: Element, watched: Watched) {
+    this.stopTimer(watched);
+    watcher.observer.unobserve(element);
+    watcher.watched.delete(element);
   }
 }

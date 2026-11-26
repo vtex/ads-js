@@ -1,6 +1,16 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
-import { StoryEventsController } from "./events-controller";
+import {
+  StoryEventsController,
+  VIEW_DURATION_MS,
+  type StoryTarget,
+} from "./events-controller";
+import {
+  deliverQueued,
+  installIntersectionObserverMock,
+  intersect,
+  observed,
+} from "./intersection-observer.mock";
 import type { EventIdentity } from "../../utils/send-event";
 import { mockStories } from "../../story/story.mock";
 
@@ -9,75 +19,106 @@ const stories = mockStories;
 const beaconed = () =>
   vi.mocked(navigator.sendBeacon).mock.calls.map(([url]) => String(url));
 
-function setup(identity: Partial<EventIdentity>) {
+/** With `views`, the elements shown also count toward their views. */
+function setup(identity: Partial<EventIdentity>, { views = false } = {}) {
   let controller: ReactiveController | undefined;
+  let targets: StoryTarget[] = [];
   const host: ReactiveControllerHost = {
     addController: (c) => (controller = c),
     removeController: () => undefined,
-    requestUpdate: () => undefined,
+    // Renders at once, where lit renders a microtask later.
+    requestUpdate: () => controller?.hostUpdated?.(),
     updateComplete: Promise.resolve(true),
   };
-  const events = new StoryEventsController(host, {
+  new StoryEventsController(host, {
     identity: () => identity,
-    viewTargets: () => [],
+    impressionTargets: () => targets,
+    viewTargets: () => (views ? targets : []),
   });
   controller?.hostConnected?.();
   return {
-    events,
-    render: () => controller?.hostUpdated?.(),
+    /** Renders the host showing `shown`. */
+    render: (shown: StoryTarget[] = targets) => {
+      targets = shown;
+      controller?.hostUpdated?.();
+    },
     disconnect: () => controller?.hostDisconnected?.(),
     connect: () => controller?.hostConnected?.(),
   };
 }
 
+const cards = stories.map(
+  (story) => [document.createElement("div"), story] as const,
+);
+
 describe("StoryEventsController", () => {
+  beforeEach(() => {
+    installIntersectionObserverMock();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
-  it("keeps the impressions until a render has a session", () => {
-    const identity: Partial<EventIdentity> = {};
-    const { events, render } = setup(identity);
+  it("sends nothing without a session", () => {
+    const { render } = setup({});
 
-    events.impress(stories.slice(0, 2));
-    render();
+    render(cards.slice(0, 2));
+    intersect(cards[0][0], 1);
+
     expect(beaconed()).toEqual([]);
-
-    identity.sessionId = "s-1";
-    render();
-    expect(beaconed()).toEqual([
-      stories[0].impression_url,
-      stories[1].impression_url,
-    ]);
-
-    render();
-    expect(beaconed()).toHaveLength(2);
   });
 
-  it("sends the latest Stories passed, not the replaced ones", () => {
-    const identity: Partial<EventIdentity> = {};
-    const { events, render } = setup(identity);
+  it("stops watching the elements the host no longer shows", () => {
+    const { render } = setup({ sessionId: "s-1" });
 
-    events.impress(stories.slice(0, 2));
-    render();
-    events.impress([stories[2]]);
-    identity.sessionId = "s-1";
-    render();
+    render(cards.slice(0, 2));
+    render([cards[2]]);
+    intersect(cards[0][0], 1);
+    intersect(cards[2][0], 1);
 
+    expect(observed()).toEqual([]);
     expect(beaconed()).toEqual([stories[2].impression_url]);
   });
 
-  it("sends nothing off the page, and the impressions once it is back", async () => {
-    const { events, render, disconnect, connect } = setup({ sessionId: "s-1" });
+  it("watches nothing off the page, and the elements shown once it is back", () => {
+    const { render, disconnect, connect } = setup({ sessionId: "s-1" });
 
     disconnect();
-    events.impress([stories[0]]);
-    render();
-    expect(beaconed()).toEqual([]);
+    render([cards[0]]);
+    expect(observed()).toEqual([]);
 
     connect();
-    await vi.waitFor(() =>
-      expect(beaconed()).toEqual([stories[0].impression_url]),
+    expect(observed()).toEqual([cards[0][0]]);
+    intersect(cards[0][0], 1);
+    expect(beaconed()).toEqual([stories[0].impression_url]);
+  });
+
+  it("ignores an impression entry queued before it left the page", () => {
+    const { render, disconnect } = setup({ sessionId: "s-1" });
+
+    render([cards[0]]);
+    disconnect();
+    deliverQueued(cards[0][0], 1);
+
+    expect(beaconed()).toEqual([]);
+  });
+
+  it("ignores a view entry queued before it left the page", () => {
+    vi.useFakeTimers();
+    const { render, disconnect, connect } = setup(
+      { sessionId: "s-1" },
+      { views: true },
     );
+
+    render([cards[0]]);
+    disconnect();
+    deliverQueued(cards[0][0], 1);
+    connect();
+    vi.advanceTimersByTime(VIEW_DURATION_MS);
+
+    expect(beaconed()).not.toContain(stories[0].view_url);
   });
 });

@@ -9,7 +9,7 @@ import {
   renderCarouselSkeleton,
   type Slide,
 } from "../components/carousel";
-import { StoryEventsController, type ViewTarget } from "../components/events";
+import { StoryEventsController, type StoryTarget } from "../components/events";
 import {
   mediaStyles,
   prefersReducedMotion,
@@ -303,6 +303,7 @@ export class VtexAdsStoryCarouselElement extends LitElement {
   // they rendered.
   private readonly events = new StoryEventsController(this, {
     identity: () => ({ sessionId: this.sessionId, userId: this.userId }),
+    impressionTargets: () => this.impressionTargets(),
     viewTargets: () => this.viewTargets(),
   });
 
@@ -433,8 +434,8 @@ export class VtexAdsStoryCarouselElement extends LitElement {
 
   /**
    * Shows the cards once the first Story's cover or video is ready: whichever
-   * loads first, or once both failed. Only then are the Stories impressed
-   * and do their videos play, from the start.
+   * loads first, or once both failed. Only then do the cards count for the
+   * impressions and do their videos play, from the start.
    */
   private async waitForFirstMedia(stories: StoryAd[]) {
     this.mediaWait?.abort();
@@ -456,37 +457,54 @@ export class VtexAdsStoryCarouselElement extends LitElement {
 
     this.mediaWait = undefined;
     this.mediaLoading = false;
-    this.events.impress(stories);
     this.afterRender = () => {
       if (!this.isConnected) return;
       for (const cardVideo of this.cardVideos.values()) cardVideo.resume();
     };
     // Without media to wait for, mediaLoading didn't change: nothing else
-    // asks for the render that sends the impressions.
+    // asks for the render that shows the cards.
     this.requestUpdate();
   }
 
   /**
-   * Where each Story is being watched: the cards on screen (not the hidden
-   * ones kept for the slide in) and the open player's video, while their
-   * video plays. A card showing only its cover doesn't count. Behind the
+   * Where each Story can be seen: the cards on screen (not the hidden ones
+   * kept for the slide in) and the open player's card, with whether their
+   * video plays. None while the skeleton covers the cards. Behind the
    * expanded player, a modal over the page, the cards are covered.
    */
-  private *viewTargets(): Generator<ViewTarget> {
+  private *shownCards(): Generator<
+    readonly [card: Element, story: StoryAd, playing: boolean]
+  > {
     const { stories } = this;
     if (this.mediaLoading) return;
 
     if (!this.player.isExpanded) {
       for (const [card, { key, index }] of this.carousel.visibleCards()) {
         const story = stories[index];
-        if (story && this.cardVideos.get(key)?.playing) yield [card, story];
+        const playing = this.cardVideos.get(key)?.playing ?? false;
+        if (story) yield [card, story, playing];
       }
     }
 
     const stageCard = this.player.stageCard;
     const active = stories[this.carousel.active];
-    if (stageCard && active && this.player.video.playing) {
-      yield [stageCard, active];
+    if (stageCard && active) {
+      yield [stageCard, active, this.player.video.playing];
+    }
+  }
+
+  /** Where each Story counts for its impression: every card shown. */
+  private *impressionTargets(): Generator<StoryTarget> {
+    for (const [card, story] of this.shownCards()) yield [card, story];
+  }
+
+  /**
+   * Where each Story is being watched: the cards shown, while their video
+   * plays. A card showing only its cover doesn't count.
+   */
+  private *viewTargets(): Generator<StoryTarget> {
+    for (const [card, story, playing] of this.shownCards()) {
+      if (playing) yield [card, story];
     }
   }
 

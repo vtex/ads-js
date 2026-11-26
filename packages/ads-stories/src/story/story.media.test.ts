@@ -14,6 +14,11 @@ import {
   type VtexAdsStoryCarouselElement,
 } from "./story";
 import { AUTO_ADVANCE_MS } from "../components/carousel";
+import {
+  installIntersectionObserverMock,
+  intersectAll,
+  observed,
+} from "../components/events/intersection-observer.mock";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { FakeImage, pendingDecodes, resetImageMock } from "../utils/image.mock";
@@ -82,6 +87,7 @@ describe(`${TAG_NAME} media loading`, () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.stubGlobal("Image", FakeImage);
+    installIntersectionObserverMock();
     resetImageMock();
     getRawAdsMock.mockReset();
     getRawAdsMock.mockResolvedValue(rawAdsWith([mockStories[0]]));
@@ -182,6 +188,20 @@ describe(`${TAG_NAME} media loading`, () => {
 
   it("sends the impressions only once the skeleton leaves", async () => {
     const el = await mount();
+    intersectAll();
+    expect(observed()).toEqual([]);
+    expect(impressions()).toEqual([]);
+
+    decodeAll();
+    await settle(el);
+    intersectAll();
+
+    expect(impressions()).toEqual([mockStories[0].impression_url]);
+  });
+
+  it("waits for the skeleton to leave without IntersectionObserver too", async () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    const el = await mount();
     expect(impressions()).toEqual([]);
 
     decodeAll();
@@ -281,6 +301,7 @@ describe(`${TAG_NAME} media loading`, () => {
     const el = await mount();
 
     expect(root(el)?.hasAttribute("data-loading")).toBe(false);
+    intersectAll();
     expect(impressions()).toEqual([mockStories[0].impression_url]);
   });
 

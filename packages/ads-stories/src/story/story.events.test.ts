@@ -13,7 +13,17 @@ import {
   TAG_NAME,
   type VtexAdsStoryCarouselElement,
 } from "./story";
-import { VIEW_DURATION_MS } from "../components/events";
+import {
+  IMPRESSION_THRESHOLD,
+  VIEW_DURATION_MS,
+  VIEW_THRESHOLD,
+} from "../components/events";
+import {
+  installIntersectionObserverMock,
+  intersect,
+  intersectAll,
+  observed,
+} from "../components/events/intersection-observer.mock";
 import { installMediaMocks } from "../components/media/media.mock";
 import { installDialogMocks } from "../components/player/dialog.mock";
 import { mockStories, rawAdsWith, REQUIRED_ATTRIBUTES } from "./story.mock";
@@ -37,55 +47,6 @@ const beaconed = () =>
 
 const beaconedOf = (kind: string) =>
   beaconed().filter((url) => url.includes(`/${kind}/`));
-
-/**
- * IntersectionObserver as the element uses it: tests report how much of an
- * element is on screen with intersect().
- */
-class FakeIntersectionObserver {
-  static instances: FakeIntersectionObserver[] = [];
-  readonly observed = new Set<Element>();
-
-  constructor(private readonly callback: IntersectionObserverCallback) {
-    FakeIntersectionObserver.instances.push(this);
-  }
-
-  observe(element: Element) {
-    this.observed.add(element);
-  }
-
-  unobserve(element: Element) {
-    this.observed.delete(element);
-  }
-
-  disconnect() {
-    this.observed.clear();
-  }
-
-  report(target: Element, ratio: number) {
-    if (!this.observed.has(target)) return;
-    this.callback(
-      [
-        {
-          target,
-          intersectionRatio: ratio,
-          isIntersecting: ratio > 0,
-        } as IntersectionObserverEntry,
-      ],
-      this as unknown as IntersectionObserver,
-    );
-  }
-}
-
-const observed = () =>
-  FakeIntersectionObserver.instances.flatMap((o) => [...o.observed]);
-
-function intersect(element: Element | null | undefined, ratio: number) {
-  if (!element) throw new Error("No element to intersect");
-  for (const observer of FakeIntersectionObserver.instances) {
-    observer.report(element, ratio);
-  }
-}
 
 async function flushRequest(el: VtexAdsStoryCarouselElement) {
   await el.updateComplete;
@@ -137,8 +98,7 @@ describe(`${TAG_NAME} events`, () => {
 
   beforeEach(() => {
     getRawAdsMock.mockReset();
-    FakeIntersectionObserver.instances = [];
-    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+    installIntersectionObserverMock();
   });
 
   afterEach(() => {
@@ -149,18 +109,65 @@ describe(`${TAG_NAME} events`, () => {
   });
 
   describe("impression", () => {
-    it("sends each Story's impression once the carousel renders", async () => {
-      await mount([story1, story2, story3]);
+    it("sends a Story's impression once 30% of its card is on screen", async () => {
+      const el = await mount([story1]);
+      const solo = query(el, '.carousel[data-layout="solo"] > .card');
+      expect(beaconedOf("impression")).toEqual([]);
 
-      expect(beaconedOf("impression")).toEqual([
-        story1.impression_url,
-        story2.impression_url,
-        story3.impression_url,
-      ]);
+      intersect(solo, IMPRESSION_THRESHOLD - 0.01);
+      expect(beaconedOf("impression")).toEqual([]);
+
+      intersect(solo, IMPRESSION_THRESHOLD);
+      expect(beaconedOf("impression")).toEqual([story1.impression_url]);
+    });
+
+    it("sends only the impressions of the Stories seen", async () => {
+      const el = await mount([story1, story2, story3]);
+      expect(observed(IMPRESSION_THRESHOLD).length).toBeGreaterThan(1);
+
+      intersect(query(el, ".slide[data-active] > .card"), 1);
+
+      expect(beaconedOf("impression")).toEqual([story1.impression_url]);
+    });
+
+    it("sends each one once, and stops watching the Story", async () => {
+      const el = await mount([story1]);
+      const solo = query(el, '.carousel[data-layout="solo"] > .card');
+
+      intersect(solo, 1);
+      intersect(solo, 0);
+      intersect(solo, 1);
+
+      expect(beaconedOf("impression")).toEqual([story1.impression_url]);
+      expect(observed(IMPRESSION_THRESHOLD)).not.toContain(solo);
+    });
+
+    it("watches only the cards on screen, not the hidden ones", async () => {
+      const el = await mount([story1, story2, story3]);
+      const hiddenCards = [
+        ...(el.shadowRoot?.querySelectorAll(".slide[data-hidden] > .card") ??
+          []),
+      ];
+
+      expect(hiddenCards.length).toBeGreaterThan(0);
+      for (const hidden of hiddenCards) {
+        expect(observed(IMPRESSION_THRESHOLD)).not.toContain(hidden);
+      }
+    });
+
+    it("sends the impression of the Story shown in the player", async () => {
+      const el = await mount([story1, story2]);
+      await click(el, ".slide[data-active] .card-open");
+      await click(el, ".player-next");
+
+      intersect(query(el, ".player .player-stage > .card"), 1);
+
+      expect(beaconedOf("impression")).toEqual([story2.impression_url]);
     });
 
     it("posts the session and the user", async () => {
       await mount([story1], { ...REQUIRED_ATTRIBUTES, "user-id": "user-9" });
+      intersectAll();
 
       const blob = vi.mocked(navigator.sendBeacon).mock.calls[0][1] as Blob;
       expect(JSON.parse(await blob.text())).toEqual({
@@ -171,26 +178,42 @@ describe(`${TAG_NAME} events`, () => {
 
     it("sends it once per session, even when the Stories come again", async () => {
       const el = await mount([story1, story2]);
+      intersectAll();
+      expect(beaconedOf("impression")).toHaveLength(2);
 
       el.setAttribute("quantity", "4");
       await flushRequest(el);
+      intersectAll();
       expect(beaconedOf("impression")).toHaveLength(2);
 
       el.setAttribute("session-id", "session-2");
       await flushRequest(el);
+      intersectAll();
       expect(beaconedOf("impression")).toHaveLength(4);
     });
 
     it("sends nothing without Stories", async () => {
       await mount([]);
+      intersectAll();
 
       expect(beaconed()).toEqual([]);
     });
 
     it("sends nothing for a Story without a valid impression URL", async () => {
       await mount([{ ...story1, impression_url: "" }, story2]);
+      intersectAll();
 
       expect(beaconedOf("impression")).toEqual([story2.impression_url]);
+    });
+
+    it("sends the impression of every card shown without IntersectionObserver", async () => {
+      vi.stubGlobal("IntersectionObserver", undefined);
+      await mount([story1, story2]);
+
+      expect(beaconedOf("impression")).toEqual([
+        story1.impression_url,
+        story2.impression_url,
+      ]);
     });
   });
 
@@ -321,7 +344,7 @@ describe(`${TAG_NAME} events`, () => {
       vi.advanceTimersByTime(VIEW_DURATION_MS);
 
       expect(beaconedOf("view")).toEqual([story1.view_url]);
-      expect(observed()).not.toContain(card);
+      expect(observed(VIEW_THRESHOLD)).not.toContain(card);
     });
 
     it("stops the count while the page is hidden", async () => {
@@ -361,8 +384,11 @@ describe(`${TAG_NAME} events`, () => {
       ];
 
       expect(hiddenCards.length).toBeGreaterThan(0);
-      expect(observed()).toEqual(expect.arrayContaining(shownCards));
-      for (const card of hiddenCards) expect(observed()).not.toContain(card);
+      expect(observed(VIEW_THRESHOLD)).toEqual(
+        expect.arrayContaining(shownCards),
+      );
+      for (const card of hiddenCards)
+        expect(observed(VIEW_THRESHOLD)).not.toContain(card);
     });
 
     it("counts the view of the Story shown in the player", async () => {
@@ -388,7 +414,7 @@ describe(`${TAG_NAME} events`, () => {
       vi.advanceTimersByTime(VIEW_DURATION_MS);
 
       expect(beaconedOf("view")).toEqual([]);
-      expect(observed()).toEqual([]);
+      expect(observed(VIEW_THRESHOLD)).toEqual([]);
     });
 
     it("watches the card again after the element moves on the page", async () => {
@@ -400,7 +426,7 @@ describe(`${TAG_NAME} events`, () => {
       await el.updateComplete;
       vi.useFakeTimers();
 
-      expect(observed()).toContain(activeCard(el));
+      expect(observed(VIEW_THRESHOLD)).toContain(activeCard(el));
       intersect(activeCard(el), 1);
       vi.advanceTimersByTime(VIEW_DURATION_MS);
       expect(beaconedOf("view")).toEqual([story1.view_url]);
@@ -419,9 +445,9 @@ describe(`${TAG_NAME} events`, () => {
       expect(covers.length).toBeGreaterThan(0);
       for (const card of covers) {
         expect(card.querySelector("video")).toBeNull();
-        expect(observed()).not.toContain(card);
+        expect(observed(VIEW_THRESHOLD)).not.toContain(card);
       }
-      expect(observed()).toContain(activeCard(el));
+      expect(observed(VIEW_THRESHOLD)).toContain(activeCard(el));
     });
 
     it("counts only while the video plays, starting over after a pause", async () => {
@@ -430,14 +456,14 @@ describe(`${TAG_NAME} events`, () => {
       // The highlighted card's video starts when the cards show.
       const card = activeCard(el);
       expect(card?.querySelector("video")?.paused).toBe(false);
-      expect(observed()).toContain(card);
+      expect(observed(VIEW_THRESHOLD)).toContain(card);
 
       intersect(card, 1);
       vi.advanceTimersByTime(VIEW_DURATION_MS - 100);
 
       card?.querySelector("video")?.pause();
       await el.updateComplete;
-      expect(observed()).not.toContain(card);
+      expect(observed(VIEW_THRESHOLD)).not.toContain(card);
       vi.advanceTimersByTime(VIEW_DURATION_MS);
       expect(beaconedOf("view")).toEqual([]);
 
@@ -449,13 +475,13 @@ describe(`${TAG_NAME} events`, () => {
 
     it("sends no view without IntersectionObserver", async () => {
       vi.stubGlobal("IntersectionObserver", undefined);
-      await mount([story1]);
+      const el = await mount([story1]);
+      await playVideos(el);
       vi.useFakeTimers();
 
       vi.advanceTimersByTime(VIEW_DURATION_MS * 2);
 
       expect(beaconedOf("view")).toEqual([]);
-      expect(beaconedOf("impression")).toEqual([story1.impression_url]);
     });
   });
 });
